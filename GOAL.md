@@ -19,28 +19,32 @@
 ## 기술 스택
 
 ### 프론트엔드
-- **Framework**: Next.js 14+ (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS + Radix UI
-- **State Management**: React hooks + Context API
+
+- **Framework**: Next.js 15+ (App Router) ✅
+- **Language**: TypeScript (strict mode) ✅
+- **Styling**: Tailwind CSS v4 + Radix UI ✅
+- **State Management**: React hooks + Context API ✅
 - **Charts**: Recharts 또는 Chart.js
-- **Form Handling**: React Hook Form + Zod
+- **Form Handling**: React Hook Form + Zod ✅
 
 ### 백엔드
-- **Runtime**: Node.js
-- **Framework**: Next.js API Routes + Server Actions
-- **Database**: MySQL 8.0+
-- **ORM**: Prisma
-- **Authentication**: JWT (Access + Refresh Token)
-- **Password Hashing**: bcrypt
+
+- **Runtime**: Node.js ✅
+- **Framework**: Next.js API Routes + Server Actions ✅
+- **Database**: MySQL 8.4 (Docker) ✅
+- **ORM**: Prisma ✅
+- **Authentication**: JWT (Access + Refresh Token) ✅
+- **Password Hashing**: bcrypt ✅
 - **File Upload**: Multer + 로컬/S3 스토리지
 
 ### 개발 도구
-- **Package Manager**: pnpm
-- **Linting**: ESLint + Prettier
-- **Testing**: Jest + React Testing Library
-- **Type Checking**: TypeScript strict mode
-- **Database Migration**: Prisma Migrate
+
+- **Package Manager**: pnpm ✅
+- **Linting**: ESLint + Prettier ✅
+- **Testing**: Jest + React Testing Library ✅
+- **Type Checking**: TypeScript strict mode ✅
+- **Database Migration**: Prisma Migrate ✅
+- **Container**: Docker (MySQL) ✅
 
 ## 핵심 기능
 
@@ -56,12 +60,17 @@
 - 역할 관리 (OWNER, ADMIN, MEMBER)
 - 그룹 전환 기능 (헤더 스위처)
 
-### 3. 계좌 및 카테고리 관리
-- 개인/그룹 단위 계좌 관리 (현금, 카드, 은행 등)
-- 실시간 잔액 추적
-- 기본 카테고리 템플릿 (식비, 교통, 주거, 공과금, 의료, 교육, 취미, 기타)
-- 사용자/그룹 커스텀 카테고리
-- 태그 시스템
+### 3. 계좌 및 카테고리 관리 ✅ 완료
+- ✅ 개인/그룹 단위 계좌 관리 (현금, 카드, 은행, 기타)
+- ✅ 실시간 잔액 추적 및 포맷팅
+- ✅ 계좌 CRUD API 및 UI (검색, 필터링, 활성화 토글)
+- ✅ 기본 카테고리 15개 자동 시드 (식비, 교통, 주거, 공과금, 의료, 교육, 취미, 쇼핑, 급여, 용돈, 투자 등)
+- ✅ 사용자/그룹 커스텀 카테고리 생성 및 관리
+- ✅ 거래 타입별 카테고리 분류 (수입/지출/이체)
+- ✅ 카테고리 색상 설정 (브랜드 팔레트 + HTML5 색상 선택기)
+- ✅ 기본/커스텀 카테고리 분리 표시 및 보호
+- ✅ 통합 설정 페이지 (계좌/카테고리 관리 UI)
+- [ ] 태그 시스템 (추후 구현)
 
 ### 4. 거래 관리
 - 수입/지출/이체 기록
@@ -201,35 +210,51 @@ surface: { card: "#FFFFFF", page: "#FAFAFB" }
 
 ## 개발 마일스톤
 
-### M0. 프로젝트 부트스트랩
-- Next.js + TypeScript + Tailwind + Prisma 초기 설정
-- 색상 토큰 적용, ESLint/Prettier 설정
-- .env.example 파일 생성
+### ✅ M0. 프로젝트 부트스트랩 (완료)
 
-### M1. 인증 및 기본 도메인
-- Prisma 스키마 작성 및 마이그레이션
-- JWT 인증 시스템 구현
-- 기본 레이아웃 및 네비게이션
-- 시드 데이터 (사용자 2명, 그룹 1개, 거래 10건)
+- ✅ Next.js + TypeScript + Tailwind + Prisma 초기 설정
+- ✅ 색상 토큰 적용, ESLint/Prettier 설정
+- ✅ .env.example 파일 생성
+- ✅ Docker MySQL 환경 구축
 
-### M2. 거래 MVP
-- 거래 CRUD API 구현
-- 거래 목록 및 필터링 UI
-- 거래 작성 폼
-- 파일 첨부 기능
+### ✅ M1. 인증 및 기본 도메인 (완료)
 
-### M3. 그룹 및 정산
-- 그룹 관리 기능
+- ✅ Prisma 스키마 작성 및 마이그레이션
+- ✅ JWT 인증 시스템 구현 (Access + Refresh Token)
+- ✅ 기본 레이아웃 및 네비게이션
+- ✅ 그룹 관리 시스템 (생성, 초대, 멤버 관리)
+- ✅ Jest + Testing Library 테스트 환경 (50+ 테스트)
+
+### ✅ M2. 계좌 및 카테고리 관리 (완료)
+
+- ✅ 계좌 CRUD API 구현 (검색, 필터링, 소유권 검증)
+- ✅ 카테고리 CRUD API 구현 (기본 15개 시드, 커스텀 생성)
+- ✅ 계좌 관리 UI (AccountForm, AccountList, AccountDialog)
+- ✅ 카테고리 관리 UI (CategoryForm, CategoryList, ColorPicker)
+- ✅ 통합 설정 페이지 (/settings/accounts, /settings/categories)
+- ✅ 실시간 금액 포맷팅 및 색상 시스템
+- ✅ 반응형 디자인 및 모바일 최적화
+
+### 🚧 M3. 거래 MVP (다음 목표)
+
+- ⏳ 거래 CRUD API 구현
+- ⏳ 거래 목록 및 필터링 UI
+- ⏳ 거래 작성 폼 (계좌/카테고리 선택 연동)
+- ⏳ 거래 검색 및 날짜/금액 범위 필터
+- ⏳ 파일 첨부 기능
+
+### M4. 그룹 및 정산
+- 그룹 거래 분할 로직 구현
 - 정산 계산 로직 구현
 - 정산 미리보기 및 생성 UI
 - 정산 완료 처리
 
-### M4. 예산, 반복, 분석
+### M5. 예산, 반복, 분석
 - 예산 관리 기능
 - 반복 거래 자동 생성
 - 분석 대시보드 (차트 포함)
 
-### M5. 가져오기/내보내기 및 설정
+### M6. 가져오기/내보내기 및 설정
 - CSV 가져오기 파이프라인
 - 데이터 내보내기 기능
 - 설정 페이지 구현

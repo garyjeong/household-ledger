@@ -505,3 +505,91 @@ export const emailStorage = {
     }
   },
 }
+
+// =============================================
+// 소유권 검증 유틸리티
+// =============================================
+
+export interface OwnershipVerificationResult {
+  isValid: boolean
+  error?: string
+}
+
+/**
+ * 사용자가 특정 리소스의 소유자인지 확인
+ */
+export async function verifyResourceOwnership(
+  userId: string,
+  ownerType: 'USER' | 'GROUP',
+  ownerId: string
+): Promise<OwnershipVerificationResult> {
+  try {
+    if (ownerType === 'USER') {
+      // 개인 소유 리소스: 소유자 ID가 현재 사용자 ID와 일치해야 함
+      if (ownerId === userId) {
+        return { isValid: true }
+      }
+      return { isValid: false, error: '접근 권한이 없습니다' }
+    }
+
+    if (ownerType === 'GROUP') {
+      // 그룹 소유 리소스: 현재 사용자가 해당 그룹의 멤버여야 함
+      const membership = mockGroupMembers.find(
+        (member) => member.groupId === ownerId && member.userId === userId
+      )
+
+      if (membership) {
+        return { isValid: true }
+      }
+      return { isValid: false, error: '그룹 멤버만 접근할 수 있습니다' }
+    }
+
+    return { isValid: false, error: '올바르지 않은 소유자 타입입니다' }
+  } catch (error) {
+    console.error('소유권 검증 중 오류:', error)
+    return { isValid: false, error: '소유권 검증에 실패했습니다' }
+  }
+}
+
+/**
+ * 계좌 소유권 검증 (특화된 버전)
+ */
+export async function verifyAccountOwnership(
+  userId: string,
+  ownerType: 'USER' | 'GROUP',
+  ownerId: string
+): Promise<OwnershipVerificationResult> {
+  return verifyResourceOwnership(userId, ownerType, ownerId)
+}
+
+/**
+ * 카테고리 소유권 검증 (특화된 버전)
+ */
+export async function verifyCategoryOwnership(
+  userId: string,
+  ownerType: 'USER' | 'GROUP',
+  ownerId: string
+): Promise<OwnershipVerificationResult> {
+  return verifyResourceOwnership(userId, ownerType, ownerId)
+}
+
+/**
+ * 그룹 멤버의 역할 확인
+ */
+export function getGroupMemberRole(
+  userId: string,
+  groupId: string
+): 'OWNER' | 'ADMIN' | 'MEMBER' | null {
+  const membership = mockGroupMembers.find(
+    (member) => member.groupId === groupId && member.userId === userId
+  )
+  return membership?.role || null
+}
+
+/**
+ * 그룹 관리 권한 확인 (OWNER 또는 ADMIN)
+ */
+export function hasGroupManagementPermission(userId: string, groupId: string): boolean {
+  const role = getGroupMemberRole(userId, groupId)
+  return role === 'OWNER' || role === 'ADMIN'
+}
