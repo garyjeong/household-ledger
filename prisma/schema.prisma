@@ -1,0 +1,332 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================
+// User Management Models
+// =============================================
+
+model User {
+  id           BigInt   @id @default(autoincrement())
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  nickname     String   @db.VarChar(60)
+  avatarUrl    String?  @map("avatar_url") @db.VarChar(500)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  ownedGroups     Group[]         @relation("GroupOwner")
+  groupMembers    GroupMember[]
+  transactions    Transaction[]   @relation("TransactionOwner")
+  participants    TransactionParticipant[]
+  createdSettlements Settlement[] @relation("SettlementCreator")
+  settlementItems SettlementItem[]
+  auditLogs       AuditLog[]
+
+  @@map("users")
+}
+
+model Group {
+  id        BigInt   @id @default(autoincrement())
+  name      String   @db.VarChar(120)
+  ownerId   BigInt   @map("owner_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  owner        User          @relation("GroupOwner", fields: [ownerId], references: [id])
+  members      GroupMember[]
+  transactions Transaction[]
+  settlements  Settlement[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  groupId  BigInt                @map("group_id")
+  userId   BigInt                @map("user_id")
+  role     GroupMemberRole       @default(MEMBER)
+  joinedAt DateTime              @default(now()) @map("joined_at")
+
+  // Relations
+  group Group @relation(fields: [groupId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@id([groupId, userId])
+  @@map("group_members")
+}
+
+enum GroupMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+// =============================================
+// Financial Models
+// =============================================
+
+model Account {
+  id        BigInt      @id @default(autoincrement())
+  ownerType OwnerType   @map("owner_type")
+  ownerId   BigInt      @map("owner_id")
+  name      String      @db.VarChar(120)
+  type      AccountType
+  currency  String      @default("KRW") @db.Char(3)
+  balance   BigInt      @default(0)
+  isActive  Boolean     @default(true) @map("is_active")
+
+  // Relations
+  transactions Transaction[]
+
+  @@index([ownerType, ownerId], map: "idx_accounts_owner")
+  @@map("accounts")
+}
+
+enum AccountType {
+  CASH
+  CARD
+  BANK
+  OTHER
+}
+
+model Category {
+  id        BigInt           @id @default(autoincrement())
+  ownerType OwnerType        @map("owner_type")
+  ownerId   BigInt           @map("owner_id")
+  name      String           @db.VarChar(120)
+  type      TransactionType
+  color     String?          @db.VarChar(7)
+  isDefault Boolean          @default(false) @map("is_default")
+
+  // Relations
+  transactions     Transaction[]
+  budgetCategories BudgetCategory[]
+
+  @@unique([ownerType, ownerId, name, type], map: "ux_category_name")
+  @@index([ownerType, ownerId], map: "idx_categories_owner")
+  @@map("categories")
+}
+
+model Tag {
+  id        BigInt    @id @default(autoincrement())
+  ownerType OwnerType @map("owner_type")
+  ownerId   BigInt    @map("owner_id")
+  name      String    @db.VarChar(60)
+
+  // Relations
+  transactions TransactionTag[]
+
+  @@unique([ownerType, ownerId, name], map: "ux_tag")
+  @@map("tags")
+}
+
+enum OwnerType {
+  USER
+  GROUP
+}
+
+// =============================================
+// Transaction Models
+// =============================================
+
+model Transaction {
+  id          BigInt           @id @default(autoincrement())
+  groupId     BigInt?          @map("group_id")
+  ownerUserId BigInt           @map("owner_user_id")
+  type        TransactionType
+  date        DateTime         @db.Date
+  amount      BigInt
+  accountId   BigInt           @map("account_id")
+  categoryId  BigInt?          @map("category_id")
+  merchant    String?          @db.VarChar(160)
+  memo        String?          @db.VarChar(1000)
+  isSettled   Boolean          @default(false) @map("is_settled")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  group        Group?                       @relation(fields: [groupId], references: [id])
+  owner        User                         @relation("TransactionOwner", fields: [ownerUserId], references: [id])
+  account      Account                      @relation(fields: [accountId], references: [id])
+  category     Category?                    @relation(fields: [categoryId], references: [id])
+  participants TransactionParticipant[]
+  tags         TransactionTag[]
+  attachments  Attachment[]
+
+  @@index([groupId, date], map: "idx_tx_group_date")
+  @@index([ownerUserId, date], map: "idx_tx_owner_date")
+  @@map("transactions")
+}
+
+model TransactionParticipant {
+  transactionId BigInt   @map("transaction_id")
+  userId        BigInt   @map("user_id")
+  shareRatio    Decimal? @map("share_ratio") @db.Decimal(8, 6)
+  shareAmount   BigInt?  @map("share_amount")
+
+  // Relations
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@id([transactionId, userId])
+  @@map("transaction_participants")
+}
+
+model TransactionTag {
+  transactionId BigInt @map("transaction_id")
+  tagId         BigInt @map("tag_id")
+
+  // Relations
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  tag         Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([transactionId, tagId])
+  @@map("transaction_tags")
+}
+
+model Attachment {
+  id            BigInt @id @default(autoincrement())
+  transactionId BigInt @map("transaction_id")
+  fileUrl       String @map("file_url") @db.VarChar(500)
+  mime          String? @db.VarChar(100)
+  size          Int?
+
+  // Relations
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}
+
+enum TransactionType {
+  EXPENSE
+  INCOME
+  TRANSFER
+}
+
+// =============================================
+// Budget Models
+// =============================================
+
+model Budget {
+  id          BigInt    @id @default(autoincrement())
+  ownerType   OwnerType @map("owner_type")
+  ownerId     BigInt    @map("owner_id")
+  periodYm    String    @map("period_ym") @db.Char(7) // 'YYYY-MM'
+  amountTotal BigInt    @default(0) @map("amount_total")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  categories BudgetCategory[]
+
+  @@unique([ownerType, ownerId, periodYm], map: "ux_budget")
+  @@map("budgets")
+}
+
+model BudgetCategory {
+  id         BigInt @id @default(autoincrement())
+  budgetId   BigInt @map("budget_id")
+  categoryId BigInt @map("category_id")
+  amount     BigInt
+
+  // Relations
+  budget   Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@unique([budgetId, categoryId], map: "ux_budget_cat")
+  @@map("budget_categories")
+}
+
+// =============================================
+// Recurring Transaction Models
+// =============================================
+
+model RecurringRule {
+  id         BigInt              @id @default(autoincrement())
+  ownerType  OwnerType           @map("owner_type")
+  ownerId    BigInt              @map("owner_id")
+  startDate  DateTime            @map("start_date") @db.Date
+  frequency  RecurringFrequency
+  dayRule    String              @map("day_rule") @db.VarChar(20) // 'D25', 'MON', etc.
+  amount     BigInt
+  accountId  BigInt              @map("account_id")
+  categoryId BigInt?             @map("category_id")
+  merchant   String?             @db.VarChar(160)
+  memo       String?             @db.VarChar(1000)
+  isActive   Boolean             @default(true) @map("is_active")
+
+  @@map("recurring_rules")
+}
+
+enum RecurringFrequency {
+  MONTHLY
+  WEEKLY
+}
+
+// =============================================
+// Settlement Models
+// =============================================
+
+model Settlement {
+  id         BigInt           @id @default(autoincrement())
+  groupId    BigInt           @map("group_id")
+  title      String           @db.VarChar(160)
+  periodFrom DateTime         @map("period_from") @db.Date
+  periodTo   DateTime         @map("period_to") @db.Date
+  createdBy  BigInt           @map("created_by")
+  status     SettlementStatus @default(OPEN)
+  createdAt  DateTime         @default(now()) @map("created_at")
+  closedAt   DateTime?        @map("closed_at")
+
+  // Relations
+  group Group             @relation(fields: [groupId], references: [id])
+  creator User            @relation("SettlementCreator", fields: [createdBy], references: [id])
+  items SettlementItem[]
+
+  @@index([groupId, status], map: "idx_set_group_status")
+  @@map("settlements")
+}
+
+model SettlementItem {
+  id           BigInt @id @default(autoincrement())
+  settlementId BigInt @map("settlement_id")
+  userId       BigInt @map("user_id")
+  amount       BigInt // Positive = receives money, Negative = pays money
+
+  // Relations
+  settlement Settlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@map("settlement_items")
+}
+
+enum SettlementStatus {
+  OPEN
+  CLOSED
+}
+
+// =============================================
+// Audit Log Model
+// =============================================
+
+model AuditLog {
+  id          BigInt   @id @default(autoincrement())
+  actorUserId BigInt   @map("actor_user_id")
+  entity      String   @db.VarChar(50)
+  entityId    BigInt   @map("entity_id")
+  action      String   @db.VarChar(50)
+  payloadJson String?  @map("payload_json") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  actor User @relation(fields: [actorUserId], references: [id])
+
+  @@map("audit_logs")
+}

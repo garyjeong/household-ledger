@@ -1,0 +1,83 @@
+# Docker Compose configuration for Household Ledger
+
+services:
+  mysql:
+    build:
+      context: .
+      dockerfile: database.Dockerfile
+    container_name: household-ledger-mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=household_ledger_root_password
+      - MYSQL_DATABASE=household_ledger
+      - MYSQL_USER=household_user
+      - MYSQL_PASSWORD=household_password
+      - TZ=Asia/Seoul
+    ports:
+      - "3307:3306"
+    volumes:
+      # 데이터 영속성을 위한 볼륨
+      - mysql_data:/var/lib/mysql
+      # MySQL 로그 볼륨
+      - mysql_logs:/var/log/mysql
+      # 설정 파일 볼륨 (실시간 수정 가능)
+      - ./mysql.cnf:/etc/mysql/conf.d/mysql.cnf:ro
+      # 초기화 스크립트 볼륨
+      - ./init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - household-ledger-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uhousehold_user", "-phousehold_password"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # 개발용 phpMyAdmin (선택사항)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5.2
+    container_name: household-ledger-phpmyadmin
+    restart: unless-stopped
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+      - PMA_USER=household_user
+      - PMA_PASSWORD=household_password
+      - UPLOAD_LIMIT=100M
+    ports:
+      - "8080:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - household-ledger-network
+    profiles:
+      - dev  # 'dev' 프로필로 실행할 때만 시작
+
+  # Redis (캐싱 및 세션 저장용, 향후 사용)
+  redis:
+    image: redis:7.4-alpine
+    container_name: household-ledger-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - household-ledger-network
+    command: redis-server --appendonly yes --requirepass household_redis_password
+    profiles:
+      - dev
+      - production
+
+volumes:
+  mysql_data:
+    driver: local
+  mysql_logs:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  household-ledger-network:
+    driver: bridge
