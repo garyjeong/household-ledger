@@ -42,7 +42,7 @@ docker-compose logs -f
 - **Root Password**: `household_ledger_root_password`
 
 ### phpMyAdmin 접속 (개발용)
-- **URL**: http://localhost:8080
+- **URL**: <http://localhost:8080>
 - **Username**: `household_user`
 - **Password**: `household_password`
 
@@ -53,7 +53,7 @@ docker-compose logs -f
 
 ## 📁 파일 구조
 
-```
+```text
 docker/
 ├── database.Dockerfile     # MySQL 커스텀 이미지
 ├── mysql.cnf              # MySQL 설정 파일
