@@ -457,16 +457,12 @@ export async function updateGroupMemberRole(
   return true
 }
 
-// 헤더에서 토큰 추출
-export function extractTokenFromHeader(authHeader: string | null): string | null {
-  if (!authHeader) return null
+// 헤더에서 토큰 추출 및 검증 (통합 함수)
+export function verifyToken(authHeader: string | null): JWTPayload | null {
+  const token = extractTokenFromHeader(authHeader)
+  if (!token) return null
 
-  const parts = authHeader.split(' ')
-  if (parts.length !== 2 || parts[0] !== 'Bearer') {
-    return null
-  }
-
-  return parts[1]
+  return verifyAccessToken(token)
 }
 
 // ID 생성 함수 (초대 코드 등에 사용)

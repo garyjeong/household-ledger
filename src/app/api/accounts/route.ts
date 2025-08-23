@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         {
           error: '잘못된 쿼리 파라미터입니다',
           code: 'INVALID_QUERY',
-          details: queryResult.error.errors,
+          details: queryResult.error.issues,
         },
         { status: 400 }
       )
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
         {
           error: '입력 데이터가 올바르지 않습니다',
           code: 'VALIDATION_ERROR',
-          details: validationResult.error.errors,
+          details: validationResult.error.issues,
         },
         { status: 400 }
       )

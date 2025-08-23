@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         {
           error: '잘못된 쿼리 파라미터입니다',
           code: 'INVALID_QUERY',
-          details: queryResult.error.errors,
+          details: queryResult.error.issues,
         },
         { status: 400 }
       )
@@ -95,7 +95,9 @@ export async function GET(request: NextRequest) {
     // isDefault 필터 적용
     let filteredCategories = categories
     if (query.isDefault !== undefined) {
-      filteredCategories = categories.filter((category) => category.isDefault === query.isDefault)
+      filteredCategories = categories.filter(
+        (category: any) => category.isDefault === query.isDefault
+      )
     }
 
     // 응답 형태로 변환
@@ -148,7 +150,7 @@ export async function POST(request: NextRequest) {
         {
           error: '입력 데이터가 올바르지 않습니다',
           code: 'VALIDATION_ERROR',
-          details: validationResult.error.errors,
+          details: validationResult.error.issues,
         },
         { status: 400 }
       )

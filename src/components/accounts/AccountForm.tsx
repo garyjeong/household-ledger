@@ -22,14 +22,14 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 // 폼 데이터 타입 (UI용)
-type AccountFormData = {
-  name: string
-  type: AccountType
-  currency: string
-  balance: string // UI에서는 문자열로 처리
-  ownerType: 'USER' | 'GROUP'
-  ownerId: number
-}
+// type AccountFormData = {
+//   name: string
+//   type: AccountType
+//   currency: string
+//   balance: string // UI에서는 문자열로 처리
+//   ownerType: 'USER' | 'GROUP'
+//   ownerId: number
+// }
 
 interface AccountFormProps {
   mode: 'create' | 'edit'
@@ -68,13 +68,13 @@ export function AccountForm({
     formState: { errors },
     setValue,
     watch
-  } = useForm<AccountFormData>({
+  } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       name: initialData?.name || '',
       type: initialData?.type || 'CASH',
       currency: initialData?.currency || 'KRW',
-      balance: initialData?.balance || '0',
+      balance: parseInt(initialData?.balance || '0'),
       ownerType: initialData?.ownerType || 'USER',
       ownerId: initialData?.ownerId ? parseInt(initialData.ownerId) : 1, // TODO: 실제 사용자 ID
     },
@@ -88,11 +88,11 @@ export function AccountForm({
     setBalanceInput(formatted)
     
     const numericValue = parseNumberInput(formatted)
-    setValue('balance', numericValue.toString())
+    setValue('balance', numericValue)
   }
 
   // 폼 제출 처리
-  const onFormSubmit = async (data: AccountFormData) => {
+  const onFormSubmit = async (data: Record<string, unknown>) => {
     try {
       const submitData = {
         ...data,

@@ -138,12 +138,12 @@ export default function CategoriesPage() {
         
         const newCategory: Category = {
           id: Date.now().toString(),
-          name: data.name,
-          type: data.type,
+          name: data.name || '',
+          type: data.type || 'EXPENSE',
           color: data.color || '#6B7280',
           isDefault: false,
-          ownerType: data.ownerType,
-          ownerId: data.ownerId.toString(),
+          ownerType: ('ownerType' in data ? data.ownerType : 'USER') || 'USER',
+          ownerId: (('ownerId' in data ? data.ownerId : 1) || 1).toString(),
         }
         
         setCategories(prev => [...prev, newCategory])

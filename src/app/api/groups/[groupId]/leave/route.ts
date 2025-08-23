@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { verifyAccessToken, findGroupById, leaveGroup } from '@/lib/auth'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     groupId: string
-  }
+  }>
 }
 
 // 그룹 탈퇴
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: '유효하지 않은 토큰입니다.' }, { status: 401 })
     }
 
-    const { groupId } = params
+    const { groupId } = await params
 
     // 그룹 존재 여부 및 멤버십 확인
     const group = await findGroupById(groupId, payload.userId)

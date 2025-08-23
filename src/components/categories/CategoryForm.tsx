@@ -20,14 +20,14 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ColorPicker } from '@/components/ui/ColorPicker'
 
-// 폼 데이터 타입 (UI용)
-type CategoryFormData = {
-  name: string
-  type: TransactionType
-  color?: string
-  ownerType: 'USER' | 'GROUP'
-  ownerId: number
-}
+// 폼 데이터 타입 (UI용) - 현재 사용하지 않음
+// type CategoryFormData = {
+//   name: string
+//   type: TransactionType
+//   color?: string
+//   ownerType: 'USER' | 'GROUP'
+//   ownerId: number
+// }
 
 interface CategoryFormProps {
   mode: 'create' | 'edit'
@@ -61,7 +61,7 @@ export function CategoryForm({
     formState: { errors },
     setValue,
     watch
-  } = useForm<CategoryFormData>({
+  } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       name: initialData?.name || '',
@@ -81,7 +81,7 @@ export function CategoryForm({
   }
 
   // 폼 제출 처리
-  const onFormSubmit = async (data: CategoryFormData) => {
+  const onFormSubmit = async (data: Record<string, unknown>) => {
     try {
       await onSubmit(data)
     } catch (error) {
@@ -175,7 +175,7 @@ export function CategoryForm({
                   {watch('name') || '카테고리명'}
                 </span>
                 <span className="text-sm text-gray-500">
-                  ({transactionTypeLabels[selectedType]})
+                  ({transactionTypeLabels[selectedType || 'EXPENSE']})
                 </span>
               </div>
             </div>

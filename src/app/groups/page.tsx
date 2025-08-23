@@ -349,9 +349,9 @@ export default function GroupsPage() {
                             </span>
                           </div>
                         ))}
-                        {group.memberCount > 3 && (
+                        {(group.memberCount ?? 0) > 3 && (
                           <p className="text-xs text-text-700">
-                            외 {group.memberCount - 3}명 더
+                            외 {(group.memberCount ?? 0) - 3}명 더
                           </p>
                         )}
                       </div>

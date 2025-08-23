@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge'
 const loginSchema = z.object({
   email: z.string().email('올바른 이메일 형식이 아닙니다.'),
   password: z.string().min(1, '비밀번호를 입력해주세요.'),
-  rememberMe: z.boolean().default(false),
+  rememberMe: z.boolean().optional().default(false),
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
@@ -36,7 +36,7 @@ export default function LoginPage() {
     formState: { errors },
     setError,
     setValue,
-  } = useForm<LoginFormData>({
+  } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',

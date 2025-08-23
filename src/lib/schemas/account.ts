@@ -12,7 +12,7 @@ export const createAccountSchema = z.object({
     .max(120, '계좌명은 120자 이하로 입력해주세요')
     .trim(),
   type: z.enum(['CASH', 'CARD', 'BANK', 'OTHER'], {
-    errorMap: () => ({ message: '올바른 계좌 타입을 선택해주세요' }),
+    message: '올바른 계좌 타입을 선택해주세요',
   }),
   currency: z.string().length(3, '통화 코드는 3자리여야 합니다').default('KRW').optional(),
   balance: z
@@ -23,7 +23,7 @@ export const createAccountSchema = z.object({
     .default(0)
     .optional(),
   ownerType: z.enum(['USER', 'GROUP'], {
-    errorMap: () => ({ message: '소유자 타입을 선택해주세요' }),
+    message: '소유자 타입을 선택해주세요',
   }),
   ownerId: z.number().int().positive('소유자 ID는 양수여야 합니다'),
 })
@@ -38,7 +38,7 @@ export const updateAccountSchema = z.object({
     .optional(),
   type: z
     .enum(['CASH', 'CARD', 'BANK', 'OTHER'], {
-      errorMap: () => ({ message: '올바른 계좌 타입을 선택해주세요' }),
+      message: '올바른 계좌 타입을 선택해주세요',
     })
     .optional(),
   currency: z.string().length(3, '통화 코드는 3자리여야 합니다').optional(),

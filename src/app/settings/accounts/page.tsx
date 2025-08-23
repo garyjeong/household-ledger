@@ -151,13 +151,13 @@ export default function AccountsPage() {
         
         const newAccount: Account = {
           id: Date.now().toString(),
-          name: data.name,
-          type: data.type,
+          name: data.name || '',
+          type: data.type || 'BANK',
           currency: data.currency || 'KRW',
           balance: data.balance?.toString() || '0',
           isActive: true,
-          ownerType: data.ownerType,
-          ownerId: data.ownerId.toString(),
+          ownerType: ('ownerType' in data ? data.ownerType : 'USER') || 'USER',
+          ownerId: (('ownerId' in data ? data.ownerId : 1) || 1).toString(),
         }
         
         setAccounts(prev => [...prev, newAccount])

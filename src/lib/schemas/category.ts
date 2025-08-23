@@ -15,14 +15,14 @@ export const createCategorySchema = z.object({
     .max(120, '카테고리명은 120자 이하로 입력해주세요')
     .trim(),
   type: z.enum(['EXPENSE', 'INCOME', 'TRANSFER'], {
-    errorMap: () => ({ message: '올바른 거래 타입을 선택해주세요' }),
+    message: '올바른 거래 타입을 선택해주세요',
   }),
   color: z
     .string()
     .regex(hexColorPattern, '올바른 색상 코드를 입력해주세요 (예: #FF5733)')
     .optional(),
   ownerType: z.enum(['USER', 'GROUP'], {
-    errorMap: () => ({ message: '소유자 타입을 선택해주세요' }),
+    message: '소유자 타입을 선택해주세요',
   }),
   ownerId: z.number().int().positive('소유자 ID는 양수여야 합니다'),
 })
@@ -37,7 +37,7 @@ export const updateCategorySchema = z.object({
     .optional(),
   type: z
     .enum(['EXPENSE', 'INCOME', 'TRANSFER'], {
-      errorMap: () => ({ message: '올바른 거래 타입을 선택해주세요' }),
+      message: '올바른 거래 타입을 선택해주세요',
     })
     .optional(),
   color: z

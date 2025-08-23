@@ -7,9 +7,10 @@ import { updateAccountSchema, formatAccountForResponse } from '@/lib/schemas/acc
  * PATCH /api/accounts/[id]
  * 계좌 정보 수정
  */
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const accountId = params.id
+    const { id } = await params
+    const accountId = id
 
     // 인증 확인
     const authHeader = request.headers.get('authorization')
@@ -65,7 +66,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         {
           error: '입력 데이터가 올바르지 않습니다',
           code: 'VALIDATION_ERROR',
-          details: validationResult.error.errors,
+          details: validationResult.error.issues,
         },
         { status: 400 }
       )
@@ -121,9 +122,13 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
  * DELETE /api/accounts/[id]
  * 계좌 삭제
  */
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const accountId = params.id
+    const { id } = await params
+    const accountId = id
 
     // 인증 확인
     const authHeader = request.headers.get('authorization')
@@ -185,7 +190,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     console.error('계좌 삭제 중 오류:', error)
 
     // Prisma 에러 처리
-    if (error.code === 'P2003') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2003') {
       return NextResponse.json(
         {
           error: '연관된 거래가 있어 계좌를 삭제할 수 없습니다',
@@ -206,9 +211,10 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
  * GET /api/accounts/[id]
  * 특정 계좌 정보 조회
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const accountId = params.id
+    const { id } = await params
+    const accountId = id
 
     // 인증 확인
     const authHeader = request.headers.get('authorization')
