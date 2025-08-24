@@ -94,7 +94,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // BigInt 변환이 필요한 필드 처리
-    const prismaUpdateData: any = { ...updateData }
+    const prismaUpdateData: Record<string, unknown> = { ...updateData }
     if (updateData.balance !== undefined) {
       prismaUpdateData.balance = BigInt(updateData.balance)
     }

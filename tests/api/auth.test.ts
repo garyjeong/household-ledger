@@ -79,7 +79,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         body: validSignupData,
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await signupHandler(request)
       const responseData = await response.json()
@@ -102,7 +102,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         body: validSignupData,
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await signupHandler(request)
       const responseData = await response.json()

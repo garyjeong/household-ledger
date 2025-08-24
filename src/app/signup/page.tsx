@@ -111,161 +111,223 @@ export default function SignupPage() {
   const passwordStrength = calculatePasswordStrength(password || '')
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-surface-page to-chip-lavender flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-text-900">회원가입</h1>
-          <p className="text-text-700">새로운 계정을 만들어보세요</p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 relative overflow-hidden flex items-center justify-center p-4">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-10 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-bounce animation-delay-[0s]"></div>
+        <div className="absolute top-10 right-10 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-bounce animation-delay-[2s]"></div>
+        <div className="absolute bottom-10 left-1/2 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-bounce animation-delay-[4s]"></div>
+      </div>
+      
+      <div className="w-full max-w-md space-y-8 relative z-10">
+        {/* Header with Animation */}
+        <div className="text-center space-y-4 animate-fade-in">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-blue-400 rounded-full blur-lg opacity-75 w-20 h-20 mx-auto animate-pulse"></div>
+            <div className="relative w-20 h-20 mx-auto bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center shadow-xl">
+              <span className="text-3xl">🌟</span>
+            </div>
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-green-100 bg-clip-text text-transparent">
+            회원가입
+          </h1>
+          <p className="text-green-100/80 text-lg">새로운 계정을 만들어보세요</p>
         </div>
 
-        {/* Signup Form */}
-        <Card className="shadow-lg">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">계정 만들기</CardTitle>
-            <CardDescription className="text-center">
+        {/* Glassmorphism Signup Form */}
+        <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl relative overflow-hidden animate-slide-up">
+          {/* Glassmorphism overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+          
+          <CardHeader className="space-y-1 relative z-10">
+            <CardTitle className="text-3xl text-center bg-gradient-to-r from-white to-green-100 bg-clip-text text-transparent font-bold">
+              계정 만들기
+            </CardTitle>
+            <CardDescription className="text-center text-white/70 text-base">
               필요한 정보를 입력해주세요
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <CardContent className="relative z-10">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               {/* Email Field */}
-              <div className="space-y-2">
-                <Label htmlFor="email">이메일</Label>
+              <div className="space-y-3 group">
+                <Label htmlFor="email" className="text-white/90 font-medium text-sm">이메일</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-text-700" />
+                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60 transition-colors group-focus-within:text-green-300" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="이메일을 입력하세요"
-                    className="pl-10"
+                    className="pl-12 h-12 bg-white/5 border-white/20 text-white placeholder:text-white/50 backdrop-blur-sm focus:bg-white/10 focus:border-green-300/50 focus:ring-green-300/30 transition-all duration-300 rounded-xl"
                     {...register('email')}
                   />
                 </div>
                 {errors.email && (
-                  <p className="text-sm text-red-600">{errors.email.message}</p>
+                  <p className="text-sm text-red-300 flex items-center gap-2 animate-fade-in">
+                    <span className="w-1 h-1 bg-red-300 rounded-full"></span>
+                    {errors.email.message}
+                  </p>
                 )}
               </div>
 
               {/* Nickname Field */}
-              <div className="space-y-2">
-                <Label htmlFor="nickname">닉네임</Label>
+              <div className="space-y-3 group">
+                <Label htmlFor="nickname" className="text-white/90 font-medium text-sm">닉네임</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-text-700" />
+                  <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60 transition-colors group-focus-within:text-green-300" />
                   <Input
                     id="nickname"
                     type="text"
                     placeholder="닉네임을 입력하세요"
-                    className="pl-10"
+                    className="pl-12 h-12 bg-white/5 border-white/20 text-white placeholder:text-white/50 backdrop-blur-sm focus:bg-white/10 focus:border-green-300/50 focus:ring-green-300/30 transition-all duration-300 rounded-xl"
                     {...register('nickname')}
                   />
                 </div>
                 {errors.nickname && (
-                  <p className="text-sm text-red-600">{errors.nickname.message}</p>
+                  <p className="text-sm text-red-300 flex items-center gap-2 animate-fade-in">
+                    <span className="w-1 h-1 bg-red-300 rounded-full"></span>
+                    {errors.nickname.message}
+                  </p>
                 )}
               </div>
 
               {/* Password Field */}
-              <div className="space-y-2">
-                <Label htmlFor="password">비밀번호</Label>
+              <div className="space-y-3 group">
+                <Label htmlFor="password" className="text-white/90 font-medium text-sm">비밀번호</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-text-700" />
+                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60 transition-colors group-focus-within:text-green-300" />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="비밀번호를 입력하세요"
-                    className="pl-10 pr-10"
+                    className="pl-12 pr-12 h-12 bg-white/5 border-white/20 text-white placeholder:text-white/50 backdrop-blur-sm focus:bg-white/10 focus:border-green-300/50 focus:ring-green-300/30 transition-all duration-300 rounded-xl"
                     {...register('password')}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 h-4 w-4 text-text-700 hover:text-brand-600 transition-colors"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60 hover:text-green-300 transition-all duration-200 hover:scale-110"
                   >
                     {showPassword ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
                 {password && (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-text-700">비밀번호 강도:</span>
-                      <span className="text-xs font-medium">
+                      <span className="text-xs text-white/70">비밀번호 강도:</span>
+                      <span className="text-xs font-semibold text-white/90">
                         {getPasswordStrengthText(passwordStrength)}
                       </span>
                     </div>
-                    <Progress 
-                      value={passwordStrength} 
-                      className={`h-2 ${getPasswordStrengthColor(passwordStrength)}`}
-                    />
+                    <div className="relative">
+                      <Progress 
+                        value={passwordStrength} 
+                        className="h-2 bg-white/10 rounded-full overflow-hidden"
+                      />
+                      <div 
+                        className={`absolute top-0 left-0 h-2 rounded-full transition-all duration-500 ${getPasswordStrengthColor(passwordStrength)}`}
+                        style={{ width: `${passwordStrength}%` }}
+                      />
+                    </div>
                   </div>
                 )}
                 {errors.password && (
-                  <p className="text-sm text-red-600">{errors.password.message}</p>
+                  <p className="text-sm text-red-300 flex items-center gap-2 animate-fade-in">
+                    <span className="w-1 h-1 bg-red-300 rounded-full"></span>
+                    {errors.password.message}
+                  </p>
                 )}
-                <div className="text-xs text-text-700 space-y-1">
-                  <p>비밀번호는 다음 조건을 만족해야 합니다:</p>
-                  <ul className="list-disc list-inside space-y-0.5 ml-2">
-                    <li>최소 8자 이상</li>
-                    <li>대문자 포함</li>
-                    <li>소문자 포함</li>
-                    <li>숫자 포함</li>
+                <div className="text-xs text-white/60 space-y-2 bg-white/5 rounded-xl p-3 backdrop-blur-sm">
+                  <p className="font-medium text-white/80">비밀번호 조건:</p>
+                  <ul className="space-y-1 ml-2">
+                    <li className={`flex items-center gap-2 ${password && password.length >= 8 ? 'text-green-300' : 'text-white/60'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${password && password.length >= 8 ? 'bg-green-300' : 'bg-white/40'}`}></span>
+                      최소 8자 이상
+                    </li>
+                    <li className={`flex items-center gap-2 ${password && /[A-Z]/.test(password) ? 'text-green-300' : 'text-white/60'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${password && /[A-Z]/.test(password) ? 'bg-green-300' : 'bg-white/40'}`}></span>
+                      대문자 포함
+                    </li>
+                    <li className={`flex items-center gap-2 ${password && /[a-z]/.test(password) ? 'text-green-300' : 'text-white/60'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${password && /[a-z]/.test(password) ? 'bg-green-300' : 'bg-white/40'}`}></span>
+                      소문자 포함
+                    </li>
+                    <li className={`flex items-center gap-2 ${password && /\d/.test(password) ? 'text-green-300' : 'text-white/60'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${password && /\d/.test(password) ? 'bg-green-300' : 'bg-white/40'}`}></span>
+                      숫자 포함
+                    </li>
                   </ul>
                 </div>
               </div>
 
               {/* Confirm Password Field */}
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">비밀번호 확인</Label>
+              <div className="space-y-3 group">
+                <Label htmlFor="confirmPassword" className="text-white/90 font-medium text-sm">비밀번호 확인</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-text-700" />
+                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60 transition-colors group-focus-within:text-green-300" />
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? 'text' : 'password'}
                     placeholder="비밀번호를 다시 입력하세요"
-                    className="pl-10 pr-10"
+                    className="pl-12 pr-12 h-12 bg-white/5 border-white/20 text-white placeholder:text-white/50 backdrop-blur-sm focus:bg-white/10 focus:border-green-300/50 focus:ring-green-300/30 transition-all duration-300 rounded-xl"
                     {...register('confirmPassword')}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-3 h-4 w-4 text-text-700 hover:text-brand-600 transition-colors"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60 hover:text-green-300 transition-all duration-200 hover:scale-110"
                   >
                     {showConfirmPassword ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
                 {errors.confirmPassword && (
-                  <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>
+                  <p className="text-sm text-red-300 flex items-center gap-2 animate-fade-in">
+                    <span className="w-1 h-1 bg-red-300 rounded-full"></span>
+                    {errors.confirmPassword.message}
+                  </p>
                 )}
               </div>
 
               {/* Error Message */}
               {errors.root && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-600">{errors.root.message}</p>
+                <div className="p-4 bg-red-500/10 border border-red-400/30 rounded-xl backdrop-blur-sm animate-fade-in">
+                  <p className="text-sm text-red-200 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-red-400 rounded-full"></span>
+                    {errors.root.message}
+                  </p>
                 </div>
               )}
 
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full h-12 bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl shadow-lg disabled:opacity-50 disabled:transform-none"
                 disabled={isLoading}
               >
-                {isLoading ? '계정 생성 중...' : '계정 만들기'}
+                <span className="flex items-center justify-center gap-2">
+                  {isLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                      계정 생성 중...
+                    </>
+                  ) : (
+                    '계정 만들기'
+                  )}
+                </span>
               </Button>
             </form>
           </CardContent>
         </Card>
 
         {/* Login Link */}
-        <Card>
+        <Card className="backdrop-blur-xl bg-white/5 border border-white/20 shadow-lg animate-slide-up animation-delay-[0.2s]">
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-sm text-text-700">
+              <p className="text-sm text-white/70">
                 이미 계정이 있으신가요?{' '}
                 <Link
                   href="/login"
-                  className="text-brand-600 hover:text-brand-700 font-medium transition-colors"
+                  className="text-green-300 hover:text-white font-semibold transition-all duration-200 hover:underline"
                 >
                   로그인
                 </Link>

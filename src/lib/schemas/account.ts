@@ -86,13 +86,22 @@ export type AccountResponse = {
 }
 
 // BigInt를 string으로 변환하는 헬퍼 함수
-export function formatAccountForResponse(account: any): AccountResponse {
+export function formatAccountForResponse(account: {
+  id: bigint
+  ownerType: string
+  ownerId: bigint
+  name: string
+  type: string
+  currency: string
+  balance: bigint
+  isActive: boolean
+}): AccountResponse {
   return {
     id: account.id.toString(),
-    ownerType: account.ownerType,
+    ownerType: account.ownerType as 'USER' | 'GROUP',
     ownerId: account.ownerId.toString(),
     name: account.name,
-    type: account.type,
+    type: account.type as 'CASH' | 'CARD' | 'BANK' | 'OTHER',
     currency: account.currency,
     balance: account.balance.toString(),
     isActive: account.isActive,

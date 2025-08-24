@@ -43,9 +43,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const checkAuthStatus = async () => {
     try {
+      // 타임아웃 설정으로 무한 대기 방지
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5초 타임아웃
+
       const response = await fetch('/api/auth/me', {
         credentials: 'include',
+        signal: controller.signal,
       })
+      
+      clearTimeout(timeoutId)
       
       if (response.ok) {
         const userData = await response.json()
@@ -53,6 +60,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     } catch (error) {
       console.error('Auth check failed:', error)
+      // 타임아웃이나 네트워크 에러 시에도 로딩 완료
     } finally {
       setIsLoading(false)
     }

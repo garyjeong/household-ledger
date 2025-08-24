@@ -86,7 +86,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'GET',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await getGroupsHandler(request)
       const responseData = await response.json()
@@ -133,7 +133,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'GET',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await getGroupsHandler(request)
       const responseData = await response.json()
@@ -284,7 +284,7 @@ describe('Groups API Routes', () => {
         cookies: { accessToken: 'valid-token' },
       }) as NextRequest
 
-      const response = await inviteHandler(request, { params: { groupId: '1' } })
+      const response = await inviteHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()
 
       expect(response.status).toBe(200)
@@ -324,7 +324,7 @@ describe('Groups API Routes', () => {
         cookies: { accessToken: 'valid-token' },
       }) as NextRequest
 
-      const response = await inviteHandler(request, { params: { groupId: '1' } })
+      const response = await inviteHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()
 
       expect(response.status).toBe(200)
@@ -346,7 +346,7 @@ describe('Groups API Routes', () => {
         cookies: { accessToken: 'valid-token' },
       }) as NextRequest
 
-      const response = await inviteHandler(request, { params: { groupId: '1' } })
+      const response = await inviteHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()
 
       expect(response.status).toBe(403)
@@ -384,7 +384,7 @@ describe('Groups API Routes', () => {
         cookies: { accessToken: 'valid-token' },
       }) as NextRequest
 
-      const response = await inviteHandler(request, { params: { groupId: '1' } })
+      const response = await inviteHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()
 
       expect(response.status).toBe(404)
@@ -500,7 +500,7 @@ describe('Groups API Routes', () => {
         cookies: { accessToken: 'valid-token' },
       }) as NextRequest
 
-      const response = await leaveHandler(request, { params: { groupId: '1' } })
+      const response = await leaveHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()
 
       expect(response.status).toBe(200)
@@ -518,7 +518,7 @@ describe('Groups API Routes', () => {
         cookies: { accessToken: 'valid-token' },
       }) as NextRequest
 
-      const response = await leaveHandler(request, { params: { groupId: '1' } })
+      const response = await leaveHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()
 
       expect(response.status).toBe(400)
@@ -535,7 +535,7 @@ describe('Groups API Routes', () => {
         cookies: { accessToken: 'valid-token' },
       }) as NextRequest
 
-      const response = await leaveHandler(request, { params: { groupId: '999' } })
+      const response = await leaveHandler(request, { params: Promise.resolve({ groupId: '999' }) })
       const responseData = await response.json()
 
       expect(response.status).toBe(404)
@@ -558,7 +558,7 @@ describe('Groups API Routes', () => {
         cookies: { accessToken: 'valid-token' },
       }) as NextRequest
 
-      const response = await leaveHandler(request, { params: { groupId: '1' } })
+      const response = await leaveHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()
 
       expect(response.status).toBe(400)
@@ -571,7 +571,7 @@ describe('Groups API Routes', () => {
         cookies: {},
       }) as NextRequest
 
-      const response = await leaveHandler(request, { params: { groupId: '1' } })
+      const response = await leaveHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()
 
       expect(response.status).toBe(401)

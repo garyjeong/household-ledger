@@ -85,49 +85,72 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-50 via-surface-page to-chip-lavender flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-text-900">로그인</h1>
-          <p className="text-text-700">Household Ledger에 오신 것을 환영합니다</p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 relative overflow-hidden flex items-center justify-center p-4">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-10 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-bounce animation-delay-[0s]"></div>
+        <div className="absolute top-10 right-10 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-bounce animation-delay-[2s]"></div>
+        <div className="absolute bottom-10 left-1/2 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-bounce animation-delay-[4s]"></div>
+      </div>
+      
+      <div className="w-full max-w-md space-y-8 relative z-10">
+        {/* Header with Animation */}
+        <div className="text-center space-y-4 animate-fade-in">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full blur-lg opacity-75 w-20 h-20 mx-auto animate-pulse"></div>
+            <div className="relative w-20 h-20 mx-auto bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-xl">
+              <span className="text-3xl">💰</span>
+            </div>
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-purple-100 bg-clip-text text-transparent">
+            로그인
+          </h1>
+          <p className="text-purple-100/80 text-lg">Household Ledger에 오신 것을 환영합니다</p>
         </div>
 
-        {/* Login Form */}
-        <Card className="shadow-lg">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">계정에 로그인</CardTitle>
-            <CardDescription className="text-center">
+        {/* Glassmorphism Login Form */}
+        <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl relative overflow-hidden animate-slide-up">
+          {/* Glassmorphism overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
+          
+          <CardHeader className="space-y-1 relative z-10">
+            <CardTitle className="text-3xl text-center bg-gradient-to-r from-white to-purple-100 bg-clip-text text-transparent font-bold">
+              계정에 로그인
+            </CardTitle>
+            <CardDescription className="text-center text-white/70 text-base">
               이메일과 비밀번호를 입력해주세요
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <CardContent className="relative z-10">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {/* Email Field */}
-              <div className="space-y-2">
-                <Label htmlFor="email">이메일</Label>
+              <div className="space-y-3 group">
+                <Label htmlFor="email" className="text-white/90 font-medium text-sm">이메일</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-text-700" />
+                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60 transition-colors group-focus-within:text-purple-300" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="이메일을 입력하세요"
-                    className="pl-10"
+                    className="pl-12 h-12 bg-white/5 border-white/20 text-white placeholder:text-white/50 backdrop-blur-sm focus:bg-white/10 focus:border-purple-300/50 focus:ring-purple-300/30 transition-all duration-300 rounded-xl"
                     {...register('email')}
                   />
                 </div>
                 {errors.email && (
-                  <p className="text-sm text-red-600">{errors.email.message}</p>
+                  <p className="text-sm text-red-300 flex items-center gap-2 animate-fade-in">
+                    <span className="w-1 h-1 bg-red-300 rounded-full"></span>
+                    {errors.email.message}
+                  </p>
                 )}
                 {rememberedEmail && (
-                  <div className="flex items-center justify-between">
-                    <Badge variant="secondary" className="text-xs">
+                  <div className="flex items-center justify-between animate-fade-in">
+                    <Badge variant="secondary" className="text-xs bg-purple-500/20 text-purple-200 border-purple-300/30">
                       저장된 이메일
                     </Badge>
                     <button
                       type="button"
                       onClick={handleClearRememberedEmail}
-                      className="text-xs text-text-700 hover:text-brand-600 transition-colors"
+                      className="text-xs text-white/60 hover:text-purple-300 transition-colors duration-200"
                     >
                       이메일 삭제
                     </button>
@@ -136,39 +159,43 @@ export default function LoginPage() {
               </div>
 
               {/* Password Field */}
-              <div className="space-y-2">
-                <Label htmlFor="password">비밀번호</Label>
+              <div className="space-y-3 group">
+                <Label htmlFor="password" className="text-white/90 font-medium text-sm">비밀번호</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-text-700" />
+                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60 transition-colors group-focus-within:text-purple-300" />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="비밀번호를 입력하세요"
-                    className="pl-10 pr-10"
+                    className="pl-12 pr-12 h-12 bg-white/5 border-white/20 text-white placeholder:text-white/50 backdrop-blur-sm focus:bg-white/10 focus:border-purple-300/50 focus:ring-purple-300/30 transition-all duration-300 rounded-xl"
                     {...register('password')}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 h-4 w-4 text-text-700 hover:text-brand-600 transition-colors"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60 hover:text-purple-300 transition-all duration-200 hover:scale-110"
                   >
                     {showPassword ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-sm text-red-600">{errors.password.message}</p>
+                  <p className="text-sm text-red-300 flex items-center gap-2 animate-fade-in">
+                    <span className="w-1 h-1 bg-red-300 rounded-full"></span>
+                    {errors.password.message}
+                  </p>
                 )}
               </div>
 
               {/* Remember Me */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between pt-2">
                 <Checkbox
                   label="이메일 저장"
+                  className="text-white/80 text-sm"
                   {...register('rememberMe')}
                 />
                 <Link
                   href="/forgot-password"
-                  className="text-sm text-brand-600 hover:text-brand-700 transition-colors"
+                  className="text-sm text-purple-300 hover:text-white transition-colors duration-200 hover:underline"
                 >
                   비밀번호를 잊으셨나요?
                 </Link>
@@ -176,29 +203,48 @@ export default function LoginPage() {
 
               {/* Error Message */}
               {errors.root && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-600">{errors.root.message}</p>
+                <div className="p-4 bg-red-500/10 border border-red-400/30 rounded-xl backdrop-blur-sm animate-fade-in">
+                  <p className="text-sm text-red-200 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-red-400 rounded-full"></span>
+                    {errors.root.message}
+                  </p>
                 </div>
               )}
 
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl shadow-lg disabled:opacity-50 disabled:transform-none"
                 disabled={isLoading}
               >
-                {isLoading ? '로그인 중...' : '로그인'}
+                <span className="flex items-center justify-center gap-2">
+                  {isLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                      로그인 중...
+                    </>
+                  ) : (
+                    '로그인'
+                  )}
+                </span>
               </Button>
 
               {/* Demo Accounts */}
-              <div className="space-y-2">
-                <p className="text-xs text-text-700 text-center">테스트 계정:</p>
-                <div className="flex gap-2">
+              <div className="space-y-3 pt-2">
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/20"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-white/5 px-3 py-1 text-white/60 rounded-full backdrop-blur-sm">테스트 계정</span>
+                  </div>
+                </div>
+                <div className="flex gap-3">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="flex-1 text-xs"
+                    className="flex-1 text-xs bg-white/5 border-white/20 text-white/80 hover:bg-white/10 hover:border-white/30 transition-all duration-200 rounded-lg"
                     onClick={() => {
                       setValue('email', 'test@example.com')
                       setValue('password', 'password123')
@@ -210,7 +256,7 @@ export default function LoginPage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="flex-1 text-xs"
+                    className="flex-1 text-xs bg-white/5 border-white/20 text-white/80 hover:bg-white/10 hover:border-white/30 transition-all duration-200 rounded-lg"
                     onClick={() => {
                       setValue('email', 'demo@demo.com')
                       setValue('password', 'password123')
@@ -225,14 +271,14 @@ export default function LoginPage() {
         </Card>
 
         {/* Sign Up Link */}
-        <Card>
+        <Card className="backdrop-blur-xl bg-white/5 border border-white/20 shadow-lg animate-slide-up animation-delay-[0.2s]">
           <CardContent className="pt-6">
             <div className="text-center">
-              <p className="text-sm text-text-700">
+              <p className="text-sm text-white/70">
                 계정이 없으신가요?{' '}
                 <Link
                   href="/signup"
-                  className="text-brand-600 hover:text-brand-700 font-medium transition-colors"
+                  className="text-purple-300 hover:text-white font-semibold transition-all duration-200 hover:underline"
                 >
                   회원가입
                 </Link>

@@ -15,18 +15,17 @@ import { getAvailableCategories, seedDefaultCategories } from '@/lib/seed-catego
  */
 export async function GET(request: NextRequest) {
   try {
-    // 인증 확인
-    const authHeader = request.headers.get('authorization')
-    const token = extractTokenFromHeader(authHeader)
+    // 쿠키에서 액세스 토큰 가져오기
+    const accessToken = request.cookies.get('accessToken')?.value
 
-    if (!token) {
+    if (!accessToken) {
       return NextResponse.json(
         { error: '인증이 필요합니다', code: 'AUTH_REQUIRED' },
         { status: 401 }
       )
     }
 
-    const user = await verifyToken(token)
+    const user = await verifyToken(accessToken)
     if (!user) {
       return NextResponse.json(
         { error: '유효하지 않은 토큰입니다', code: 'INVALID_TOKEN' },
@@ -122,18 +121,17 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    // 인증 확인
-    const authHeader = request.headers.get('authorization')
-    const token = extractTokenFromHeader(authHeader)
+    // 쿠키에서 액세스 토큰 가져오기
+    const accessToken = request.cookies.get('accessToken')?.value
 
-    if (!token) {
+    if (!accessToken) {
       return NextResponse.json(
         { error: '인증이 필요합니다', code: 'AUTH_REQUIRED' },
         { status: 401 }
       )
     }
 
-    const user = await verifyToken(token)
+    const user = await verifyToken(accessToken)
     if (!user) {
       return NextResponse.json(
         { error: '유효하지 않은 토큰입니다', code: 'INVALID_TOKEN' },

@@ -72,7 +72,7 @@ export const mockGroupMembers: GroupMember[] = [
 // HTTP 응답 헬퍼
 export interface MockResponse {
   status: number
-  body: any
+  body: Record<string, unknown>
   headers?: Record<string, string>
 }
 
@@ -105,27 +105,50 @@ export function createMockCookies(tokens?: { accessToken?: string; refreshToken?
 // 테스트용 NextRequest Mock
 export function createMockRequest(options: {
   method?: string
-  body?: any
+  body?: unknown
   cookies?: { accessToken?: string; refreshToken?: string }
   headers?: Record<string, string>
   url?: string
 }) {
   const { method = 'GET', body, cookies, headers = {}, url = 'http://localhost:3000' } = options
 
-  return {
+  const mockRequest = {
     method,
     url,
+    nextUrl: new URL(url),
     json: () => Promise.resolve(body),
+    text: () => Promise.resolve(JSON.stringify(body)),
     cookies: createMockCookies(cookies),
     headers: new Map(Object.entries(headers)),
+    // NextRequest의 필수 속성들 추가
+    page: undefined,
+    ua: undefined,
+    cache: 'default' as const,
+    credentials: 'same-origin' as const,
+    destination: '' as const,
+    integrity: '',
+    keepalive: false,
+    mode: 'cors' as const,
+    redirect: 'follow' as const,
+    referrer: '',
+    referrerPolicy: '' as const,
+    signal: new AbortController().signal,
+    body: null,
+    bodyUsed: false,
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+    blob: () => Promise.resolve(new Blob()),
+    formData: () => Promise.resolve(new FormData()),
+    clone: () => mockRequest,
   }
+
+  return mockRequest
 }
 
 // 테스트 케이스 헬퍼
 export interface TestCase {
   name: string
-  input: any
-  expected: any
+  input: Record<string, unknown>
+  expected: Record<string, unknown>
   setup?: () => void | Promise<void>
   cleanup?: () => void | Promise<void>
 }
@@ -152,12 +175,19 @@ export function runTestCases(
 }
 
 // API 테스트 헬퍼
-export function expectApiSuccess(response: any, expectedStatus = 200) {
+export function expectApiSuccess(
+  response: { status: number; body: Record<string, unknown> },
+  expectedStatus = 200
+) {
   expect(response.status).toBe(expectedStatus)
   expect(response.body).toHaveProperty('success', true)
 }
 
-export function expectApiError(response: any, expectedStatus: number, expectedError?: string) {
+export function expectApiError(
+  response: { status: number; body: Record<string, unknown> },
+  expectedStatus: number,
+  expectedError?: string
+) {
   expect(response.status).toBe(expectedStatus)
   expect(response.body).toHaveProperty('error')
   if (expectedError) {
@@ -166,7 +196,7 @@ export function expectApiError(response: any, expectedStatus: number, expectedEr
 }
 
 // 비동기 테스트 헬퍼
-export function expectAsync(promise: Promise<any>) {
+export function expectAsync(promise: Promise<unknown>) {
   return {
     toResolve: async () => {
       await expect(promise).resolves.toBeDefined()
