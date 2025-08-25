@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import Link from 'next/link'
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, ArrowLeft, AtSign } from 'lucide-react'
 
 import { useAuth } from '@/contexts/auth-context'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,20 +15,60 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
-const loginSchema = z.object({
-  email: z.string().email('올바른 이메일 형식이 아닙니다.'),
+// 이메일 단계 스키마
+const emailStageSchema = z.object({
+  username: z.string().min(1, '아이디를 입력해주세요.'),
+  domain: z.string().min(1, '도메인을 선택해주세요.'),
+  customDomain: z.string().optional(),
+  password: z.string().optional(),
+  rememberMe: z.boolean().optional().default(false),
+}).refine((data) => {
+  if (data.domain === 'custom') {
+    return data.customDomain && data.customDomain.length > 0
+  }
+  return true
+}, {
+  message: '도메인을 입력해주세요.',
+  path: ['customDomain'],
+})
+
+// 비밀번호 단계 스키마
+const passwordStageSchema = z.object({
+  username: z.string().min(1, '아이디를 입력해주세요.'),
+  domain: z.string().min(1, '도메인을 선택해주세요.'),
+  customDomain: z.string().optional(),
   password: z.string().min(1, '비밀번호를 입력해주세요.'),
   rememberMe: z.boolean().optional().default(false),
+}).refine((data) => {
+  if (data.domain === 'custom') {
+    return data.customDomain && data.customDomain.length > 0
+  }
+  return true
+}, {
+  message: '도메인을 입력해주세요.',
+  path: ['customDomain'],
 })
+
+const loginSchema = emailStageSchema
 
 type LoginFormData = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { login, isAuthenticated, rememberedEmail, clearRememberedEmail } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  
+  const emailFromUrl = searchParams.get('email') || ''
+  const isEmailFromUrl = Boolean(emailFromUrl)
+  const [stage, setStage] = useState<'email' | 'password'>(isEmailFromUrl ? 'password' : 'email')
+
+  
+  // URL에서 받은 이메일을 username@domain으로 분리
+  const [usernameFromUrl, domainFromUrl] = emailFromUrl ? emailFromUrl.split('@') : ['', '']
 
   const {
     register,
@@ -36,14 +76,28 @@ export default function LoginPage() {
     formState: { errors },
     setError,
     setValue,
-  } = useForm({
-    resolver: zodResolver(loginSchema),
+    watch,
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(stage === 'email' ? emailStageSchema : passwordStageSchema),
     defaultValues: {
-      email: '',
+      username: usernameFromUrl,
+      domain: domainFromUrl && domainFromUrl !== 'custom' ? domainFromUrl : '',
+      customDomain: domainFromUrl && !['naver.com', 'gmail.com', 'daum.net', 'kakao.com', 'outlook.com', 'yahoo.com'].includes(domainFromUrl) ? domainFromUrl : '',
       password: '',
       rememberMe: false,
     },
   })
+  
+  const selectedDomain = watch('domain')
+  
+  // 이메일 주소를 조합하는 함수
+  const getFullEmail = (data: LoginFormData) => {
+    const domain = data.domain === 'custom' ? data.customDomain : data.domain
+    if (!data.username || !domain) {
+      return ''
+    }
+    return `${data.username}@${domain}`
+  }
 
   // 이미 로그인된 경우 홈으로 리다이렉트
   useEffect(() => {
@@ -55,8 +109,17 @@ export default function LoginPage() {
   // 저장된 이메일 자동 입력
   useEffect(() => {
     if (rememberedEmail) {
-      setValue('email', rememberedEmail)
-      setValue('rememberMe', true)
+      const [savedUsername, savedDomain] = rememberedEmail.split('@')
+      if (savedUsername && savedDomain) {
+        setValue('username', savedUsername)
+        if (['naver.com', 'gmail.com', 'daum.net', 'kakao.com', 'outlook.com', 'yahoo.com'].includes(savedDomain)) {
+          setValue('domain', savedDomain)
+        } else {
+          setValue('domain', 'custom')
+          setValue('customDomain', savedDomain)
+        }
+        setValue('rememberMe', true)
+      }
     }
   }, [rememberedEmail, setValue])
 
@@ -64,7 +127,36 @@ export default function LoginPage() {
     setIsLoading(true)
     
     try {
-      const result = await login(data.email, data.password, data.rememberMe)
+      const fullEmail = getFullEmail(data)
+      
+      if (stage === 'email') {
+        // 이메일이 올바르게 구성되었는지 확인
+        if (!fullEmail) {
+          setError('root', { message: '아이디와 도메인을 모두 입력해주세요.' })
+          return
+        }
+        
+        // 이메일 존재 여부 확인
+        const res = await fetch('/api/auth/check-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: fullEmail }),
+        })
+        const payload = await res.json()
+        if (!res.ok) {
+          setError('root', { message: payload.error || '이메일 확인 중 오류가 발생했습니다.' })
+          return
+        }
+        if (payload.exists) {
+          setStage('password')
+          return
+        }
+        // 신규 사용자는 회원가입으로 이동 (이메일 전달)
+        router.push(`/signup?email=${encodeURIComponent(fullEmail)}`)
+        return
+      }
+
+      const result = await login(fullEmail, data.password, data.rememberMe)
       
       if (result.success) {
         router.push('/')
@@ -80,132 +172,178 @@ export default function LoginPage() {
 
   const handleClearRememberedEmail = () => {
     clearRememberedEmail()
-    setValue('email', '')
+    setValue('username', '')
+    setValue('domain', '')
+    setValue('customDomain', '')
     setValue('rememberMe', false)
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 relative overflow-hidden flex items-center justify-center p-4">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0">
-        <div className="absolute top-10 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-bounce animation-delay-[0s]"></div>
-        <div className="absolute top-10 right-10 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-bounce animation-delay-[2s]"></div>
-        <div className="absolute bottom-10 left-1/2 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-bounce animation-delay-[4s]"></div>
-      </div>
-      
-      <div className="w-full max-w-md space-y-8 relative z-10">
-        {/* Header with Animation */}
-        <div className="text-center space-y-4 animate-fade-in">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full blur-lg opacity-75 w-20 h-20 mx-auto animate-pulse"></div>
-            <div className="relative w-20 h-20 mx-auto bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-xl">
-              <span className="text-3xl">💰</span>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2 animate-fade-in">
+          {stage === 'password' && (
+            <div className="flex justify-start mb-3">
+              <button
+                onClick={() => setStage('email')}
+                className="flex items-center gap-2 text-slate-600 hover:text-slate-900 cursor-pointer transition-colors duration-200"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="text-sm">다른 이메일로 로그인</span>
+              </button>
             </div>
+          )}
+          <div className="w-14 h-14 mx-auto bg-slate-900 rounded-xl flex items-center justify-center shadow-md">
+            <span className="text-xl">💰</span>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-purple-100 bg-clip-text text-transparent">
-            로그인
-          </h1>
-          <p className="text-purple-100/80 text-lg">Household Ledger에 오신 것을 환영합니다</p>
+          <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">로그인</h1>
+          <p className="text-slate-600 text-sm">
+            {stage === 'password' && isEmailFromUrl ? `${emailFromUrl}로 로그인` : '계정으로 계속하기'}
+          </p>
         </div>
 
-        {/* Glassmorphism Login Form */}
-        <Card className="backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl relative overflow-hidden animate-slide-up">
-          {/* Glassmorphism overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent"></div>
-          
-          <CardHeader className="space-y-1 relative z-10">
-            <CardTitle className="text-3xl text-center bg-gradient-to-r from-white to-purple-100 bg-clip-text text-transparent font-bold">
-              계정에 로그인
+        <Card className="bg-white border border-slate-200 shadow-lg animate-slide-up">
+          <CardHeader className="space-y-1 pb-4">
+            <CardTitle className="text-lg text-center text-slate-900 font-medium tracking-tight">
+              {stage === 'email' ? '이메일로 계속하기' : '비밀번호 입력'}
             </CardTitle>
-            <CardDescription className="text-center text-white/70 text-base">
-              이메일과 비밀번호를 입력해주세요
+            <CardDescription className="text-center text-slate-600 text-sm">
+              {stage === 'email' ? '내 계정이 있는지 확인합니다' : '계정 비밀번호를 입력해주세요'}
             </CardDescription>
           </CardHeader>
-          <CardContent className="relative z-10">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               {/* Email Field */}
-              <div className="space-y-3 group">
-                <Label htmlFor="email" className="text-white/90 font-medium text-sm">이메일</Label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60 transition-colors group-focus-within:text-purple-300" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="이메일을 입력하세요"
-                    className="pl-12 h-12 bg-white/5 border-white/20 text-white placeholder:text-white/50 backdrop-blur-sm focus:bg-white/10 focus:border-purple-300/50 focus:ring-purple-300/30 transition-all duration-300 rounded-xl"
-                    {...register('email')}
-                  />
+              <div className="space-y-2">
+                <Label className="text-slate-900 font-medium text-sm">이메일</Label>
+                <div className="flex gap-2">
+                  {/* Username */}
+                  <div className="flex-1 relative group">
+                    <AtSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 transition-colors group-focus-within:text-slate-900" />
+                    <Input
+                      placeholder="아이디"
+                      className="pl-10 h-10 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-slate-300/30 transition-all duration-200 rounded-lg"
+                      {...register('username')}
+                      disabled={stage === 'password'}
+
+                    />
+                  </div>
+                  
+                  {/* @ Symbol */}
+                  <div className="flex items-center text-slate-500 font-medium">@</div>
+                  
+                  {/* Domain Select */}
+                  <div className="flex-1">
+                    <Select
+                      value={selectedDomain}
+                      onValueChange={(value) => {
+                        setValue('domain', value, { shouldValidate: true, shouldDirty: true })
+                      }}
+
+                    >
+                      <SelectTrigger className="h-10" disabled={stage === 'password'}>
+                        <SelectValue placeholder="선택하기" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="naver.com">naver.com</SelectItem>
+                        <SelectItem value="gmail.com">gmail.com</SelectItem>
+                        <SelectItem value="daum.net">daum.net</SelectItem>
+                        <SelectItem value="kakao.com">kakao.com</SelectItem>
+                        <SelectItem value="outlook.com">outlook.com</SelectItem>
+                        <SelectItem value="yahoo.com">yahoo.com</SelectItem>
+                        <SelectItem value="custom">기타 (직접입력)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {/* Hidden input for form submission */}
+                    <input type="hidden" {...register('domain')} />
+                  </div>
                 </div>
-                {errors.email && (
-                  <p className="text-sm text-red-300 flex items-center gap-2 animate-fade-in">
-                    <span className="w-1 h-1 bg-red-300 rounded-full"></span>
-                    {errors.email.message}
+                
+                {/* Custom Domain Input */}
+                {selectedDomain === 'custom' && (
+                  <div className="relative group">
+                    <Input
+                      placeholder="도메인을 입력하세요 (예: company.com)"
+                      className="h-10 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-slate-300/30 transition-all duration-200 rounded-lg"
+                      {...register('customDomain')}
+
+                    />
+                  </div>
+                )}
+                
+                {/* Error Messages */}
+                {errors.username && (
+                  <p className="text-sm text-red-600 flex items-center gap-2 animate-fade-in">
+                    <span className="w-1 h-1 bg-red-600 rounded-full"></span>
+                    {errors.username.message}
                   </p>
                 )}
-                {rememberedEmail && (
-                  <div className="flex items-center justify-between animate-fade-in">
-                    <Badge variant="secondary" className="text-xs bg-purple-500/20 text-purple-200 border-purple-300/30">
-                      저장된 이메일
-                    </Badge>
-                    <button
-                      type="button"
-                      onClick={handleClearRememberedEmail}
-                      className="text-xs text-white/60 hover:text-purple-300 transition-colors duration-200"
-                    >
-                      이메일 삭제
-                    </button>
-                  </div>
+                {errors.domain && (
+                  <p className="text-sm text-red-600 flex items-center gap-2 animate-fade-in">
+                    <span className="w-1 h-1 bg-red-600 rounded-full"></span>
+                    {errors.domain.message}
+                  </p>
+                )}
+                {errors.customDomain && (
+                  <p className="text-sm text-red-600 flex items-center gap-2 animate-fade-in">
+                    <span className="w-1 h-1 bg-red-600 rounded-full"></span>
+                    {errors.customDomain.message}
+                  </p>
                 )}
               </div>
 
               {/* Password Field */}
-              <div className="space-y-3 group">
-                <Label htmlFor="password" className="text-white/90 font-medium text-sm">비밀번호</Label>
+              {stage === 'password' && (
+              <div className="space-y-2 group">
+                <Label htmlFor="password" className="text-slate-900 font-medium text-sm">비밀번호</Label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60 transition-colors group-focus-within:text-purple-300" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 transition-colors group-focus-within:text-slate-900" />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="비밀번호를 입력하세요"
-                    className="pl-12 pr-12 h-12 bg-white/5 border-white/20 text-white placeholder:text-white/50 backdrop-blur-sm focus:bg-white/10 focus:border-purple-300/50 focus:ring-purple-300/30 transition-all duration-300 rounded-xl"
+                    className="pl-10 pr-10 h-10 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-slate-300/30 transition-all duration-200 rounded-lg"
                     {...register('password')}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60 hover:text-purple-300 transition-all duration-200 hover:scale-110"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 hover:text-slate-900 cursor-pointer transition-all duration-200 hover:scale-110"
                   >
                     {showPassword ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-sm text-red-300 flex items-center gap-2 animate-fade-in">
-                    <span className="w-1 h-1 bg-red-300 rounded-full"></span>
+                  <p className="text-sm text-red-600 flex items-center gap-2 animate-fade-in">
+                    <span className="w-1 h-1 bg-red-600 rounded-full"></span>
                     {errors.password.message}
                   </p>
                 )}
               </div>
+              )}
 
               {/* Remember Me */}
-              <div className="flex items-center justify-between pt-2">
+              {stage === 'password' && (
+              <div className="flex items-center justify-between">
                 <Checkbox
                   label="이메일 저장"
-                  className="text-white/80 text-sm"
                   {...register('rememberMe')}
                 />
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-purple-300 hover:text-white transition-colors duration-200 hover:underline"
+                <Link 
+                  href="/forgot-password" 
+                  className="text-sm text-slate-600 hover:text-slate-900 cursor-pointer transition-colors duration-200"
                 >
                   비밀번호를 잊으셨나요?
                 </Link>
               </div>
+              )}
 
               {/* Error Message */}
               {errors.root && (
-                <div className="p-4 bg-red-500/10 border border-red-400/30 rounded-xl backdrop-blur-sm animate-fade-in">
-                  <p className="text-sm text-red-200 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-red-400 rounded-full"></span>
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg animate-fade-in">
+                  <p className="text-sm text-red-700 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
                     {errors.root.message}
                   </p>
                 </div>
@@ -214,78 +352,27 @@ export default function LoginPage() {
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl shadow-lg disabled:opacity-50 disabled:transform-none"
+                className="w-full h-10 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg transition-all duration-200 disabled:opacity-50"
                 disabled={isLoading}
               >
                 <span className="flex items-center justify-center gap-2">
                   {isLoading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                      로그인 중...
+                      {stage === 'email' ? '확인 중...' : '로그인 중...'}
                     </>
                   ) : (
-                    '로그인'
+                    stage === 'email' ? '계속하기' : '로그인'
                   )}
                 </span>
               </Button>
 
-              {/* Demo Accounts */}
-              <div className="space-y-3 pt-2">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-white/20"></div>
-                  </div>
-                  <div className="relative flex justify-center text-xs">
-                    <span className="bg-white/5 px-3 py-1 text-white/60 rounded-full backdrop-blur-sm">테스트 계정</span>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 text-xs bg-white/5 border-white/20 text-white/80 hover:bg-white/10 hover:border-white/30 transition-all duration-200 rounded-lg"
-                    onClick={() => {
-                      setValue('email', 'test@example.com')
-                      setValue('password', 'password123')
-                    }}
-                  >
-                    테스트 계정
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 text-xs bg-white/5 border-white/20 text-white/80 hover:bg-white/10 hover:border-white/30 transition-all duration-200 rounded-lg"
-                    onClick={() => {
-                      setValue('email', 'demo@demo.com')
-                      setValue('password', 'password123')
-                    }}
-                  >
-                    데모 계정
-                  </Button>
-                </div>
-              </div>
+
             </form>
           </CardContent>
         </Card>
 
-        {/* Sign Up Link */}
-        <Card className="backdrop-blur-xl bg-white/5 border border-white/20 shadow-lg animate-slide-up animation-delay-[0.2s]">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-sm text-white/70">
-                계정이 없으신가요?{' '}
-                <Link
-                  href="/signup"
-                  className="text-purple-300 hover:text-white font-semibold transition-all duration-200 hover:underline"
-                >
-                  회원가입
-                </Link>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+
       </div>
     </div>
   )

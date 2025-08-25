@@ -9,10 +9,12 @@ import {
   User, 
   Settings as SettingsIcon,
   Menu,
-  X
+  X,
+  LogOut
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { useAuth } from '@/contexts/auth-context'
 
 interface SettingsLayoutProps {
   children: React.ReactNode
@@ -42,6 +44,7 @@ const settingsNavigation = [
 export default function SettingsLayout({ children }: SettingsLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
+  const { logout } = useAuth()
 
   return (
     <div className="min-h-screen bg-surface-page">
@@ -54,19 +57,32 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
               <h1 className="text-xl font-semibold text-text-900">설정</h1>
             </div>
             
-            {/* Mobile menu button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="md:hidden"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-            </Button>
+            <div className="flex items-center gap-3">
+              {/* Logout button */}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={logout}
+                className="text-slate-600 hover:text-slate-900 hidden md:flex"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                로그아웃
+              </Button>
+
+              {/* Mobile menu button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="md:hidden"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -153,6 +169,23 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
                         </Link>
                       )
                     })}
+                    
+                    {/* Mobile Logout Button */}
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false)
+                        logout()
+                      }}
+                      className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors text-slate-600 hover:bg-slate-50 hover:text-slate-900 w-full"
+                    >
+                      <LogOut className="h-5 w-5 text-slate-400" />
+                      <div>
+                        <div className="font-medium">로그아웃</div>
+                        <div className="text-xs text-slate-500 mt-0.5">
+                          계정에서 로그아웃
+                        </div>
+                      </div>
+                    </button>
                   </nav>
                 </div>
               </div>

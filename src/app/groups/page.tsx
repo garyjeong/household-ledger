@@ -14,7 +14,8 @@ import {
   UserPlus,
   ExternalLink,
   Copy,
-  Check
+  Check,
+  LogOut
 } from 'lucide-react'
 
 import { useAuth } from '@/contexts/auth-context'
@@ -52,8 +53,8 @@ type JoinGroupFormData = z.infer<typeof joinGroupSchema>
 
 export default function GroupsPage() {
   const router = useRouter()
-  const { user, isAuthenticated } = useAuth()
-  const { groups, isLoading, createGroup, generateInvite, joinGroupByCode } = useGroup()
+  const { user, isAuthenticated, logout } = useAuth()
+  const { groups, isLoading, createGroup, generateInvite, joinGroupByCode, switchGroup } = useGroup()
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false)
@@ -127,11 +128,11 @@ export default function GroupsPage() {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'OWNER':
-        return <Crown className="h-4 w-4 text-yellow-600" />
+        return <Crown className="h-4 w-4 text-amber-600" />
       case 'ADMIN':
-        return <Users className="h-4 w-4 text-blue-600" />
+        return <Users className="h-4 w-4 text-slate-600" />
       default:
-        return <Users className="h-4 w-4 text-text-700" />
+        return <Users className="h-4 w-4 text-slate-500" />
     }
   }
 
@@ -148,15 +149,29 @@ export default function GroupsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-surface-page p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-stroke-200 rounded w-48"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-48 bg-stroke-200 rounded-xl"></div>
-              ))}
+      <div className="min-h-screen bg-slate-50">
+        <div className="bg-white border-b border-slate-200">
+          <div className="max-w-6xl mx-auto px-6 py-6">
+            <div className="animate-pulse">
+              <div className="h-8 bg-slate-200 rounded w-48 mb-2"></div>
+              <div className="h-4 bg-slate-200 rounded w-64"></div>
             </div>
+          </div>
+        </div>
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-64 bg-white border border-slate-200 rounded-xl animate-pulse">
+                <div className="p-6 space-y-4">
+                  <div className="h-6 bg-slate-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-slate-200 rounded w-full"></div>
+                    <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -164,25 +179,40 @@ export default function GroupsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-page p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-text-900">내 그룹</h1>
-            <p className="text-text-700 mt-2">
-              {groups.length}개의 그룹에 참여 중입니다
-            </p>
-          </div>
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-6 py-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center justify-between sm:block">
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900 tracking-tight">내 그룹</h1>
+                {groups.length > 0 && (
+                  <p className="text-slate-600 mt-1">
+                    {`${groups.length}개의 그룹에 참여 중입니다`}
+                  </p>
+                )}
+              </div>
+              
+              {/* 모바일에서만 보이는 로그아웃 버튼 */}
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={logout}
+                className="text-slate-600 hover:text-slate-900 sm:hidden"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           
-          <div className="flex gap-3">
-            <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  그룹 참여
-                </Button>
-              </DialogTrigger>
+            <div className="flex flex-wrap gap-3">
+              <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    그룹 참여
+                  </Button>
+                </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>그룹 참여</DialogTitle>
@@ -214,10 +244,18 @@ export default function GroupsPage() {
                   )}
                   
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsJoinDialogOpen(false)}>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsJoinDialogOpen(false)}
+                      className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                    >
                       취소
                     </Button>
-                    <Button type="submit">
+                    <Button 
+                      type="submit"
+                      className="bg-slate-900 hover:bg-slate-800 text-white"
+                    >
                       참여하기
                     </Button>
                   </DialogFooter>
@@ -225,13 +263,13 @@ export default function GroupsPage() {
               </DialogContent>
             </Dialog>
 
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  새 그룹 만들기
-                </Button>
-              </DialogTrigger>
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-slate-900 hover:bg-slate-800 text-white shadow-sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    새 그룹 만들기
+                  </Button>
+                </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>새 그룹 만들기</DialogTitle>
@@ -263,40 +301,55 @@ export default function GroupsPage() {
                   )}
                   
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsCreateDialogOpen(false)}
+                      className="border-slate-300 text-slate-700 hover:bg-slate-50"
+                    >
                       취소
                     </Button>
-                    <Button type="submit">
+                    <Button 
+                      type="submit"
+                      className="bg-slate-900 hover:bg-slate-800 text-white"
+                    >
                       만들기
                     </Button>
                   </DialogFooter>
                 </form>
               </DialogContent>
             </Dialog>
+            
+            {/* 데스크탑에서만 보이는 로그아웃 버튼 */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={logout}
+              className="text-slate-600 hover:text-slate-900 hidden sm:flex"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              로그아웃
+            </Button>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Groups Grid */}
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
         {groups.length === 0 ? (
-          <Card className="border-2 border-dashed border-stroke-200">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Users className="h-16 w-16 text-text-700 mb-4" />
-              <h3 className="text-lg font-semibold text-text-900 mb-2">
+          <Card className="border-2 border-dashed border-slate-300 bg-white shadow-sm">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-6">
+                <Users className="h-8 w-8 text-slate-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-slate-900 mb-3">
                 아직 그룹이 없습니다
               </h3>
-              <p className="text-text-700 text-center mb-6 max-w-md">
-                새로운 그룹을 만들거나 초대 코드로 기존 그룹에 참여해보세요.
+              <p className="text-slate-600 text-center max-w-md leading-relaxed">
+                새로운 그룹을 만들어서 가족이나 친구들과 함께 가계부를 관리해보세요.
+                또는 기존 그룹의 초대 코드로 참여할 수도 있습니다.
               </p>
-              <div className="flex gap-3">
-                <Button onClick={() => setIsJoinDialogOpen(true)} variant="outline">
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  그룹 참여
-                </Button>
-                <Button onClick={() => setIsCreateDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  그룹 만들기
-                </Button>
-              </div>
             </CardContent>
           </Card>
         ) : (
@@ -306,26 +359,26 @@ export default function GroupsPage() {
               const canInvite = userMember?.role === 'OWNER' || userMember?.role === 'ADMIN'
               
               return (
-                <Card key={group.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
+                <Card key={group.id} className="bg-white border-slate-200 hover:shadow-lg hover:border-slate-300 transition-all duration-200">
+                  <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <CardTitle className="text-lg">{group.name}</CardTitle>
+                        <CardTitle className="text-lg font-semibold text-slate-900">{group.name}</CardTitle>
                         <div className="flex items-center space-x-2 mt-2">
                           {getRoleIcon(userMember?.role || 'MEMBER')}
-                          <span className="text-sm text-text-700">
+                          <span className="text-sm text-slate-600 font-medium">
                             {getRoleName(userMember?.role || 'MEMBER')}
                           </span>
                         </div>
                       </div>
-                      <Badge variant="secondary">
+                      <Badge variant="secondary" className="bg-slate-100 text-slate-700 border-0">
                         {group.memberCount}명
                       </Badge>
                     </div>
                   </CardHeader>
                   
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center space-x-2 text-sm text-text-700">
+                  <CardContent className="space-y-5">
+                    <div className="flex items-center space-x-2 text-sm text-slate-500">
                       <Calendar className="h-4 w-4" />
                       <span>
                         {formatDate(group.createdAt, { 
@@ -337,33 +390,38 @@ export default function GroupsPage() {
                     </div>
                     
                     {/* Members */}
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium text-text-900">멤버</h4>
-                      <div className="space-y-1">
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-semibold text-slate-900">멤버</h4>
+                      <div className="space-y-2">
                         {group.members.slice(0, 3).map((member) => (
                           <div key={member.userId} className="flex items-center space-x-2 text-sm">
                             {getRoleIcon(member.role)}
-                            <span className="text-text-700">
+                            <span className="text-slate-700">
                               {member.user?.nickname}
-                              {member.userId === user?.id && ' (나)'}
+                              {member.userId === user?.id && (
+                                <span className="text-slate-500 font-medium"> (나)</span>
+                              )}
                             </span>
                           </div>
                         ))}
                         {(group.memberCount ?? 0) > 3 && (
-                          <p className="text-xs text-text-700">
-                            외 {(group.memberCount ?? 0) - 3}명 더
+                          <p className="text-xs text-slate-500 pl-6">
+                            외 {(group.memberCount ?? 0) - 3}명 더...
                           </p>
                         )}
                       </div>
                     </div>
                     
                     {/* Actions */}
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex gap-2 pt-3 border-t border-slate-100">
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="flex-1"
-                        onClick={() => router.push(`/groups/${group.id}`)}
+                        className="flex-1 border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+                        onClick={() => {
+                          switchGroup(group.id)
+                          router.push('/ledger')
+                        }}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
                         열기
@@ -373,6 +431,7 @@ export default function GroupsPage() {
                         <Button 
                           variant="outline" 
                           size="sm"
+                          className="border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
                           onClick={() => handleGenerateInvite(group.id)}
                         >
                           <LinkIcon className="h-4 w-4" />
@@ -446,8 +505,8 @@ export default function GroupsPage() {
                   </div>
                 </div>
                 
-                <div className="p-3 bg-brand-50 border border-brand-200 rounded-lg">
-                  <p className="text-sm text-brand-700">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                  <p className="text-sm text-slate-700">
                     💡 초대 코드는 7일 후에 만료됩니다.
                   </p>
                 </div>
@@ -459,6 +518,7 @@ export default function GroupsPage() {
                 type="button" 
                 variant="outline" 
                 onClick={() => setIsInviteDialogOpen(false)}
+                className="border-slate-300 text-slate-700 hover:bg-slate-50"
               >
                 닫기
               </Button>

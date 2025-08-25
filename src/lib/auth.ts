@@ -145,142 +145,134 @@ export const refreshTokenCookieOptions = {
 }
 
 // Mock 사용자 데이터 (실제 DB 연결 전까지 사용)
-const mockUsers: User[] = [
-  {
-    id: '1',
-    email: 'test@example.com',
-    nickname: '테스트유저',
-    createdAt: new Date(),
-  },
-  {
-    id: '2',
-    email: 'demo@demo.com',
-    nickname: '데모유저',
-    avatarUrl: 'https://via.placeholder.com/100',
-    createdAt: new Date(),
-  },
-]
-
-// Mock 비밀번호 저장소 (실제로는 DB에서 해시된 비밀번호를 가져옴)
-const mockPasswords: Record<string, string> = {}
-
-// Mock 그룹 데이터
-const mockGroups: Group[] = [
-  {
-    id: '1',
-    name: '우리 가족',
-    ownerId: '1',
-    createdAt: new Date('2024-01-01'),
-    memberCount: 2,
-  },
-  {
-    id: '2',
-    name: '회사 동료',
-    ownerId: '2',
-    createdAt: new Date('2024-01-15'),
-    memberCount: 1,
-  },
-]
-
-// Mock 그룹 멤버 데이터
-const mockGroupMembers: GroupMember[] = [
-  {
-    groupId: '1',
-    userId: '1',
-    role: 'OWNER',
-    joinedAt: new Date('2024-01-01'),
-  },
-  {
-    groupId: '1',
-    userId: '2',
-    role: 'MEMBER',
-    joinedAt: new Date('2024-01-02'),
-  },
-  {
-    groupId: '2',
-    userId: '2',
-    role: 'OWNER',
-    joinedAt: new Date('2024-01-15'),
-  },
-]
-
-// Mock 초대 코드 저장소
-const mockInviteCodes: Record<string, { groupId: string; expiresAt: Date; createdBy: string }> = {}
-
-// Mock 데이터 초기화 함수
-async function initializeMockData() {
-  if (Object.keys(mockPasswords).length === 0) {
-    // 기본 사용자들의 비밀번호 해시 생성
-    mockPasswords['test@example.com'] = await hashPassword('password123')
-    mockPasswords['demo@demo.com'] = await hashPassword('password123')
-  }
-}
-
-// 즉시 초기화 실행
-initializeMockData().catch(console.error)
+// Mock 데이터는 제거되었습니다. 모든 기능이 실제 Prisma 데이터베이스를 사용합니다.
 
 // Mock 함수들 (DB 연결 후 실제 구현으로 교체)
 export async function findUserByEmail(email: string): Promise<User | null> {
-  const user = mockUsers.find((u) => u.email === email)
-  return user || null
+  const { prisma } = await import('@/lib/prisma')
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+  })
+
+  if (!user) return null
+
+  return {
+    id: user.id.toString(),
+    email: user.email,
+    nickname: user.nickname,
+    avatarUrl: user.avatarUrl || undefined,
+    createdAt: user.createdAt,
+  }
 }
 
 export async function findUserById(id: string): Promise<User | null> {
-  const user = mockUsers.find((u) => u.id === id)
-  return user || null
+  const { prisma } = await import('@/lib/prisma')
+
+  const user = await prisma.user.findUnique({
+    where: { id: BigInt(id) },
+  })
+
+  if (!user) return null
+
+  return {
+    id: user.id.toString(),
+    email: user.email,
+    nickname: user.nickname,
+    avatarUrl: user.avatarUrl || undefined,
+    createdAt: user.createdAt,
+  }
 }
 
 export async function createUser(userData: SignupData): Promise<User> {
+  const { prisma } = await import('@/lib/prisma')
+
   const hashedPassword = await hashPassword(userData.password)
 
-  const newUser: User = {
-    id: (mockUsers.length + 1).toString(),
-    email: userData.email,
-    nickname: userData.nickname,
-    createdAt: new Date(),
+  const user = await prisma.user.create({
+    data: {
+      email: userData.email,
+      passwordHash: hashedPassword,
+      nickname: userData.nickname,
+      avatarUrl: null,
+    },
+  })
+
+  return {
+    id: user.id.toString(),
+    email: user.email,
+    nickname: user.nickname,
+    avatarUrl: user.avatarUrl || undefined,
+    createdAt: user.createdAt,
   }
-
-  // Mock 데이터에 추가
-  mockUsers.push(newUser)
-  mockPasswords[userData.email] = hashedPassword
-
-  return newUser
 }
 
 export async function verifyUserPassword(email: string, password: string): Promise<boolean> {
-  const hashedPassword = mockPasswords[email]
-  if (!hashedPassword) return false
+  const { prisma } = await import('@/lib/prisma')
 
-  return await verifyPassword(password, hashedPassword)
+  const user = await prisma.user.findUnique({
+    where: { email },
+  })
+
+  if (!user) return false
+
+  return await verifyPassword(password, user.passwordHash)
 }
 
 // 그룹 관련 Mock 함수들
 export async function findGroupsByUserId(userId: string): Promise<GroupWithMembers[]> {
-  const userGroups = mockGroupMembers
-    .filter((member) => member.userId === userId)
-    .map((member) => {
-      const group = mockGroups.find((g) => g.id === member.groupId)
-      if (!group) return null
+  const { prisma } = await import('@/lib/prisma')
 
-      const groupMembers = mockGroupMembers
-        .filter((gm) => gm.groupId === group.id)
-        .map((gm) => ({
-          ...gm,
-          user: mockUsers.find((u) => u.id === gm.userId),
-        }))
-
-      const owner = mockUsers.find((u) => u.id === group.ownerId)
-
-      return {
-        ...group,
-        members: groupMembers,
-        owner,
-        memberCount: groupMembers.length,
-      }
+  try {
+    const userGroups = await prisma.groupMember.findMany({
+      where: {
+        userId: BigInt(userId),
+      },
+      include: {
+        group: {
+          include: {
+            members: {
+              include: {
+                user: true,
+              },
+            },
+            owner: true,
+          },
+        },
+      },
     })
-    .filter(Boolean) as GroupWithMembers[]
 
-  return userGroups
+    return userGroups.map((membership) => ({
+      id: membership.group.id.toString(),
+      name: membership.group.name,
+      ownerId: membership.group.ownerId.toString(),
+      createdAt: membership.group.createdAt,
+      memberCount: membership.group.members.length,
+      members: membership.group.members.map((member) => ({
+        groupId: member.groupId.toString(),
+        userId: member.userId.toString(),
+        role: member.role,
+        joinedAt: member.joinedAt,
+        user: {
+          id: member.user.id.toString(),
+          email: member.user.email,
+          nickname: member.user.nickname,
+          avatarUrl: member.user.avatarUrl || undefined,
+          createdAt: member.user.createdAt,
+        },
+      })),
+      owner: {
+        id: membership.group.owner.id.toString(),
+        email: membership.group.owner.email,
+        nickname: membership.group.owner.nickname,
+        avatarUrl: membership.group.owner.avatarUrl || undefined,
+        createdAt: membership.group.owner.createdAt,
+      },
+    }))
+  } catch (error) {
+    console.error('Error finding groups by user ID:', error)
+    return []
+  }
 }
 
 export async function findGroupById(
@@ -316,27 +308,42 @@ export async function findGroupById(
 }
 
 export async function createGroup(data: CreateGroupData): Promise<Group> {
-  const newGroup: Group = {
-    id: (mockGroups.length + 1).toString(),
-    name: data.name,
-    ownerId: data.ownerId,
-    createdAt: new Date(),
-    memberCount: 1,
+  const { prisma } = await import('@/lib/prisma')
+
+  try {
+    // 트랜잭션을 사용하여 그룹과 소유자 멤버십을 동시에 생성
+    const result = await prisma.$transaction(async (tx) => {
+      // 그룹 생성
+      const newGroup = await tx.group.create({
+        data: {
+          name: data.name,
+          ownerId: BigInt(data.ownerId),
+        },
+      })
+
+      // 소유자를 그룹 멤버로 추가
+      await tx.groupMember.create({
+        data: {
+          groupId: newGroup.id,
+          userId: BigInt(data.ownerId),
+          role: 'OWNER',
+        },
+      })
+
+      return newGroup
+    })
+
+    return {
+      id: result.id.toString(),
+      name: result.name,
+      ownerId: result.ownerId.toString(),
+      createdAt: result.createdAt,
+      memberCount: 1,
+    }
+  } catch (error) {
+    console.error('Error creating group:', error)
+    throw new Error('그룹 생성에 실패했습니다.')
   }
-
-  // Mock 데이터에 추가
-  mockGroups.push(newGroup)
-
-  // 소유자를 그룹 멤버로 추가
-  const ownerMember: GroupMember = {
-    groupId: newGroup.id,
-    userId: data.ownerId,
-    role: 'OWNER',
-    joinedAt: new Date(),
-  }
-  mockGroupMembers.push(ownerMember)
-
-  return newGroup
 }
 
 export async function generateInviteCode(

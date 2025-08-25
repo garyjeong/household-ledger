@@ -1,21 +1,37 @@
 @import "tailwindcss";
 
+/* 은평사가독서체 웹폰트 */
+/* 
+ * 본 저작물은 '은평구'에서 '2025년' 작성하여 공공누리 제1유형으로 개방한 
+ * '은평사가독서체'을 이용하였으며, 해당 저작물은 '눈누(https://noonnu.cc)'에서 
+ * 무료로 다운받으실 수 있습니다.
+ */
+@font-face {
+  font-family: 'EunpyeongSagaDogseo';
+  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/2507-1@1.0/EunpyeongSagaDogseoTitle-Regular.woff2') format('woff2');
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
   
-  /* Brand Colors */
-  --brand-50: #F3E9FF;
-  --brand-100: #E9D9FF;
-  --brand-400: #9E60FF;
-  --brand-600: #6F3DF5;
-  --brand-700: #5A2FE0;
+  /* Brand Colors - Modern Slate */
+  --brand-50: #F8FAFC;
+  --brand-100: #F1F5F9;
+  --brand-400: #64748B;
+  --brand-600: #475569;
+  --brand-700: #334155;
   
-  /* Accent Colors */
-  --accent-magenta: #D957FF;
+  /* Accent Colors - Sophisticated */
+  --accent-emerald: #10B981;
+  --accent-blue: #3B82F6;
+  --accent-amber: #F59E0B;
   
   /* Chip Colors */
-  --chip-lavender: #EDE7FF;
+  --chip-light: #F1F5F9;
   
   /* Text Colors */
   --text-900: #1D2230;
@@ -32,8 +48,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: 'EunpyeongSagaDogseo', system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains-mono);
   
   /* Brand Colors */
   --color-brand-50: var(--brand-50);
@@ -43,10 +59,12 @@
   --color-brand-700: var(--brand-700);
   
   /* Accent Colors */
-  --color-accent-magenta: var(--accent-magenta);
+  --color-accent-emerald: var(--accent-emerald);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-amber: var(--accent-amber);
   
   /* Chip Colors */
-  --color-chip-lavender: var(--chip-lavender);
+  --color-chip-light: var(--chip-light);
   
   /* Text Colors */
   --color-text-900: var(--text-900);
@@ -62,8 +80,12 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0f172a;
+    --foreground: #f1f5f9;
+    --surface-page: #1e293b;
+    --surface-card: #334155;
+    --text-900: #f1f5f9;
+    --text-700: #cbd5e1;
   }
 }
 
@@ -71,6 +93,24 @@ body {
   background: var(--surface-page);
   color: var(--text-900);
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  font-feature-settings: "kern", "liga", "clig", "calt";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+}
+
+/* Enhanced typography */
+h1, h2, h3, h4, h5, h6 {
+  font-feature-settings: "kern", "liga", "clig", "calt", "dlig";
+  line-height: 1.2;
+}
+
+p {
+  line-height: 1.7;
+}
+
+.tracking-tight {
+  letter-spacing: -0.025em;
 }
 
 /* Custom scrollbar */
@@ -88,14 +128,14 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--brand-400);
+  background: var(--brand-600);
 }
 
 /* Custom Animations */
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -106,7 +146,7 @@ body {
 @keyframes slide-up {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(24px);
   }
   to {
     opacity: 1;
@@ -144,29 +184,26 @@ body {
   }
 }
 
-@keyframes gradient-shift {
-  0% {
-    background-position: 0% 50%;
+@keyframes subtle-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(71, 85, 105, 0.1);
   }
   50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
+    box-shadow: 0 0 25px rgba(71, 85, 105, 0.15);
   }
 }
 
 /* Animation Classes */
 .animate-fade-in {
-  animation: fade-in 0.8s ease-out;
+  animation: fade-in 0.6s ease-out;
 }
 
 .animate-slide-up {
-  animation: slide-up 0.6s ease-out;
+  animation: slide-up 0.5s ease-out;
 }
 
 .animate-bounce {
-  animation: bounce 2s infinite;
+  animation: bounce 3s infinite;
 }
 
 .animate-pulse {
@@ -175,6 +212,10 @@ body {
 
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+.animate-subtle-glow {
+  animation: subtle-glow 3s ease-in-out infinite;
 }
 
 /* Animation Delays */
@@ -237,34 +278,34 @@ body {
 }
 
 /* Focus States */
-.focus\:ring-purple-300\/30:focus {
-  --tw-ring-color: rgb(196 181 253 / 0.3);
+.focus\:ring-slate-300\/30:focus {
+  --tw-ring-color: rgb(148 163 184 / 0.3);
   --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
   box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
 }
 
-.focus\:ring-green-300\/30:focus {
-  --tw-ring-color: rgb(134 239 172 / 0.3);
+.focus\:ring-emerald-300\/30:focus {
+  --tw-ring-color: rgb(110 231 183 / 0.3);
   --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
   box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
 }
 
 /* Input Focus States */
-.focus\:border-purple-300\/50:focus {
-  border-color: rgb(196 181 253 / 0.5);
+.focus\:border-slate-300\/50:focus {
+  border-color: rgb(148 163 184 / 0.5);
 }
 
-.focus\:border-green-300\/50:focus {
-  border-color: rgb(134 239 172 / 0.5);
+.focus\:border-emerald-300\/50:focus {
+  border-color: rgb(110 231 183 / 0.5);
 }
 
 /* Group States */
-.group:focus-within .group-focus-within\:text-purple-300 {
-  color: rgb(196 181 253);
+.group:focus-within .group-focus-within\:text-slate-400 {
+  color: rgb(148 163 184);
 }
 
-.group:focus-within .group-focus-within\:text-green-300 {
-  color: rgb(134 239 172);
+.group:focus-within .group-focus-within\:text-emerald-400 {
+  color: rgb(52 211 153);
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { User, emailStorage } from '@/lib/auth'
 
 interface AuthContextType {
@@ -29,6 +30,7 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [rememberedEmail, setRememberedEmail] = useState<string | null>(null)
@@ -141,6 +143,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Logout error:', error)
     } finally {
       setUser(null)
+      // 로그아웃 후 로그인 페이지로 리디렉션
+      router.push('/login')
     }
   }
 
