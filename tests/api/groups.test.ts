@@ -46,7 +46,7 @@ describe('Groups API Routes', () => {
   const mockTokenPayload = {
     userId: '1',
     email: 'test@example.com',
-    nickname: '테스트유저',
+    nickname: 'Gary',
   }
 
   const mockGroup = {

@@ -6,45 +6,49 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from '@/components/ui/dialog'
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select'
 import { useAuth } from '@/contexts/auth-context'
 import { useGroup } from '@/contexts/group-context'
+import { apiGet, apiPost } from '@/lib/api-client'
 import {
   BarChart3,
   TrendingUp,
   TrendingDown,
   Wallet,
-  Settings,
-  Download,
-  Upload,
   ArrowLeft,
-  Lightbulb,
   Zap,
   List,
   Plus,
-  Eye,
-  EyeOff,
   LogOut,
 } from 'lucide-react'
 
 export default function LedgerPage() {
   const router = useRouter()
   const [showPresets, setShowPresets] = useState(true)
-  const [showBulkInput, setShowBulkInput] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false)
+  const [prefilledCategory, setPrefilledCategory] = useState('')
+  const [categories, setCategories] = useState<Array<{id: string, name: string, type: string, color: string | null, isDefault: boolean}>>([])
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false)
 
   const { user, isAuthenticated, logout } = useAuth()
   const { currentGroup } = useGroup()
-
-  // Mobile detection
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-    
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -52,6 +56,72 @@ export default function LedgerPage() {
       router.push('/login')
     }
   }, [isAuthenticated, user, router])
+
+  // 카테고리 목록 가져오기
+  const fetchCategories = async () => {
+    if (!currentGroup) return
+    
+    setIsLoadingCategories(true)
+    try {
+      const response = await apiGet('/api/categories')
+
+      if (response.ok) {
+        setCategories(response.data?.categories || [])
+      } else {
+        console.error('카테고리 목록 가져오기 실패:', response.error)
+      }
+    } catch (error) {
+      console.error('카테고리 가져오는 중 오류:', error)
+    } finally {
+      setIsLoadingCategories(false)
+    }
+  }
+
+  // 거래 추가 핸들러
+  const handleOpenTransactionDialog = (category = '') => {
+    setPrefilledCategory(category)
+    setIsTransactionDialogOpen(true)
+    // 다이얼로그 열 때 카테고리 목록 로드
+    if (categories.length === 0) {
+      fetchCategories()
+    }
+  }
+
+  const handleTransactionSubmit = async (formData: {
+    amount: string
+    description: string
+    category: string
+    type: string
+    date: string
+  }) => {
+    try {
+      if (!currentGroup) {
+        alert('그룹을 먼저 선택해주세요.')
+        return
+      }
+
+      const response = await apiPost('/api/transactions/quick-add', {
+        type: formData.type,
+        amount: parseInt(formData.amount),
+        categoryName: formData.category,
+        memo: formData.description,
+        date: formData.date,
+        groupId: currentGroup.id,
+      })
+
+      if (response.ok) {
+        setIsTransactionDialogOpen(false)
+        setPrefilledCategory('')
+        // 페이지 새로고침 또는 거래 목록 갱신
+        window.location.reload()
+      } else {
+        alert(response.error || '거래 추가에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('거래 추가 오류:', error)
+      alert('거래 추가 중 오류가 발생했습니다.')
+    }
+  }
 
   if (!isAuthenticated) {
     return (
@@ -113,8 +183,7 @@ export default function LedgerPage() {
       {/* Main content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Quick Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 mb-6">
             <Button
               variant={showPresets ? "default" : "outline"}
               size="sm"
@@ -124,28 +193,6 @@ export default function LedgerPage() {
               <Zap className="h-4 w-4 mr-2" />
               {showPresets ? '프리셋 숨기기' : '프리셋 보기'}
             </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowBulkInput(!showBulkInput)}
-              className="cursor-pointer"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              일괄입력
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="cursor-pointer">
-              <Download className="h-4 w-4 mr-2" />
-              내보내기
-            </Button>
-            <Button variant="outline" size="sm" className="cursor-pointer">
-              <Settings className="h-4 w-4 mr-2" />
-              설정
-            </Button>
-          </div>
         </div>
 
         {/* Stats Cards */}
@@ -191,44 +238,54 @@ export default function LedgerPage() {
             <div className="lg:col-span-1 space-y-6">
               <Card className="bg-white border-slate-200 shadow-sm">
                 <CardHeader className="border-b border-slate-100 pb-4">
-                  <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                  <CardTitle className="text-lg font-semibold text-slate-900 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
                     <Zap className="h-5 w-5 text-amber-500" />
                     빠른 입력
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-slate-600 hover:text-slate-900"
+                      onClick={() => router.push('/settings/categories')}
+                    >
+                      관리
+                    </Button>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-4">
                   <div className="space-y-2">
-                    <Button variant="outline" size="sm" className="w-full justify-start cursor-pointer">
-                      <Plus className="h-4 w-4 mr-2" />
-                      점심식사
+                    {categories.length > 0 ? (
+                      // 지출 카테고리만 표시 (최대 12개)
+                      categories
+                        .filter(cat => cat.type === 'EXPENSE')
+                        .slice(0, 12)
+                        .map((category) => (
+                          <Button 
+                            key={category.id}
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full justify-start cursor-pointer"
+                            onClick={() => handleOpenTransactionDialog(category.name)}
+                          >
+                            <div className="flex items-center gap-2 w-full">
+                              {category.color && (
+                                <div 
+                                  className="w-3 h-3 rounded-full" 
+                                  style={{ backgroundColor: category.color }}
+                                />
+                              )}
+                              <Plus className="h-4 w-4" />
+                              <span>{category.name}</span>
+                            </div>
                     </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start cursor-pointer">
-                      <Plus className="h-4 w-4 mr-2" />
-                      교통비
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start cursor-pointer">
-                      <Plus className="h-4 w-4 mr-2" />
-                      커피
-                    </Button>
+                        ))
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <p className="text-sm">카테고리를 추가하여</p>
+                        <p className="text-sm">빠른 입력을 사용해보세요</p>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border-slate-200 shadow-sm">
-                <CardHeader className="border-b border-slate-100 pb-4">
-                  <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-                    <Lightbulb className="h-5 w-5 text-yellow-500" />
-                    팁
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <div className="space-y-3">
-                    <div className="text-sm text-slate-600">
-                      💡 영수증 사진을 업로드하면 자동으로 금액과 카테고리를 인식합니다
-                    </div>
-                    <div className="text-sm text-slate-600">
-                      🔄 반복 거래를 설정하면 정기적인 지출을 자동으로 기록합니다
-                    </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -260,7 +317,10 @@ export default function LedgerPage() {
                   <p className="text-slate-500 mb-6">
                     첫 번째 거래를 추가하여 가계부를 시작해보세요
                   </p>
-                  <Button className="bg-slate-900 hover:bg-slate-800 text-white cursor-pointer">
+                  <Button 
+                    className="bg-slate-900 hover:bg-slate-800 text-white cursor-pointer"
+                    onClick={() => handleOpenTransactionDialog()}
+                  >
                     <Plus className="h-4 w-4 mr-2" />
                     거래 추가
                   </Button>
@@ -270,33 +330,203 @@ export default function LedgerPage() {
           </div>
         </div>
 
-        {/* Mobile floating actions */}
-        {isMobile && (
-          <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full shadow-lg bg-white border-slate-300 hover:bg-slate-50 w-12 h-12 cursor-pointer"
-              onClick={() => setShowBulkInput(!showBulkInput)}
-            >
-              <Upload className="h-5 w-5 text-slate-700" />
-            </Button>
-            
-            <Button
-              variant={showPresets ? "default" : "outline"}
-              size="sm"
-              className={`rounded-full shadow-lg w-12 h-12 cursor-pointer ${
-                showPresets 
-                  ? "bg-slate-900 hover:bg-slate-800 text-white" 
-                  : "bg-white border-slate-300 hover:bg-slate-50"
-              }`}
-              onClick={() => setShowPresets(!showPresets)}
-            >
-              <Zap className={`h-5 w-5 ${showPresets ? "text-white" : "text-slate-700"}`} />
-            </Button>
-          </div>
-        )}
+        {/* Transaction Dialog */}
+        <TransactionDialog
+          isOpen={isTransactionDialogOpen}
+          onOpenChange={setIsTransactionDialogOpen}
+          prefilledCategory={prefilledCategory}
+          onSubmit={handleTransactionSubmit}
+          categories={categories}
+          isLoadingCategories={isLoadingCategories}
+        />
       </div>
     </div>
+  )
+}
+
+// Transaction Dialog Component
+function TransactionDialog({
+  isOpen,
+  onOpenChange,
+  prefilledCategory,
+  onSubmit,
+  categories,
+  isLoadingCategories,
+}: {
+  isOpen: boolean
+  onOpenChange: (open: boolean) => void
+  prefilledCategory: string
+  onSubmit: (data: {
+    amount: string
+    description: string
+    category: string
+    type: string
+    date: string
+  }) => void
+  categories: Array<{id: string, name: string, type: string, color: string | null, isDefault: boolean}>
+  isLoadingCategories: boolean
+}) {
+  const [formData, setFormData] = useState({
+    amount: '',
+    description: '',
+    category: prefilledCategory,
+    type: 'EXPENSE',
+    date: new Date().toISOString().split('T')[0],
+  })
+
+  // 프리셋 카테고리 변경 시 폼 업데이트
+  useEffect(() => {
+    setFormData(prev => ({
+      ...prev,
+      category: prefilledCategory,
+    }))
+  }, [prefilledCategory])
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!formData.amount || !formData.description || !formData.category) {
+      alert('모든 필수 항목을 입력해주세요.')
+      return
+    }
+
+    onSubmit(formData)
+  }
+
+  const resetForm = () => {
+    setFormData({
+      amount: '',
+      description: '',
+      category: '',
+      type: 'EXPENSE',
+      date: new Date().toISOString().split('T')[0],
+    })
+  }
+
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm()
+    }
+  }, [isOpen])
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>거래 추가</DialogTitle>
+          <DialogDescription>
+            새로운 수입 또는 지출을 기록하세요.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="type">유형</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="유형 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EXPENSE">지출</SelectItem>
+                  <SelectItem value="INCOME">수입</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="amount">금액</Label>
+              <Input
+                id="amount"
+                type="number"
+                placeholder="0"
+                value={formData.amount}
+                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">카테고리</Label>
+            <Select
+              value={formData.category}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="카테고리를 선택하세요" />
+              </SelectTrigger>
+              <SelectContent>
+                {isLoadingCategories ? (
+                  <SelectItem value="loading" disabled>로딩 중...</SelectItem>
+                ) : categories.length > 0 ? (
+                  <>
+                    {categories
+                      .filter(cat => cat.type === formData.type || cat.type === 'TRANSFER')
+                      .map((category) => (
+                        <SelectItem key={category.id} value={category.name}>
+                          <div className="flex items-center gap-2">
+                            {category.color && (
+                              <div 
+                                className="w-3 h-3 rounded-full" 
+                                style={{ backgroundColor: category.color }}
+                              />
+                            )}
+                            <span>{category.name}</span>
+                            {category.isDefault && (
+                              <span className="text-xs text-gray-500">(기본)</span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                  </>
+                ) : (
+                  <SelectItem value="no-categories" disabled>카테고리가 없습니다</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">설명</Label>
+            <Input
+              id="description"
+              placeholder="거래 내용을 입력하세요"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              required
+            />
+      </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="date">날짜</Label>
+            <Input
+              id="date"
+              type="date"
+              value={formData.date}
+              onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+              required
+            />
+    </div>
+
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+            >
+              취소
+            </Button>
+            <Button type="submit" className="bg-slate-900 hover:bg-slate-800 text-white">
+              추가하기
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }

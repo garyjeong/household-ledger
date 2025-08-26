@@ -89,6 +89,7 @@ export default function LoginPage() {
   })
   
   const selectedDomain = watch('domain')
+  const rememberMeValue = watch('rememberMe')
   
   // 이메일 주소를 조합하는 함수
   const getFullEmail = (data: LoginFormData) => {
@@ -328,7 +329,10 @@ export default function LoginPage() {
               <div className="flex items-center justify-between">
                 <Checkbox
                   label="이메일 저장"
-                  {...register('rememberMe')}
+                  checked={rememberMeValue}
+                  onChange={(e) => {
+                    setValue('rememberMe', e.target.checked, { shouldValidate: true, shouldDirty: true })
+                  }}
                 />
                 <Link 
                   href="/forgot-password" 

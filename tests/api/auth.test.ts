@@ -195,7 +195,7 @@ describe('Auth API Routes', () => {
     const mockUser = {
       id: '1',
       email: validLoginData.email,
-      nickname: '테스트유저',
+      nickname: 'Gary',
       createdAt: new Date(),
     }
 
@@ -316,7 +316,7 @@ describe('Auth API Routes', () => {
     const mockUser = {
       id: '1',
       email: 'test@example.com',
-      nickname: '테스트유저',
+      nickname: 'Gary',
       createdAt: new Date(),
     }
 
@@ -399,7 +399,7 @@ describe('Auth API Routes', () => {
     const mockUser = {
       id: '1',
       email: 'test@example.com',
-      nickname: '테스트유저',
+      nickname: 'Gary',
       createdAt: new Date(),
     }
 

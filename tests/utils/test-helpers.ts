@@ -6,12 +6,12 @@ export function createMockToken(payload: JWTPayload): string {
   return jwt.sign(payload, 'test-secret', { expiresIn: '1h' })
 }
 
-// Mock 사용자 데이터
+// Mock 사용자 데이터 (테스트용)
 export const mockUsers: User[] = [
   {
     id: '1',
-    email: 'test@example.com',
-    nickname: '테스트유저',
+    email: 'smat91@naver.com',
+    nickname: 'Gary',
     createdAt: new Date('2024-01-01'),
   },
   {

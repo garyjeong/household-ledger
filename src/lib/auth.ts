@@ -216,7 +216,7 @@ export async function verifyUserPassword(email: string, password: string): Promi
 
   if (!user) return false
 
-  return await verifyPassword(password, user.passwordHash)
+  return await verifyPassword(password, user.password_hash)
 }
 
 // 그룹 관련 Mock 함수들
@@ -469,6 +469,11 @@ export function verifyToken(authHeader: string | null): JWTPayload | null {
   const token = extractTokenFromHeader(authHeader)
   if (!token) return null
 
+  return verifyAccessToken(token)
+}
+
+// 쿠키에서 가져온 토큰을 직접 검증하는 함수
+export function verifyCookieToken(token: string): JWTPayload | null {
   return verifyAccessToken(token)
 }
 

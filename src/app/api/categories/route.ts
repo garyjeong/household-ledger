@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyToken, extractTokenFromHeader, verifyCategoryOwnership } from '@/lib/auth'
+import {
+  verifyToken,
+  extractTokenFromHeader,
+  verifyCategoryOwnership,
+  verifyCookieToken,
+} from '@/lib/auth'
 import {
   categoryQuerySchema,
   createCategorySchema,
@@ -25,7 +30,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const user = await verifyToken(accessToken)
+    const user = verifyCookieToken(accessToken)
     if (!user) {
       return NextResponse.json(
         { error: '유효하지 않은 토큰입니다', code: 'INVALID_TOKEN' },
@@ -131,7 +136,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const user = await verifyToken(accessToken)
+    const user = verifyCookieToken(accessToken)
     if (!user) {
       return NextResponse.json(
         { error: '유효하지 않은 토큰입니다', code: 'INVALID_TOKEN' },

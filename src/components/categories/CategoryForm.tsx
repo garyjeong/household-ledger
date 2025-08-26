@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ColorPicker } from '@/components/ui/ColorPicker'
+import { useGroup } from '@/contexts/group-context'
 
 // 폼 데이터 타입 (UI용) - 현재 사용하지 않음
 // type CategoryFormData = {
@@ -52,6 +53,8 @@ export function CategoryForm({
   onCancel,
   isLoading = false
 }: CategoryFormProps) {
+  const { currentGroup } = useGroup()
+  
   // 스키마 선택
   const schema = mode === 'create' ? createCategorySchema : updateCategorySchema
 
@@ -67,8 +70,8 @@ export function CategoryForm({
       name: initialData?.name || '',
       type: initialData?.type || 'EXPENSE',
       color: initialData?.color || '#6B7280',
-      ownerType: initialData?.ownerType || 'USER',
-      ownerId: initialData?.ownerId ? parseInt(initialData.ownerId) : 1, // TODO: 실제 사용자 ID
+      ownerType: initialData?.ownerType || 'GROUP',
+      ownerId: initialData?.ownerId ? parseInt(initialData.ownerId) : (currentGroup ? parseInt(currentGroup.id) : 1),
     },
   })
 
