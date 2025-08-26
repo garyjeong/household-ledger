@@ -1,14 +1,13 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { 
   Tag, 
-  User, 
-  Settings as SettingsIcon,
-  LogOut
+  User,
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import AppHeader from '@/components/layouts/AppHeader'
 import { useAuth } from '@/contexts/auth-context'
 
 interface SettingsLayoutProps {
@@ -32,37 +31,45 @@ const settingsNavigation = [
 
 export default function SettingsLayout({ children }: SettingsLayoutProps) {
   const pathname = usePathname()
-  const { logout } = useAuth()
+  const router = useRouter()
+  const { user, isAuthenticated, isLoading } = useAuth()
 
-  return (
-    <div className="min-h-screen bg-surface-page">
-      {/* Header */}
-      <div className="bg-white border-b border-stroke-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <SettingsIcon className="h-6 w-6 text-brand-600" />
-              <h1 className="text-xl font-semibold text-text-900">설정</h1>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              {/* Logout button */}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={logout}
-                className="text-slate-600 hover:text-slate-900"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                로그아웃
-              </Button>
-            </div>
-          </div>
+  // Redirect if not authenticated (but wait for loading to complete)
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && !user) {
+      router.push('/login')
+    }
+  }, [isAuthenticated, user, isLoading, router])
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">로그인 상태 확인 중...</p>
         </div>
       </div>
+    )
+  }
+
+  // Don't render content if not authenticated
+  if (!isAuthenticated || !user) {
+    return null
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <AppHeader 
+        showBackButton={true}
+        backHref="/ledger"
+        backText="가계부로"
+        title="설정"
+      />
 
       {/* Navigation Tabs */}
-      <div className="bg-white border-b border-stroke-200">
+      <div className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8" aria-label="설정 메뉴">
             {settingsNavigation.map((item) => {
@@ -76,8 +83,8 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
                   className={`
                     flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors
                     ${isActive
-                      ? 'border-brand-600 text-brand-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-slate-900 text-slate-900'
+                      : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                     }
                   `}
                 >
@@ -91,7 +98,7 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <main>
           {children}
         </main>

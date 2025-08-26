@@ -9,6 +9,7 @@ import { CategoryDialog } from '@/components/categories/CategoryDialog'
 import { type CreateCategoryData, type UpdateCategoryData } from '@/lib/schemas/category'
 import { useGroup } from '@/contexts/group-context'
 import { useAuth } from '@/contexts/auth-context'
+import { useAlert } from '@/contexts/alert-context'
 import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api-client'
 
 export default function CategoriesPage() {
@@ -22,6 +23,7 @@ export default function CategoriesPage() {
   
   const { currentGroup } = useGroup()
   const { user } = useAuth()
+  const { showSuccess, showError } = useAlert()
 
   // 카테고리 데이터 로드
   useEffect(() => {
@@ -39,7 +41,7 @@ export default function CategoriesPage() {
         }
       } catch (error) {
         console.error('카테고리 목록 로드 중 오류:', error)
-        alert('카테고리 목록을 가져오는데 실패했습니다.')
+        showError('카테고리 목록을 가져오는데 실패했습니다.')
       } finally {
         setIsLoading(false)
       }
@@ -69,13 +71,13 @@ export default function CategoriesPage() {
 
       if (response.ok) {
         setCategories(prev => prev.filter(c => c.id !== category.id))
-        alert('카테고리가 삭제되었습니다.')
+        showSuccess('카테고리가 삭제되었습니다.')
       } else {
         throw new Error(response.error || '카테고리 삭제에 실패했습니다')
       }
     } catch (error) {
       console.error('카테고리 삭제 중 오류:', error)
-      alert(error instanceof Error ? error.message : '카테고리 삭제 중 오류가 발생했습니다.')
+      showError(error instanceof Error ? error.message : '카테고리 삭제 중 오류가 발생했습니다.')
     }
   }
 
@@ -98,7 +100,7 @@ export default function CategoriesPage() {
 
         if (response.ok) {
           setCategories(prev => [...prev, response.data?.category])
-          alert('카테고리가 추가되었습니다.')
+          showSuccess('카테고리가 추가되었습니다.')
         } else {
           throw new Error(response.error || '카테고리 생성에 실패했습니다')
         }
@@ -114,7 +116,7 @@ export default function CategoriesPage() {
           setCategories(prev => prev.map(c => 
             c.id === selectedCategory.id ? response.data?.category : c
           ))
-          alert('카테고리가 수정되었습니다.')
+          showSuccess('카테고리가 수정되었습니다.')
         } else {
           throw new Error(response.error || '카테고리 수정에 실패했습니다')
         }

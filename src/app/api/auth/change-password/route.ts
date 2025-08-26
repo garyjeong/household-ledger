@@ -59,7 +59,7 @@ export async function PUT(request: NextRequest) {
     // 사용자 정보 조회 (이메일 확인을 위해)
     const userRecord = await prisma.user.findUnique({
       where: { id: BigInt(user.userId) },
-      select: { email: true, password_hash: true },
+      select: { email: true, passwordHash: true },
     })
 
     if (!userRecord) {
@@ -67,7 +67,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // 현재 비밀번호 검증
-    const isCurrentPasswordValid = await verifyPassword(currentPassword, userRecord.password_hash)
+    const isCurrentPasswordValid = await verifyPassword(currentPassword, userRecord.passwordHash)
     if (!isCurrentPasswordValid) {
       return NextResponse.json(
         { error: '현재 비밀번호가 올바르지 않습니다', code: 'INVALID_CURRENT_PASSWORD' },
@@ -82,7 +82,7 @@ export async function PUT(request: NextRequest) {
     await prisma.user.update({
       where: { id: BigInt(user.userId) },
       data: {
-        password_hash: hashedNewPassword,
+        passwordHash: hashedNewPassword,
       },
     })
 

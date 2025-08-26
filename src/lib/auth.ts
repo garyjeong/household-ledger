@@ -216,7 +216,7 @@ export async function verifyUserPassword(email: string, password: string): Promi
 
   if (!user) return false
 
-  return await verifyPassword(password, user.password_hash)
+  return await verifyPassword(password, user.passwordHash)
 }
 
 // 그룹 관련 Mock 함수들

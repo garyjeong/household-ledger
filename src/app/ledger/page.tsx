@@ -26,17 +26,17 @@ import {
 } from '@/components/ui/select'
 import { useAuth } from '@/contexts/auth-context'
 import { useGroup } from '@/contexts/group-context'
+import { useAlert } from '@/contexts/alert-context'
 import { apiGet, apiPost } from '@/lib/api-client'
+import AppHeader from '@/components/layouts/AppHeader'
 import {
   BarChart3,
   TrendingUp,
   TrendingDown,
   Wallet,
-  ArrowLeft,
   Zap,
   List,
   Plus,
-  LogOut,
 } from 'lucide-react'
 
 export default function LedgerPage() {
@@ -47,15 +47,28 @@ export default function LedgerPage() {
   const [categories, setCategories] = useState<Array<{id: string, name: string, type: string, color: string | null, isDefault: boolean}>>([])
   const [isLoadingCategories, setIsLoadingCategories] = useState(false)
 
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, isLoading, logout } = useAuth()
   const { currentGroup } = useGroup()
+  const { showSuccess, showError, showWarning } = useAlert()
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated (but wait for loading to complete)
   useEffect(() => {
-    if (!isAuthenticated && !user) {
+    if (!isLoading && !isAuthenticated && !user) {
       router.push('/login')
     }
-  }, [isAuthenticated, user, router])
+  }, [isAuthenticated, user, isLoading, router])
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">로그인 상태 확인 중...</p>
+        </div>
+      </div>
+    )
+  }
 
   // 카테고리 목록 가져오기
   const fetchCategories = async () => {
@@ -96,7 +109,7 @@ export default function LedgerPage() {
   }) => {
     try {
       if (!currentGroup) {
-        alert('그룹을 먼저 선택해주세요.')
+        showWarning('그룹을 먼저 선택해주세요.')
         return
       }
 
@@ -115,11 +128,11 @@ export default function LedgerPage() {
         // 페이지 새로고침 또는 거래 목록 갱신
         window.location.reload()
       } else {
-        alert(response.error || '거래 추가에 실패했습니다.')
+        showError(response.error || '거래 추가에 실패했습니다.')
       }
     } catch (error) {
       console.error('거래 추가 오류:', error)
-      alert('거래 추가 중 오류가 발생했습니다.')
+      showError('거래 추가 중 오류가 발생했습니다.')
     }
   }
 
@@ -144,41 +157,10 @@ export default function LedgerPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header with navigation */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Link href="/groups" className="flex items-center gap-2 text-slate-600 hover:text-slate-900 cursor-pointer transition-colors">
-                <ArrowLeft className="h-4 w-4" />
-                <span className="text-sm font-medium">그룹으로</span>
-              </Link>
-              
-              <div className="h-6 w-px bg-slate-300"></div>
-              
-              <div>
-                <h1 className="text-xl font-bold text-slate-900">
-                  {currentGroup?.name || '가계부'}
-                </h1>
-                <p className="text-xs text-slate-500">
-                  {currentGroup ? `${currentGroup.memberCount}명 참여` : '그룹 선택 필요'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={logout}
-                className="text-slate-600 hover:text-slate-900 cursor-pointer"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                로그아웃
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <AppHeader 
+        showBackButton={true}
+        showGroupInfo={true}
+      />
 
       {/* Main content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -386,7 +368,7 @@ function TransactionDialog({
     e.preventDefault()
     
     if (!formData.amount || !formData.description || !formData.category) {
-      alert('모든 필수 항목을 입력해주세요.')
+      showWarning('모든 필수 항목을 입력해주세요.')
       return
     }
 

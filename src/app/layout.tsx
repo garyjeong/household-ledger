@@ -3,6 +3,7 @@ import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/auth-context";
 import { GroupProvider } from "@/contexts/group-context";
+import { AlertProvider } from "@/contexts/alert-context";
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
@@ -25,11 +26,13 @@ export default function RootLayout({
       <body
         className={`${jetbrainsMono.variable} antialiased font-sans`}
       >
-        <AuthProvider>
-          <GroupProvider>
-            {children}
-          </GroupProvider>
-        </AuthProvider>
+        <AlertProvider>
+          <AuthProvider>
+            <GroupProvider>
+              {children}
+            </GroupProvider>
+          </AuthProvider>
+        </AlertProvider>
       </body>
     </html>
   );
