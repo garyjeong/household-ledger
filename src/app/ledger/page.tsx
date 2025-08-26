@@ -38,6 +38,7 @@ import {
   List,
   Plus,
 } from 'lucide-react'
+import { BalanceWidget } from '@/components/balance/BalanceWidget'
 
 export default function LedgerPage() {
   const router = useRouter()
@@ -163,61 +164,60 @@ export default function LedgerPage() {
       />
 
       {/* Main content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Quick Actions */}
-        <div className="flex items-center gap-4 mb-6">
+      <div className="container-responsive py-4 sm:py-6">
+        {/* Quick Actions - Mobile Optimized */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
             <Button
               variant={showPresets ? "default" : "outline"}
               size="sm"
               onClick={() => setShowPresets(!showPresets)}
-              className="cursor-pointer"
+              className="btn-touch cursor-pointer w-full sm:w-auto justify-center sm:justify-start"
             >
               <Zap className="h-4 w-4 mr-2" />
               {showPresets ? '프리셋 숨기기' : '프리셋 보기'}
             </Button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-white border-slate-200 shadow-sm">
+        {/* Stats Cards - Responsive Grid */}
+        <div className="grid-responsive gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
+          <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200 shadow-sm hover-desktop transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-600">이번 달 수입</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-600" />
+              <CardTitle className="text-xs sm:text-sm font-medium text-emerald-700">이번 달 수입</CardTitle>
+              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-900">₩0</div>
-              <p className="text-xs text-slate-500">전월 대비 +0%</p>
+            <CardContent className="pb-3 sm:pb-6">
+              <div className="text-xl sm:text-2xl font-bold text-emerald-900">₩0</div>
+              <p className="text-xs text-emerald-600 mt-1">전월 대비 +0%</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-slate-200 shadow-sm">
+          <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200 shadow-sm hover-desktop transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-600">이번 달 지출</CardTitle>
-              <TrendingDown className="h-4 w-4 text-red-600" />
+              <CardTitle className="text-xs sm:text-sm font-medium text-red-700">이번 달 지출</CardTitle>
+              <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-900">₩0</div>
-              <p className="text-xs text-slate-500">전월 대비 +0%</p>
+            <CardContent className="pb-3 sm:pb-6">
+              <div className="text-xl sm:text-2xl font-bold text-red-900">₩0</div>
+              <p className="text-xs text-red-600 mt-1">전월 대비 +0%</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-slate-200 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-600">잔액</CardTitle>
-              <Wallet className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-slate-900">₩0</div>
-              <p className="text-xs text-slate-500">사용 가능 금액</p>
-            </CardContent>
-          </Card>
+          <div className="sm:col-span-2 md:col-span-1">
+            <BalanceWidget
+              ownerType={currentGroup ? 'GROUP' : 'USER'}
+              ownerId={currentGroup ? currentGroup.id : user?.id || ''}
+              showProjection={true}
+              compact={true}
+              className="bg-white border-slate-200 shadow-sm h-full"
+            />
+          </div>
         </div>
 
-        {/* Main content layout */}
-        <div className={`grid gap-6 ${showPresets ? 'lg:grid-cols-5' : 'lg:grid-cols-1'}`}>
+        {/* Main content layout - Responsive Sidebar */}
+        <div className={`${showPresets ? 'sidebar-layout' : 'w-full'}`}>
           {/* Left sidebar - Presets and Tools */}
           {showPresets && (
-            <div className="lg:col-span-1 space-y-6">
+            <div className="sidebar space-y-4 sm:space-y-6">
               <Card className="bg-white border-slate-200 shadow-sm">
                 <CardHeader className="border-b border-slate-100 pb-4">
                   <CardTitle className="text-lg font-semibold text-slate-900 flex items-center justify-between">
@@ -275,32 +275,32 @@ export default function LedgerPage() {
           )}
 
           {/* Main content - Transaction list */}
-          <div className={showPresets ? 'lg:col-span-4' : 'lg:col-span-1'}>
-            <Card className="bg-white border-slate-200 shadow-sm">
-              <CardHeader className="border-b border-slate-100 pb-4">
-                <CardTitle className="text-lg font-semibold text-slate-900 flex items-center justify-between">
+          <div className="main-content">
+            <Card className="bg-white border-slate-200 shadow-sm hover-desktop transition-all duration-300">
+              <CardHeader className="border-b border-slate-100 pb-3 sm:pb-4">
+                <CardTitle className="text-base sm:text-lg font-semibold text-slate-900 flex items-center justify-between">
                   <span className="flex items-center gap-2">
-                    <List className="h-5 w-5 text-slate-600" />
-                    최근 거래 내역
+                    <List className="h-4 w-4 sm:h-5 sm:w-5 text-slate-600" />
+                    <span className="text-responsive-lg">최근 거래 내역</span>
                   </span>
-                  <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                  <Badge variant="secondary" className="bg-slate-100 text-slate-700 text-xs">
                     0건
                   </Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-6">
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
-                    <List className="h-8 w-8 text-slate-400" />
+              <CardContent className="pt-4 sm:pt-6">
+                <div className="text-center py-8 sm:py-12">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+                    <List className="h-6 w-6 sm:h-8 sm:w-8 text-slate-400" />
                   </div>
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">
+                  <h3 className="text-base sm:text-lg font-medium text-slate-900 mb-2">
                     아직 거래 내역이 없습니다
                   </h3>
-                  <p className="text-slate-500 mb-6">
+                  <p className="text-sm sm:text-base text-slate-500 mb-4 sm:mb-6 px-4">
                     첫 번째 거래를 추가하여 가계부를 시작해보세요
                   </p>
                   <Button 
-                    className="bg-slate-900 hover:bg-slate-800 text-white cursor-pointer"
+                    className="bg-slate-900 hover:bg-slate-800 text-white cursor-pointer btn-touch w-full sm:w-auto"
                     onClick={() => handleOpenTransactionDialog()}
                   >
                     <Plus className="h-4 w-4 mr-2" />

@@ -1,116 +1,113 @@
 'use client'
 
-import { useEffect } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { useAuth } from '@/contexts/auth-context'
-import { useGroup } from '@/contexts/group-context'
+import React, { useState } from 'react'
+import { ResponsiveLayout } from '@/components/couple-ledger/DesktopSidebar'
+import { MonthlyDashboard } from '@/components/couple-ledger/MonthlyDashboard'
+import { QuickAddModal } from '@/components/couple-ledger/QuickAddModal'
+import { defaultCategories } from '@/components/couple-ledger/CategoryPicker'
+import { Transaction, MonthlyStats } from '@/types/couple-ledger'
 
-export default function Home() {
-  const router = useRouter()
-  const { user, isAuthenticated, isLoading } = useAuth()
-  const { groups } = useGroup()
+// 더미 월요약 데이터
+const createMonthlyStats = (period: string): MonthlyStats => ({
+  period,
+  totalExpense: 2450000,
+  totalIncome: 4500000,
+  myExpense: 980000,
+  partnerExpense: 720000,
+  sharedExpense: 750000,
+  categoryBreakdown: [
+    { categoryId: '1', categoryName: '식비', amount: 650000, percentage: 26.5, color: '#EF4444', icon: 'food' },
+    { categoryId: '2', categoryName: '교통비', amount: 420000, percentage: 17.1, color: '#3B82F6', icon: 'transport' },
+    { categoryId: '3', categoryName: '생활용품', amount: 380000, percentage: 15.5, color: '#10B981', icon: 'home' },
+    { categoryId: '4', categoryName: '커피/음료', amount: 290000, percentage: 11.8, color: '#F59E0B', icon: 'coffee' },
+    { categoryId: '5', categoryName: '쇼핑', amount: 260000, percentage: 10.6, color: '#EC4899', icon: 'shopping' },
+  ],
+  dailyTrend: [],
+  budgetComparison: [
+    { categoryId: '1', budgeted: 700000, spent: 650000, remaining: 50000, percentage: 92.9 },
+    { categoryId: '2', budgeted: 400000, spent: 420000, remaining: -20000, percentage: 105.0 },
+    { categoryId: '3', budgeted: 350000, spent: 380000, remaining: -30000, percentage: 108.6 },
+  ],
+})
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center space-y-4 animate-fade-in">
-          <div className="relative">
-            <div className="w-12 h-12 border-3 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto"></div>
-          </div>
-          <p className="text-slate-600 text-base">로딩 중...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // 로그인되지 않은 경우: 세련된 모던 디자인
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-slate-50 relative overflow-hidden flex items-center justify-center p-4">
-        {/* Subtle Background Pattern */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute inset-0" style={{
-            backgroundImage: 'radial-gradient(circle at 1px 1px, rgb(71 85 105) 1px, transparent 0)',
-            backgroundSize: '24px 24px'
-          }}></div>
-        </div>
-        
-        <div className="max-w-md mx-auto space-y-8 relative z-10">
-          {/* Header with Clean Animation */}
-          <div className="text-center space-y-6 animate-fade-in">
-            <div className="relative">
-              <div className="w-20 h-20 mx-auto bg-slate-900 rounded-2xl flex items-center justify-center shadow-lg">
-                <span className="text-3xl">💰</span>
-              </div>
-            </div>
-            <h1 className="text-4xl font-semibold text-slate-900 tracking-tight">
-              우리집 가계부
-            </h1>
-            <p className="text-slate-600 text-lg leading-relaxed font-light">
-              스마트하고 직관적인<br/>가계부 관리 솔루션
-            </p>
-          </div>
-          
-          {/* Clean Modern Card */}
-          <Card className="backdrop-blur-sm bg-white/90 border border-slate-200 shadow-xl animate-slide-up">
-            <CardHeader>
-              <CardTitle className="text-center text-xl text-slate-900 font-medium tracking-tight">
-                시작하기
-              </CardTitle>
-              <CardDescription className="text-center text-slate-600">
-                가계부 기능을 사용하려면 계정이 필요합니다
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center space-y-4">
-              <div className="flex flex-col gap-3">
-                <Button 
-                  asChild 
-                  size="lg"
-                  className="bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg transition-all duration-200 h-12 shadow-sm hover:shadow-md"
-                >
-                  <Link href="/login">이메일로 계속하기</Link>
-                </Button>
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                이메일을 입력하면 계정이 있는지 확인하여<br/>
-                로그인 또는 회원가입으로 자동 안내됩니다
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
-  }
-
-  // 로그인 후: 그룹 상태에 따른 분기 처리
-  const hasGroups = groups.length > 0
+/**
+ * 신혼부부 가계부 메인 페이지
+ * 
+ * 기능:
+ * - 월요약 대시보드
+ * - 반응형 네비게이션 (모바일 하단탭 + 데스크탑 사이드바)
+ * - 빠른입력 모달
+ * - 실시간 통계 업데이트
+ */
+export default function HomePage() {
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  })
   
-  useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      if (!hasGroups) {
-        // 그룹이 없는 경우: 그룹 관리 페이지로 리디렉션
-        router.push('/groups')
-      } else {
-        // 그룹이 있는 경우: 가계부 페이지로 리디렉션
-        router.push('/ledger')
-      }
-    }
-  }, [isAuthenticated, isLoading, hasGroups, router])
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
+  const [monthlyStats, setMonthlyStats] = useState(() => createMonthlyStats(selectedMonth))
 
-  // 로그인된 사용자의 경우 리디렉션 대기 중 로딩 표시
-  if (isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center space-y-4 animate-fade-in">
-          <div className="relative">
-            <div className="w-12 h-12 border-3 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto"></div>
-          </div>
-          <p className="text-slate-600 text-base">페이지 이동 중...</p>
-        </div>
-      </div>
-    )
+  // 월 변경 핸들러
+  const handleMonthChange = (month: string) => {
+    setSelectedMonth(month)
+    setMonthlyStats(createMonthlyStats(month))
   }
+
+  // 빠른입력 모달 열기
+  const handleQuickAddClick = () => {
+    setIsQuickAddOpen(true)
+  }
+
+  // 빠른입력 모달 닫기
+  const handleQuickAddClose = () => {
+    setIsQuickAddOpen(false)
+  }
+
+  // 거래 저장 핸들러
+  const handleSaveTransaction = async (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      // TODO: 실제 API 호출
+      console.log('새 거래 저장:', transaction)
+      
+      // 임시: 통계 업데이트 (실제로는 API에서 다시 가져옴)
+      setMonthlyStats(prev => ({
+        ...prev,
+        totalExpense: prev.totalExpense + transaction.amount,
+        myExpense: transaction.person === 'me' ? prev.myExpense + transaction.amount : prev.myExpense,
+        partnerExpense: transaction.person === 'partner' ? prev.partnerExpense + transaction.amount : prev.partnerExpense,
+        sharedExpense: transaction.person === 'shared' ? prev.sharedExpense + transaction.amount : prev.sharedExpense,
+      }))
+
+      return Promise.resolve()
+    } catch (error) {
+      console.error('거래 저장 실패:', error)
+      throw error
+    }
+  }
+
+  return (
+    <>
+      {/* 반응형 레이아웃 */}
+      <ResponsiveLayout onQuickAddClick={handleQuickAddClick}>
+        {/* 메인 컨텐츠 */}
+        <div className="w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8">
+          <MonthlyDashboard
+            stats={monthlyStats}
+            selectedMonth={selectedMonth}
+            onMonthChange={handleMonthChange}
+          />
+        </div>
+      </ResponsiveLayout>
+
+      {/* 빠른입력 모달 */}
+      <QuickAddModal
+        isOpen={isQuickAddOpen}
+        onClose={handleQuickAddClose}
+        onSave={handleSaveTransaction}
+        categories={defaultCategories}
+        templates={[]} // TODO: 템플릿 데이터
+      />
+    </>
+  )
 }

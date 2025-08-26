@@ -1,311 +1,123 @@
-@import "tailwindcss";
+/* Pretendard 폰트 로딩 (웹폰트) */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
 
-/* 은평사가독서체 웹폰트 */
-/* 
- * 본 저작물은 '은평구'에서 '2025년' 작성하여 공공누리 제1유형으로 개방한 
- * '은평사가독서체'을 이용하였으며, 해당 저작물은 '눈누(https://noonnu.cc)'에서 
- * 무료로 다운받으실 수 있습니다.
- */
-@font-face {
-  font-family: 'EunpyeongSagaDogseo';
-  src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/2507-1@1.0/EunpyeongSagaDogseoTitle-Regular.woff2') format('woff2');
-  font-weight: 300 700;
-  font-style: normal;
-  font-display: swap;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* 신혼부부 가계부 전용 글로벌 스타일 */
+
+/* 기본 스타일 리셋 */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+    border-color: #e5e7eb;
+  }
   
-  /* Brand Colors - Modern Slate */
-  --brand-50: #F8FAFC;
-  --brand-100: #F1F5F9;
-  --brand-400: #64748B;
-  --brand-600: #475569;
-  --brand-700: #334155;
+  body {
+    @apply bg-white text-gray-900 font-sans;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
   
-  /* Accent Colors - Sophisticated */
-  --accent-emerald: #10B981;
-  --accent-blue: #3B82F6;
-  --accent-amber: #F59E0B;
+  /* 스크롤바 스타일링 */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
   
-  /* Chip Colors */
-  --chip-light: #F1F5F9;
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-50;
+  }
   
-  /* Text Colors */
-  --text-900: #1D2230;
-  --text-700: #373C48;
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
   
-  /* Stroke Colors */
-  --stroke-200: #E8EAF0;
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
   
-  /* Surface Colors */
-  --surface-card: #FFFFFF;
-  --surface-page: #FAFAFB;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: 'EunpyeongSagaDogseo', system-ui, -apple-system, sans-serif;
-  --font-mono: var(--font-jetbrains-mono);
+  /* 포커스 스타일 통일 */
+  :focus-visible {
+    @apply outline-none ring-2 ring-blue-500/50 ring-offset-2;
+  }
   
-  /* Brand Colors */
-  --color-brand-50: var(--brand-50);
-  --color-brand-100: var(--brand-100);
-  --color-brand-400: var(--brand-400);
-  --color-brand-600: var(--brand-600);
-  --color-brand-700: var(--brand-700);
+  /* 선택 영역 스타일 */
+  ::selection {
+    @apply bg-blue-500/20 text-gray-900;
+  }
+}
+
+/* 컴포넌트 레이어 */
+@layer components {
+  /* 카드 스타일 */
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-lg;
+  }
   
-  /* Accent Colors */
-  --color-accent-emerald: var(--accent-emerald);
-  --color-accent-blue: var(--accent-blue);
-  --color-accent-amber: var(--accent-amber);
+  /* 터치 타겟 */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
   
-  /* Chip Colors */
-  --color-chip-light: var(--chip-light);
+  .touch-target-sm {
+    @apply min-h-[32px] min-w-[32px];
+  }
   
-  /* Text Colors */
-  --color-text-900: var(--text-900);
-  --color-text-700: var(--text-700);
+  /* 반응형 컨테이너 */
+  .container-responsive {
+    @apply w-full max-w-none px-4;
+  }
   
-  /* Stroke Colors */
-  --color-stroke-200: var(--stroke-200);
+  @screen sm {
+    .container-responsive {
+      @apply max-w-2xl px-6;
+    }
+  }
   
-  /* Surface Colors */
-  --color-surface-card: var(--surface-card);
-  --color-surface-page: var(--surface-page);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    --foreground: #f1f5f9;
-    --surface-page: #1e293b;
-    --surface-card: #334155;
-    --text-900: #f1f5f9;
-    --text-700: #cbd5e1;
+  @screen md {
+    .container-responsive {
+      @apply max-w-4xl px-8;
+    }
+  }
+  
+  /* 모바일 전용 스타일 */
+  .mobile-only {
+    @apply block;
+  }
+  
+  @screen md {
+    .mobile-only {
+      @apply hidden;
+    }
+  }
+  
+  /* 데스크탑 전용 스타일 */
+  .desktop-only {
+    @apply hidden;
+  }
+  
+  @screen md {
+    .desktop-only {
+      @apply block;
+    }
   }
 }
 
-body {
-  background: var(--surface-page);
-  color: var(--text-900);
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
-  font-feature-settings: "kern", "liga", "clig", "calt";
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  line-height: 1.6;
-}
-
-/* Enhanced typography */
-h1, h2, h3, h4, h5, h6 {
-  font-feature-settings: "kern", "liga", "clig", "calt", "dlig";
-  line-height: 1.2;
-}
-
-p {
-  line-height: 1.7;
-}
-
-.tracking-tight {
-  letter-spacing: -0.025em;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--surface-page);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--stroke-200);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--brand-600);
-}
-
-/* Custom Animations */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
+/* 유틸리티 레이어 */
+@layer utilities {
+  .hover-device:hover .hover-lift {
+    @apply translate-y-[-1px] shadow-lg;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  
+  .touch-device .hover-lift:active {
+    @apply translate-y-[1px] shadow-sm;
   }
-}
-
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-20px);
-  }
-  60% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes subtle-glow {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(71, 85, 105, 0.1);
-  }
-  50% {
-    box-shadow: 0 0 25px rgba(71, 85, 105, 0.15);
-  }
-}
-
-/* Animation Classes */
-.animate-fade-in {
-  animation: fade-in 0.6s ease-out;
-}
-
-.animate-slide-up {
-  animation: slide-up 0.5s ease-out;
-}
-
-.animate-bounce {
-  animation: bounce 3s infinite;
-}
-
-.animate-pulse {
-  animation: pulse 2s infinite;
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-.animate-subtle-glow {
-  animation: subtle-glow 3s ease-in-out infinite;
-}
-
-/* Animation Delays */
-.animation-delay-\[0s\] {
-  animation-delay: 0s;
-}
-
-.animation-delay-\[2s\] {
-  animation-delay: 2s;
-}
-
-.animation-delay-\[4s\] {
-  animation-delay: 4s;
-}
-
-.animation-delay-\[0\.2s\] {
-  animation-delay: 0.2s;
-}
-
-/* Glassmorphism Effects */
-.backdrop-blur-xl {
-  backdrop-filter: blur(24px);
-}
-
-.backdrop-blur-sm {
-  backdrop-filter: blur(4px);
-}
-
-/* Hover Effects */
-.hover\:scale-\[1\.02\]:hover {
-  transform: scale(1.02);
-}
-
-.hover\:scale-110:hover {
-  transform: scale(1.1);
-}
-
-/* Gradient Text */
-.bg-clip-text {
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-
-/* Smooth Transitions */
-.transition-all {
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.duration-200 {
-  transition-duration: 200ms;
-}
-
-.duration-300 {
-  transition-duration: 300ms;
-}
-
-.duration-500 {
-  transition-duration: 500ms;
-}
-
-/* Focus States */
-.focus\:ring-slate-300\/30:focus {
-  --tw-ring-color: rgb(148 163 184 / 0.3);
-  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
-}
-
-.focus\:ring-emerald-300\/30:focus {
-  --tw-ring-color: rgb(110 231 183 / 0.3);
-  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
-}
-
-/* Input Focus States */
-.focus\:border-slate-300\/50:focus {
-  border-color: rgb(148 163 184 / 0.5);
-}
-
-.focus\:border-emerald-300\/50:focus {
-  border-color: rgb(110 231 183 / 0.5);
-}
-
-/* Group States */
-.group:focus-within .group-focus-within\:text-slate-400 {
-  color: rgb(148 163 184);
-}
-
-.group:focus-within .group-focus-within\:text-emerald-400 {
-  color: rgb(52 211 153);
 }

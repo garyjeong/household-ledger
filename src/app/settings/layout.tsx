@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { 
   Tag, 
   User,
+  Clock,
 } from 'lucide-react'
 import AppHeader from '@/components/layouts/AppHeader'
 import { useAuth } from '@/contexts/auth-context'
@@ -26,6 +27,12 @@ const settingsNavigation = [
     href: '/settings/categories',
     icon: Tag,
     description: '거래 카테고리 설정',
+  },
+  {
+    name: '고정 지출',
+    href: '/settings/recurring-expenses',
+    icon: Clock,
+    description: '반복 지출 관리',
   },
 ]
 
