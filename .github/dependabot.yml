@@ -1,0 +1,107 @@
+version: 2
+updates:
+  # npm 의존성 자동 업데이트
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Seoul"
+    
+    # PR 설정
+    open-pull-requests-limit: 10
+    target-branch: "main"
+    
+    # 업데이트 유형별 그룹화
+    groups:
+      # 프로덕션 의존성 (중요도 높음)
+      production-dependencies:
+        patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+          - "@sentry/*"
+          - "prisma"
+          - "@prisma/*"
+          - "bcryptjs"
+          - "jsonwebtoken"
+          - "zod"
+        
+      # 개발 의존성 (테스트/빌드 도구)
+      development-dependencies:
+        patterns:
+          - "@types/*"
+          - "typescript"
+          - "eslint*"
+          - "prettier"
+          - "jest*"
+          - "@testing-library/*"
+          - "playwright*"
+          - "tailwindcss"
+          - "autoprefixer"
+          - "postcss"
+        
+      # 마이너/패치 업데이트 (안전한 업데이트)
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    
+    # 자동 머지 설정 (패치 업데이트만)
+    allow:
+      - dependency-type: "direct"
+        update-type: "security"
+      - dependency-type: "indirect"
+        update-type: "security"
+    
+    # 커밋 메시지 설정
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+    
+    # 무시할 의존성 (수동 관리)
+    ignore:
+      # Node.js 타입 - LTS 버전에 맞춰 수동 관리
+      - dependency-name: "@types/node"
+        versions: [">=21.0.0"]
+      
+      # Tailwind CSS v4 - Breaking change 확인 후 수동 업데이트
+      - dependency-name: "tailwindcss" 
+        versions: [">=4.0.0"]
+    
+    # 라벨 설정
+    labels:
+      - "dependencies"
+      - "security"
+    
+    # 리뷰어 설정
+    reviewers:
+      - "lead-developer"
+    
+    # PR에 포함할 정보
+    milestone: 1
+
+  # GitHub Actions 워크플로우 업데이트
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+      timezone: "Asia/Seoul"
+    
+    open-pull-requests-limit: 5
+    target-branch: "main"
+    
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    
+    labels:
+      - "github-actions"
+      - "ci"
+    
+    reviewers:
+      - "devops-team"

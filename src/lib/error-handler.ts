@@ -3,6 +3,15 @@
  * API 에러, 네트워크 에러, 애플리케이션 에러를 체계적으로 처리
  */
 
+// Sentry는 클라이언트 사이드에서만 import
+const getSentry = async () => {
+  if (typeof window !== 'undefined') {
+    const { sentryUtils } = await import('../../sentry.client.config')
+    return sentryUtils
+  }
+  return null
+}
+
 export interface ErrorDetails {
   code: string
   message: string
@@ -171,10 +180,10 @@ class ErrorLogger {
       }
     }
 
-    // 프로덕션 환경에서는 외부 로깅 서비스로 전송
-    // if (process.env.NODE_ENV === 'production') {
-    //   this.sendToLoggingService(report)
-    // }
+    // 외부 로깅 서비스로 전송 (Sentry)
+    if (typeof window !== 'undefined') {
+      this.sendToSentry(report)
+    }
   }
 
   getLogs(): ErrorReport[] {
@@ -199,17 +208,17 @@ class ErrorLogger {
     }
   }
 
-  // private async sendToLoggingService(report: ErrorReport) {
-  //   try {
-  //     await fetch('/api/errors', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify(report),
-  //     })
-  //   } catch (e) {
-  //     console.error('Failed to send error to logging service:', e)
-  //   }
-  // }
+  // Sentry로 에러 리포트 전송
+  private async sendToSentry(report: ErrorReport) {
+    try {
+      const sentryUtils = await getSentry()
+      if (sentryUtils) {
+        sentryUtils.captureErrorReport(report)
+      }
+    } catch (e) {
+      console.error('Failed to send error to Sentry:', e)
+    }
+  }
 }
 
 // 전역 에러 로거 인스턴스

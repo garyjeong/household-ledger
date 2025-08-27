@@ -2,6 +2,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react'
 import { AlertTriangle } from 'lucide-react'
+import * as Sentry from '@sentry/nextjs'
 import { Button } from '@/components/ui/button'
 
 interface Props {
@@ -29,6 +30,46 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error(`[ErrorBoundary - ${this.props.level}] Error caught:`, error, errorInfo)
+
+    // Sentry로 에러 전송
+    Sentry.withScope(scope => {
+      // ErrorBoundary 컨텍스트 정보 추가
+      scope.setTag('errorBoundary', true)
+      scope.setTag('boundaryLevel', this.props.level)
+
+      if (this.props.componentName) {
+        scope.setTag('componentName', this.props.componentName)
+      }
+
+      // React 컴포넌트 스택 추가
+      scope.setContext('componentStack', {
+        componentStack: errorInfo.componentStack,
+      })
+
+      // 에러 수준에 따른 심각도 설정
+      switch (this.props.level) {
+        case 'app':
+          scope.setLevel('fatal')
+          break
+        case 'page':
+          scope.setLevel('error')
+          break
+        case 'component':
+          scope.setLevel('warning')
+          break
+      }
+
+      // Sentry에 에러 전송
+      Sentry.captureException(error, {
+        fingerprint: [
+          'error-boundary',
+          this.props.level,
+          this.props.componentName || 'unknown-component',
+          error.name,
+        ],
+      })
+    })
+
     this.setState({ error, errorInfo })
   }
 

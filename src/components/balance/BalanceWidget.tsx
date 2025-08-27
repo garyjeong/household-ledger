@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Wallet, TrendingUp, TrendingDown, DollarSign } from 'lucide-react'
+import React, { useMemo, memo } from 'react'
+import { Wallet, TrendingUp, TrendingDown } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { apiGet } from '@/lib/api-client'
+import { useBalance } from '@/hooks/use-balance'
 
 interface BalanceWidgetProps {
   ownerType: 'USER' | 'GROUP'
@@ -13,76 +13,53 @@ interface BalanceWidgetProps {
   className?: string
 }
 
-interface BalanceData {
-  totalBalance: number
-  monthlyIncome: number
-  monthlyExpense: number
-  projectedBalance?: number
-  currency: string
-}
+// interface BalanceData {
+//   totalBalance: number
+//   monthlyIncome: number
+//   monthlyExpense: number
+//   projectedBalance?: number
+//   currency: string
+// }
 
-export function BalanceWidget({
+const BalanceWidget = memo(function BalanceWidget({
   ownerType,
   ownerId,
   showProjection = false,
   compact = false,
   className = '',
 }: BalanceWidgetProps) {
-  const [balanceData, setBalanceData] = useState<BalanceData>({
+  const {
+    balance: safeBalanceData,
+    isLoading,
+    error: _error,
+    isPositive: isBalancePositive,
+    formattedBalance: _formattedBalance,
+    refreshBalance: _refreshBalance,
+  } = useBalance(ownerType, ownerId, {
+    refreshInterval: showProjection ? 30000 : 0, // 예측 표시 시 30초마다 새로고침
+    revalidateOnFocus: true,
+  })
+
+  // 기본값 설정 (SWR에서 데이터가 아직 로드되지 않은 경우)
+  const safeBalanceData = safeBalanceData || {
     totalBalance: 0,
     monthlyIncome: 0,
     monthlyExpense: 0,
     projectedBalance: 0,
     currency: 'KRW',
-  })
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const loadBalanceData = async () => {
-      if (!ownerId) return
-
-      try {
-        setIsLoading(true)
-        const response = await fetch(`/api/balance?ownerType=${ownerType}&ownerId=${ownerId}`)
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch balance data')
-        }
-
-        const data = await response.json()
-        setBalanceData({
-          totalBalance: data.totalBalance || 0,
-          monthlyIncome: data.monthlyIncome || 0,
-          monthlyExpense: data.monthlyExpense || 0,
-          projectedBalance: data.projectedBalance || 0,
-          currency: data.currency || 'KRW',
-        })
-      } catch (error) {
-        console.error('Failed to load balance data:', error)
-        // Fallback to zero values on error
-        setBalanceData({
-          totalBalance: 0,
-          monthlyIncome: 0,
-          monthlyExpense: 0,
-          projectedBalance: 0,
-          currency: 'KRW',
-        })
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadBalanceData()
-  }, [ownerType, ownerId])
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('ko-KR', {
-      style: 'currency',
-      currency: balanceData.currency,
-    }).format(amount)
   }
 
-  const isPositive = balanceData.totalBalance >= 0
+  const formatCurrency = useMemo(
+    () => (amount: number) => {
+      return new Intl.NumberFormat('ko-KR', {
+        style: 'currency',
+        currency: safeBalanceData.currency,
+      }).format(amount)
+    },
+    [safeBalanceData.currency]
+  )
+
+  const isPositive = isBalancePositive ?? safeBalanceData.totalBalance >= 0
 
   if (compact) {
     return (
@@ -104,7 +81,7 @@ export function BalanceWidget({
               <div
                 className={`text-xl sm:text-2xl font-bold ${isPositive ? 'text-blue-900' : 'text-red-900'}`}
               >
-                {formatCurrency(balanceData.totalBalance)}
+                {formatCurrency(safeBalanceData.totalBalance)}
               </div>
               <p className='text-xs text-slate-600 mt-1'>사용 가능 금액</p>
             </>
@@ -138,7 +115,7 @@ export function BalanceWidget({
               <div
                 className={`text-3xl font-bold ${isPositive ? 'text-slate-900' : 'text-red-600'}`}
               >
-                {formatCurrency(balanceData.totalBalance)}
+                {formatCurrency(safeBalanceData.totalBalance)}
               </div>
               <p className='text-sm text-slate-500 mt-1'>총 잔액</p>
             </div>
@@ -148,7 +125,7 @@ export function BalanceWidget({
               <div className='text-center p-3 bg-green-50 rounded-lg'>
                 <TrendingUp className='h-5 w-5 text-green-600 mx-auto mb-2' />
                 <div className='text-lg font-semibold text-green-900'>
-                  {formatCurrency(balanceData.monthlyIncome)}
+                  {formatCurrency(safeBalanceData.monthlyIncome)}
                 </div>
                 <p className='text-xs text-green-600'>이번 달 수입</p>
               </div>
@@ -156,23 +133,23 @@ export function BalanceWidget({
               <div className='text-center p-3 bg-red-50 rounded-lg'>
                 <TrendingDown className='h-5 w-5 text-red-600 mx-auto mb-2' />
                 <div className='text-lg font-semibold text-red-900'>
-                  {formatCurrency(balanceData.monthlyExpense)}
+                  {formatCurrency(safeBalanceData.monthlyExpense)}
                 </div>
                 <p className='text-xs text-red-600'>이번 달 지출</p>
               </div>
             </div>
 
             {/* Projection (if enabled) */}
-            {showProjection && balanceData.projectedBalance !== undefined && (
+            {showProjection && safeBalanceData.projectedBalance !== undefined && (
               <div className='border-t pt-4'>
                 <div className='flex items-center justify-between'>
                   <span className='text-sm text-slate-600'>월말 예상 잔액</span>
                   <div
                     className={`text-lg font-semibold ${
-                      balanceData.projectedBalance >= 0 ? 'text-slate-900' : 'text-red-600'
+                      safeBalanceData.projectedBalance >= 0 ? 'text-slate-900' : 'text-red-600'
                     }`}
                   >
-                    {formatCurrency(balanceData.projectedBalance)}
+                    {formatCurrency(safeBalanceData.projectedBalance)}
                   </div>
                 </div>
               </div>
@@ -182,6 +159,7 @@ export function BalanceWidget({
       </CardContent>
     </Card>
   )
-}
+})
 
+export { BalanceWidget }
 export default BalanceWidget

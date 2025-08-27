@@ -348,4 +348,128 @@ console.log('디버그 메시지') // 개발 중에만 사용, 배포 전 제거
 
 ---
 
+## 🚀 성능 최적화 가이드라인
+
+### React 성능 최적화
+
+#### 메모이제이션 사용 기준
+
+```typescript
+// ✅ 좋은 예 - 비용이 큰 계산
+const expensiveValue = useMemo(() => {
+  return heavyComputation(data)
+}, [data])
+
+// ❌ 나쁜 예 - 단순한 계산
+const simpleValue = useMemo(() => {
+  return data.length > 0
+}, [data])
+
+// ✅ 좋은 예 - 자식 컴포넌트 최적화
+const handleClick = useCallback(() => {
+  onItemClick(item.id)
+}, [item.id, onItemClick])
+```
+
+### SWR 데이터 캐싱 패턴
+
+#### 캐시 키 명명 규칙
+
+```typescript
+// ✅ 좋은 예 - 구조화된 캐시 키
+export const CACHE_KEYS = {
+  BALANCE: (ownerType: string, ownerId: string) =>
+    `/api/balance?ownerType=${ownerType}&ownerId=${ownerId}`,
+
+  TRANSACTIONS: (ownerType: string, ownerId: string, page?: number) =>
+    `/api/transactions?ownerType=${ownerType}&ownerId=${ownerId}&page=${page || 1}`,
+}
+```
+
+#### SWR 훅 최적화
+
+```typescript
+// ✅ 좋은 예 - 최적화된 SWR 설정
+function useBalance(ownerType: string, ownerId: string) {
+  const { data, error, mutate } = useSWR(
+    ownerId ? CACHE_KEYS.BALANCE(ownerType, ownerId) : null,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 2000,
+      errorRetryCount: 3,
+    }
+  )
+
+  // 낙관적 업데이트
+  const optimisticUpdate = async (newBalance: number) => {
+    await mutate({ ...data, totalBalance: newBalance }, false)
+    setTimeout(() => mutate(), 1000)
+  }
+
+  return { data, error, optimisticUpdate }
+}
+```
+
+### 이미지 최적화
+
+#### OptimizedImage 컴포넌트 사용
+
+```typescript
+// ✅ 좋은 예 - 최적화된 이미지
+<OptimizedImage
+  src="/images/user-avatar.jpg"
+  alt="사용자 아바타"
+  width={120}
+  height={120}
+  priority={false}
+  placeholder="blur"
+  fallbackSrc="/images/default-avatar.png"
+/>
+
+// ❌ 나쁜 예 - 일반 img 태그 사용
+<img src="/images/large-image.jpg" alt="이미지" />
+```
+
+### Web Vitals 최적화
+
+#### CLS 방지 (Cumulative Layout Shift)
+
+```typescript
+// ✅ 좋은 예 - 크기 지정으로 레이아웃 이동 방지
+<div className="min-h-[200px]">
+  <OptimizedImage
+    src="/images/content.jpg"
+    alt="콘텐츠 이미지"
+    width={400}
+    height={200} // 명시적 크기 지정
+  />
+</div>
+
+// ❌ 나쁜 예 - 크기 미지정
+<div>
+  <img src="/images/content.jpg" alt="이미지" />
+</div>
+```
+
+#### 성능 안티패턴 방지
+
+```typescript
+// ❌ 나쁜 예 - 무한 루프 의존성
+const expensiveValue = useMemo(() => {
+  return heavyComputation(count)
+}, [count, heavyComputation]) // 매번 새로 생성됨
+
+// ✅ 좋은 예 - 올바른 의존성
+const heavyComputation = useCallback(value => {
+  return value * 2
+}, [])
+
+const expensiveValue = useMemo(() => {
+  return heavyComputation(count)
+}, [count, heavyComputation])
+```
+
+---
+
 이 가이드는 프로젝트 진행에 따라 업데이트될 수 있습니다. 모든 팀원이 일관된 코드 스타일을 유지할 수 있도록 협조해 주시기 바랍니다.
