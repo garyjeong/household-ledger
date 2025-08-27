@@ -154,7 +154,7 @@ export const useLedgerStore = create<LedgerState>()(
             updatedAt: new Date(apiTransaction.data.updatedAt),
           }
 
-          set((state) => ({
+          set(state => ({
             transactions: [newTransaction, ...state.transactions],
             lastUndoAction: {
               type: 'ADD',
@@ -187,7 +187,7 @@ export const useLedgerStore = create<LedgerState>()(
             updatedAt: new Date(),
           }
 
-          set((state) => ({
+          set(state => ({
             transactions: [fallbackTransaction, ...state.transactions],
             lastUndoAction: {
               type: 'ADD',
@@ -201,7 +201,7 @@ export const useLedgerStore = create<LedgerState>()(
       },
 
       editTransaction: async (id: string, updates: Partial<Transaction>) => {
-        const transaction = get().transactions.find((t) => t.id === id)
+        const transaction = get().transactions.find(t => t.id === id)
         if (!transaction) return
 
         set({ isLoading: true })
@@ -229,8 +229,8 @@ export const useLedgerStore = create<LedgerState>()(
             updatedAt: new Date(apiTransaction.data.updatedAt),
           }
 
-          set((state) => ({
-            transactions: state.transactions.map((t) => (t.id === id ? updatedTransaction : t)),
+          set(state => ({
+            transactions: state.transactions.map(t => (t.id === id ? updatedTransaction : t)),
             lastUndoAction: {
               type: 'EDIT',
               data: { id, original: transaction, updated: updatedTransaction },
@@ -242,8 +242,8 @@ export const useLedgerStore = create<LedgerState>()(
 
           // 오프라인 모드: 로컬만 수정
           const updatedTransaction = { ...transaction, ...updates, updatedAt: new Date() }
-          set((state) => ({
-            transactions: state.transactions.map((t) => (t.id === id ? updatedTransaction : t)),
+          set(state => ({
+            transactions: state.transactions.map(t => (t.id === id ? updatedTransaction : t)),
             lastUndoAction: {
               type: 'EDIT',
               data: { id, original: transaction, updated: updatedTransaction },
@@ -256,7 +256,7 @@ export const useLedgerStore = create<LedgerState>()(
       },
 
       deleteTransaction: async (id: string) => {
-        const transaction = get().transactions.find((t) => t.id === id)
+        const transaction = get().transactions.find(t => t.id === id)
         if (!transaction) return
 
         set({ isLoading: true })
@@ -270,8 +270,8 @@ export const useLedgerStore = create<LedgerState>()(
             throw new Error(`API Error: ${response.status}`)
           }
 
-          set((state) => ({
-            transactions: state.transactions.filter((t) => t.id !== id),
+          set(state => ({
+            transactions: state.transactions.filter(t => t.id !== id),
             lastUndoAction: {
               type: 'DELETE',
               data: transaction,
@@ -282,8 +282,8 @@ export const useLedgerStore = create<LedgerState>()(
           console.error('Failed to delete transaction:', error)
 
           // 오프라인 모드: 로컬만 삭제
-          set((state) => ({
-            transactions: state.transactions.filter((t) => t.id !== id),
+          set(state => ({
+            transactions: state.transactions.filter(t => t.id !== id),
             lastUndoAction: {
               type: 'DELETE',
               data: transaction,
@@ -303,20 +303,20 @@ export const useLedgerStore = create<LedgerState>()(
         try {
           switch (lastAction.type) {
             case 'ADD':
-              set((state) => ({
-                transactions: state.transactions.filter((t) => t.id !== lastAction.data.id),
+              set(state => ({
+                transactions: state.transactions.filter(t => t.id !== lastAction.data.id),
                 lastUndoAction: null,
               }))
               break
             case 'DELETE':
-              set((state) => ({
+              set(state => ({
                 transactions: [lastAction.data, ...state.transactions],
                 lastUndoAction: null,
               }))
               break
             case 'EDIT':
-              set((state) => ({
-                transactions: state.transactions.map((t) =>
+              set(state => ({
+                transactions: state.transactions.map(t =>
                   t.id === lastAction.data.id ? lastAction.data.original : t
                 ),
                 lastUndoAction: null,
@@ -329,21 +329,21 @@ export const useLedgerStore = create<LedgerState>()(
       },
 
       // Presets
-      addPreset: (preset) => {
+      addPreset: preset => {
         const newPreset = { ...preset, id: `preset-${Date.now()}` }
-        set((state) => ({
+        set(state => ({
           presets: [...state.presets, newPreset],
         }))
       },
 
-      deletePreset: (id) => {
-        set((state) => ({
-          presets: state.presets.filter((p) => p.id !== id),
+      deletePreset: id => {
+        set(state => ({
+          presets: state.presets.filter(p => p.id !== id),
         }))
       },
 
-      applyPreset: (presetId) => {
-        const preset = get().presets.find((p) => p.id === presetId)
+      applyPreset: presetId => {
+        const preset = get().presets.find(p => p.id === presetId)
         if (!preset) return null
 
         return {
@@ -357,17 +357,17 @@ export const useLedgerStore = create<LedgerState>()(
       },
 
       // Auto Classification
-      addRule: (rule) => {
+      addRule: rule => {
         const newRule = { ...rule, id: `rule-${Date.now()}` }
-        set((state) => ({
+        set(state => ({
           rules: [...state.rules, newRule],
         }))
       },
 
-      suggestCategory: (memo) => {
+      suggestCategory: memo => {
         if (!memo) return null
 
-        const rules = get().rules.filter((r) => r.isActive)
+        const rules = get().rules.filter(r => r.isActive)
         for (const rule of rules) {
           const regex = new RegExp(rule.pattern, 'i')
           if (regex.test(memo)) {
@@ -381,10 +381,10 @@ export const useLedgerStore = create<LedgerState>()(
       },
 
       // Bulk Operations
-      importTransactions: async (transactions) => {
+      importTransactions: async transactions => {
         set({ isLoading: true })
         try {
-          set((state) => ({
+          set(state => ({
             transactions: [...transactions, ...state.transactions],
           }))
         } finally {
@@ -397,37 +397,37 @@ export const useLedgerStore = create<LedgerState>()(
         const transactions = get().transactions
         const now = new Date()
         const thisMonth = transactions.filter(
-          (t) => t.date.getMonth() === now.getMonth() && t.date.getFullYear() === now.getFullYear()
+          t => t.date.getMonth() === now.getMonth() && t.date.getFullYear() === now.getFullYear()
         )
 
         return {
           totalExpense: transactions
-            .filter((t) => t.type === 'EXPENSE')
+            .filter(t => t.type === 'EXPENSE')
             .reduce((sum, t) => sum + t.amount, 0),
           totalIncome: transactions
-            .filter((t) => t.type === 'INCOME')
+            .filter(t => t.type === 'INCOME')
             .reduce((sum, t) => sum + t.amount, 0),
           transactionCount: transactions.length,
           thisMonth: {
             expense: thisMonth
-              .filter((t) => t.type === 'EXPENSE')
+              .filter(t => t.type === 'EXPENSE')
               .reduce((sum, t) => sum + t.amount, 0),
             income: thisMonth
-              .filter((t) => t.type === 'INCOME')
+              .filter(t => t.type === 'INCOME')
               .reduce((sum, t) => sum + t.amount, 0),
             count: thisMonth.length,
           },
         }
       },
 
-      checkDuplicate: (transaction) => {
+      checkDuplicate: transaction => {
         const transactions = get().transactions
         const targetDate = transaction.date
         const targetAmount = parseFloat(transaction.amount)
 
         // Check for transactions within ±1 day with same amount
         return (
-          transactions.find((t) => {
+          transactions.find(t => {
             const daysDiff = Math.abs(
               (t.date.getTime() - targetDate.getTime()) / (1000 * 60 * 60 * 24)
             )
@@ -490,7 +490,7 @@ export const useLedgerStore = create<LedgerState>()(
     }),
     {
       name: 'ledger-v1',
-      partialize: (state) => ({
+      partialize: state => ({
         transactions: state.transactions,
         presets: state.presets,
         rules: state.rules,

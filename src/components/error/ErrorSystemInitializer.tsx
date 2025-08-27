@@ -1,29 +1,38 @@
 'use client'
 
 import { useEffect } from 'react'
-import { globalErrorHandler } from '@/lib/error-handler'
+import { useToast } from './ToastProvider'
 
-/**
- * 전역 에러 처리 시스템 초기화 컴포넌트
- * 브라우저 환경에서 전역 에러 리스너를 설정
- */
 export function ErrorSystemInitializer() {
+  const { error } = useToast()
+
   useEffect(() => {
-    // 전역 에러 리스너 설정
-    globalErrorHandler.setupGlobalListeners()
-
-    // 개발 환경에서 에러 처리 시스템 초기화 로그
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🛡️ Error handling system initialized')
+    // Global error handler for unhandled promise rejections
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Unhandled promise rejection:', event.reason)
+      error('예상치 못한 오류가 발생했습니다.', '시스템 오류')
+      event.preventDefault()
     }
 
-    // cleanup 함수 반환 (필요한 경우)
+    // Global error handler for JavaScript errors
+    const handleError = (event: ErrorEvent) => {
+      console.error('Global error:', event.error)
+      error('페이지에서 오류가 발생했습니다.', '실행 오류')
+    }
+
+    // Add event listeners
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+    window.addEventListener('error', handleError)
+
+    // Cleanup function
     return () => {
-      // 현재는 제거할 리스너가 없음
-      // 필요시 addEventListener의 반대인 removeEventListener 호출
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+      window.removeEventListener('error', handleError)
     }
-  }, [])
+  }, [error])
 
-  // 이 컴포넌트는 UI를 렌더링하지 않음
+  // This component doesn't render anything
   return null
 }
+
+export default ErrorSystemInitializer

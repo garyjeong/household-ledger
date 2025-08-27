@@ -4,7 +4,16 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Calendar, Clock, DollarSign, Building, Tag, FileText, ToggleLeft, ToggleRight } from 'lucide-react'
+import {
+  Calendar,
+  Clock,
+  DollarSign,
+  Building,
+  Tag,
+  FileText,
+  ToggleLeft,
+  ToggleRight,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -179,155 +188,142 @@ export function RecurringExpenseForm({
   const dayRuleOptions = selectedFrequency === 'MONTHLY' ? monthlyDayOptions : weeklyDayOptions
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className='w-full max-w-2xl mx-auto'>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5" />
+        <CardTitle className='flex items-center gap-2'>
+          <Clock className='h-5 w-5' />
           {mode === 'create' ? '고정 지출 추가' : '고정 지출 수정'}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className='space-y-6'>
           {/* 시작 날짜 */}
-          <div className="space-y-2">
-            <Label htmlFor="startDate" className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
+          <div className='space-y-2'>
+            <Label htmlFor='startDate' className='flex items-center gap-2'>
+              <Calendar className='h-4 w-4' />
               시작 날짜 *
             </Label>
             <Input
-              id="startDate"
-              type="date"
+              id='startDate'
+              type='date'
               {...register('startDate')}
               className={errors.startDate ? 'border-red-500' : ''}
             />
-            {errors.startDate && (
-              <p className="text-sm text-red-500">{errors.startDate.message}</p>
-            )}
+            {errors.startDate && <p className='text-sm text-red-500'>{errors.startDate.message}</p>}
           </div>
 
           {/* 반복 주기 */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
+          <div className='space-y-2'>
+            <Label className='flex items-center gap-2'>
+              <Clock className='h-4 w-4' />
               반복 주기 *
             </Label>
             <Select
               value={watchedFrequency}
-              onValueChange={(value) => setValue('frequency', value as 'MONTHLY' | 'WEEKLY')}
+              onValueChange={value => setValue('frequency', value as 'MONTHLY' | 'WEEKLY')}
             >
               <SelectTrigger>
-                <SelectValue placeholder="반복 주기 선택" />
+                <SelectValue placeholder='반복 주기 선택' />
               </SelectTrigger>
               <SelectContent>
-                {frequencyOptions.map((option) => (
+                {frequencyOptions.map(option => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {errors.frequency && (
-              <p className="text-sm text-red-500">{errors.frequency.message}</p>
-            )}
+            {errors.frequency && <p className='text-sm text-red-500'>{errors.frequency.message}</p>}
           </div>
 
           {/* 반복 날짜 */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
+          <div className='space-y-2'>
+            <Label className='flex items-center gap-2'>
+              <Calendar className='h-4 w-4' />
               반복 날짜 *
             </Label>
-            <Select
-              value={watch('dayRule')}
-              onValueChange={(value) => setValue('dayRule', value)}
-            >
+            <Select value={watch('dayRule')} onValueChange={value => setValue('dayRule', value)}>
               <SelectTrigger>
-                <SelectValue 
-                  placeholder={selectedFrequency === 'MONTHLY' ? '매월 몇 일' : '매주 무슨 요일'} 
+                <SelectValue
+                  placeholder={selectedFrequency === 'MONTHLY' ? '매월 몇 일' : '매주 무슨 요일'}
                 />
               </SelectTrigger>
               <SelectContent>
-                {dayRuleOptions.map((option) => (
+                {dayRuleOptions.map(option => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {errors.dayRule && (
-              <p className="text-sm text-red-500">{errors.dayRule.message}</p>
-            )}
+            {errors.dayRule && <p className='text-sm text-red-500'>{errors.dayRule.message}</p>}
           </div>
 
           {/* 금액 */}
-          <div className="space-y-2">
-            <Label htmlFor="amount" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
+          <div className='space-y-2'>
+            <Label htmlFor='amount' className='flex items-center gap-2'>
+              <DollarSign className='h-4 w-4' />
               금액 *
             </Label>
             <Input
-              id="amount"
-              type="text"
-              placeholder="0"
+              id='amount'
+              type='text'
+              placeholder='0'
               {...register('amount')}
-              onChange={(e) => {
+              onChange={e => {
                 const formatted = formatNumberInput(e.target.value)
                 setValue('amount', formatted)
               }}
               className={errors.amount ? 'border-red-500' : ''}
             />
-            {errors.amount && (
-              <p className="text-sm text-red-500">{errors.amount.message}</p>
-            )}
+            {errors.amount && <p className='text-sm text-red-500'>{errors.amount.message}</p>}
           </div>
 
           {/* 계좌 선택 */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Building className="h-4 w-4" />
+          <div className='space-y-2'>
+            <Label className='flex items-center gap-2'>
+              <Building className='h-4 w-4' />
               계좌 *
             </Label>
             <Select
               value={watch('accountId')}
-              onValueChange={(value) => setValue('accountId', value)}
+              onValueChange={value => setValue('accountId', value)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="계좌 선택" />
+                <SelectValue placeholder='계좌 선택' />
               </SelectTrigger>
               <SelectContent>
-                {accounts.map((account) => (
+                {accounts.map(account => (
                   <SelectItem key={account.id} value={account.id}>
                     {account.name} ({account.type})
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {errors.accountId && (
-              <p className="text-sm text-red-500">{errors.accountId.message}</p>
-            )}
+            {errors.accountId && <p className='text-sm text-red-500'>{errors.accountId.message}</p>}
           </div>
 
           {/* 카테고리 선택 */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Tag className="h-4 w-4" />
+          <div className='space-y-2'>
+            <Label className='flex items-center gap-2'>
+              <Tag className='h-4 w-4' />
               카테고리
             </Label>
             <Select
               value={watch('categoryId')}
-              onValueChange={(value) => setValue('categoryId', value)}
+              onValueChange={value => setValue('categoryId', value)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="카테고리 선택 (선택사항)" />
+                <SelectValue placeholder='카테고리 선택 (선택사항)' />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">카테고리 없음</SelectItem>
-                {categories.map((category) => (
+                <SelectItem value=''>카테고리 없음</SelectItem>
+                {categories.map(category => (
                   <SelectItem key={category.id} value={category.id}>
-                    <div className="flex items-center gap-2">
+                    <div className='flex items-center gap-2'>
                       {category.color && (
-                        <div 
-                          className="w-3 h-3 rounded-full" 
+                        <div
+                          className='w-3 h-3 rounded-full'
                           style={{ backgroundColor: category.color }}
                         />
                       )}
@@ -340,54 +336,50 @@ export function RecurringExpenseForm({
           </div>
 
           {/* 상점명 */}
-          <div className="space-y-2">
-            <Label htmlFor="merchant" className="flex items-center gap-2">
-              <Building className="h-4 w-4" />
+          <div className='space-y-2'>
+            <Label htmlFor='merchant' className='flex items-center gap-2'>
+              <Building className='h-4 w-4' />
               상점명
             </Label>
             <Input
-              id="merchant"
-              type="text"
-              placeholder="예: 스타벅스, 넷플릭스"
+              id='merchant'
+              type='text'
+              placeholder='예: 스타벅스, 넷플릭스'
               {...register('merchant')}
               className={errors.merchant ? 'border-red-500' : ''}
             />
-            {errors.merchant && (
-              <p className="text-sm text-red-500">{errors.merchant.message}</p>
-            )}
+            {errors.merchant && <p className='text-sm text-red-500'>{errors.merchant.message}</p>}
           </div>
 
           {/* 메모 */}
-          <div className="space-y-2">
-            <Label htmlFor="memo" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
+          <div className='space-y-2'>
+            <Label htmlFor='memo' className='flex items-center gap-2'>
+              <FileText className='h-4 w-4' />
               메모
             </Label>
             <Input
-              id="memo"
-              type="text"
-              placeholder="추가 설명이나 메모"
+              id='memo'
+              type='text'
+              placeholder='추가 설명이나 메모'
               {...register('memo')}
               className={errors.memo ? 'border-red-500' : ''}
             />
-            {errors.memo && (
-              <p className="text-sm text-red-500">{errors.memo.message}</p>
-            )}
+            {errors.memo && <p className='text-sm text-red-500'>{errors.memo.message}</p>}
           </div>
 
           {/* 활성 상태 */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
+          <div className='space-y-2'>
+            <Label className='flex items-center gap-2'>
               {watchedIsActive ? (
-                <ToggleRight className="h-4 w-4 text-green-600" />
+                <ToggleRight className='h-4 w-4 text-green-600' />
               ) : (
-                <ToggleLeft className="h-4 w-4 text-gray-400" />
+                <ToggleLeft className='h-4 w-4 text-gray-400' />
               )}
               활성 상태
             </Label>
-            <div className="flex items-center space-x-2">
+            <div className='flex items-center space-x-2'>
               <button
-                type="button"
+                type='button'
                 onClick={() => setValue('isActive', !watchedIsActive)}
                 className={`
                   relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2
@@ -401,28 +393,22 @@ export function RecurringExpenseForm({
                   `}
                 />
               </button>
-              <span className="text-sm text-gray-700">
-                {watchedIsActive ? '활성' : '비활성'}
-              </span>
+              <span className='text-sm text-gray-700'>{watchedIsActive ? '활성' : '비활성'}</span>
             </div>
           </div>
 
           {/* 버튼 */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="submit"
-              disabled={isSubmitting || isLoading}
-              className="flex-1"
-            >
+          <div className='flex gap-3 pt-4'>
+            <Button type='submit' disabled={isSubmitting || isLoading} className='flex-1'>
               {isSubmitting || isLoading ? '처리 중...' : mode === 'create' ? '추가' : '수정'}
             </Button>
             {onCancel && (
               <Button
-                type="button"
-                variant="outline"
+                type='button'
+                variant='outline'
                 onClick={onCancel}
                 disabled={isSubmitting || isLoading}
-                className="flex-1"
+                className='flex-1'
               >
                 취소
               </Button>

@@ -28,7 +28,7 @@ jest.mock('@/lib/error-handler', () => ({
     severity: 'medium',
     userFriendlyMessage: '네트워크 연결을 확인해주세요.',
   })),
-  withRetry: jest.fn((operation) => operation()),
+  withRetry: jest.fn(operation => operation()),
 }))
 
 // Mock fetch
@@ -268,7 +268,7 @@ describe('API Client', () => {
 
       expect(responses).toHaveLength(3)
       expect(fetch).toHaveBeenCalledTimes(3)
-      responses.forEach((response) => {
+      responses.forEach(response => {
         expect(response.ok).toBe(true)
       })
     })

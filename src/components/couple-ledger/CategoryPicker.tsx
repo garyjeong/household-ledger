@@ -1,11 +1,26 @@
 'use client'
 
 import React, { useState, useMemo, useCallback } from 'react'
+import {
+  Search,
+  Star,
+  Plus,
+  TrendingUp,
+  Coffee,
+  Car,
+  Home,
+  ShoppingBag,
+  Utensils,
+  Heart,
+  Plane,
+  Gift,
+  CreditCard,
+  Calculator,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Search, Star, Plus, TrendingUp, Coffee, Car, Home, ShoppingBag, Utensils, Heart, Plane, Gift, CreditCard, Calculator } from 'lucide-react'
 import { CategoryPickerProps, Category } from '@/types/couple-ledger'
 
 // 카테고리 아이콘 매핑
@@ -30,10 +45,30 @@ function getKoreanInitials(text: string): string {
   const initials = []
   for (let i = 0; i < text.length; i++) {
     const char = text.charCodeAt(i)
-    if (char >= 0xAC00 && char <= 0xD7A3) {
+    if (char >= 0xac00 && char <= 0xd7a3) {
       // 한글 완성형 범위
-      const initial = Math.floor((char - 0xAC00) / 588)
-      const initialChars = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ']
+      const initial = Math.floor((char - 0xac00) / 588)
+      const initialChars = [
+        'ㄱ',
+        'ㄲ',
+        'ㄴ',
+        'ㄷ',
+        'ㄸ',
+        'ㄹ',
+        'ㅁ',
+        'ㅂ',
+        'ㅃ',
+        'ㅅ',
+        'ㅆ',
+        'ㅇ',
+        'ㅈ',
+        'ㅉ',
+        'ㅊ',
+        'ㅋ',
+        'ㅌ',
+        'ㅍ',
+        'ㅎ',
+      ]
       initials.push(initialChars[initial])
     }
   }
@@ -98,9 +133,12 @@ export function CategoryPicker({
   }, [filteredCategories])
 
   // 카테고리 선택 핸들러
-  const handleSelect = useCallback((categoryId: string) => {
-    onSelect(categoryId)
-  }, [onSelect])
+  const handleSelect = useCallback(
+    (categoryId: string) => {
+      onSelect(categoryId)
+    },
+    [onSelect]
+  )
 
   // 아이콘 렌더링
   const renderIcon = useCallback((iconName: string, className = 'h-4 w-4') => {
@@ -109,63 +147,67 @@ export function CategoryPicker({
   }, [])
 
   // 카테고리 버튼 렌더링
-  const renderCategoryButton = useCallback((category: Category, size: 'sm' | 'md' = 'md') => {
-    const isSelected = selectedId === category.id
-    const buttonSizeClass = size === 'sm' ? 'h-12 px-3 text-sm' : 'h-14 px-4 text-base'
-    
-    return (
-      <Button
-        key={category.id}
-        type="button"
-        variant={isSelected ? 'default' : 'outline'}
-        onClick={() => handleSelect(category.id)}
-        className={`
+  const renderCategoryButton = useCallback(
+    (category: Category, size: 'sm' | 'md' = 'md') => {
+      const isSelected = selectedId === category.id
+      const buttonSizeClass = size === 'sm' ? 'h-12 px-3 text-sm' : 'h-14 px-4 text-base'
+
+      return (
+        <Button
+          key={category.id}
+          type='button'
+          variant={isSelected ? 'default' : 'outline'}
+          onClick={() => handleSelect(category.id)}
+          className={`
           ${buttonSizeClass} 
           flex items-center gap-2 rounded-button transition-all duration-200
-          ${isSelected 
-            ? 'bg-primary text-white shadow-couple-hover' 
-            : 'border-gray-200 hover:border-blue-500/50 hover:bg-gray-50'
+          ${
+            isSelected
+              ? 'bg-primary text-white shadow-couple-hover'
+              : 'border-gray-200 hover:border-blue-500/50 hover:bg-gray-50'
           }
           ${size === 'sm' ? 'touch-target-sm' : 'touch-target'}
         `}
-        style={{
-          borderColor: !isSelected ? category.color + '40' : undefined,
-          backgroundColor: isSelected ? category.color : undefined,
-        }}
-      >
-        {renderIcon(category.icon, size === 'sm' ? 'h-4 w-4' : 'h-5 w-5')}
-        <span className="font-medium">{category.name}</span>
-        {category.favorite && (
-          <Star className="h-3 w-3 ml-auto text-warning" fill="currentColor" />
-        )}
-      </Button>
-    )
-  }, [selectedId, handleSelect, renderIcon])
+          style={{
+            borderColor: !isSelected ? category.color + '40' : undefined,
+            backgroundColor: isSelected ? category.color : undefined,
+          }}
+        >
+          {renderIcon(category.icon, size === 'sm' ? 'h-4 w-4' : 'h-5 w-5')}
+          <span className='font-medium'>{category.name}</span>
+          {category.favorite && (
+            <Star className='h-3 w-3 ml-auto text-warning' fill='currentColor' />
+          )}
+        </Button>
+      )
+    },
+    [selectedId, handleSelect, renderIcon]
+  )
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       {/* 최근 사용 카테고리 칩 */}
       {recentCategoriesData.length > 0 && !searchQuery && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-text-secondary" />
-            <span className="text-sm font-medium text-text-secondary">최근 사용</span>
+        <div className='space-y-2'>
+          <div className='flex items-center gap-2'>
+            <TrendingUp className='h-4 w-4 text-text-secondary' />
+            <span className='text-sm font-medium text-text-secondary'>최근 사용</span>
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          <div className='grid grid-cols-3 sm:grid-cols-6 gap-2'>
             {recentCategoriesData.map(category => (
               <Button
                 key={category.id}
-                type="button"
+                type='button'
                 variant={selectedId === category.id ? 'default' : 'outline'}
                 onClick={() => handleSelect(category.id)}
-                className="h-10 px-2 text-xs flex items-center gap-1.5 justify-center"
+                className='h-10 px-2 text-xs flex items-center gap-1.5 justify-center'
                 style={{
                   borderColor: selectedId !== category.id ? category.color + '40' : undefined,
                   backgroundColor: selectedId === category.id ? category.color : undefined,
                 }}
               >
                 {renderIcon(category.icon, 'h-3 w-3')}
-                <span className="truncate">{category.name}</span>
+                <span className='truncate'>{category.name}</span>
               </Button>
             ))}
           </div>
@@ -173,65 +215,65 @@ export function CategoryPicker({
       )}
 
       {/* 검색 입력 */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-muted" />
+      <div className='relative'>
+        <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-muted' />
         <Input
-          type="text"
-          placeholder="카테고리 검색 (초성 검색 가능)"
+          type='text'
+          placeholder='카테고리 검색 (초성 검색 가능)'
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 h-12"
+          onChange={e => setSearchQuery(e.target.value)}
+          className='pl-10 h-12'
         />
       </div>
 
       {/* 검색 결과 또는 카테고리 목록 */}
       {searchQuery ? (
         // 검색 모드
-        <div className="space-y-3">
+        <div className='space-y-3'>
           {searchedCategories.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
               {searchedCategories.map(category => renderCategoryButton(category))}
             </div>
           ) : (
-            <div className="text-center py-8 text-text-muted">
-              <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>'{searchQuery}'에 대한 카테고리를 찾을 수 없습니다</p>
+            <div className='text-center py-8 text-text-muted'>
+              <Search className='h-8 w-8 mx-auto mb-2 opacity-50' />
+              <p>&apos;{searchQuery}&apos;에 대한 카테고리를 찾을 수 없습니다</p>
             </div>
           )}
         </div>
       ) : (
         // 일반 모드
-        <div className="space-y-6">
+        <div className='space-y-6'>
           {/* 즐겨찾기 카테고리 */}
           {showFavorites && favoriteCategories.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Star className="h-4 w-4 text-warning" fill="currentColor" />
-                <span className="text-sm font-medium text-text-secondary">즐겨찾기</span>
+            <div className='space-y-3'>
+              <div className='flex items-center gap-2'>
+                <Star className='h-4 w-4 text-warning' fill='currentColor' />
+                <span className='text-sm font-medium text-text-secondary'>즐겨찾기</span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
                 {favoriteCategories.map(category => renderCategoryButton(category))}
               </div>
             </div>
           )}
 
           {/* 일반 카테고리 */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-text-secondary">전체 카테고리</span>
+          <div className='space-y-3'>
+            <div className='flex items-center justify-between'>
+              <span className='text-sm font-medium text-text-secondary'>전체 카테고리</span>
               {regularCategories.length > 8 && (
                 <Button
-                  type="button"
-                  variant="ghost"
+                  type='button'
+                  variant='ghost'
                   onClick={() => setShowAll(!showAll)}
-                  className="text-xs text-primary hover:text-primary/80"
+                  className='text-xs text-primary hover:text-primary/80'
                 >
                   {showAll ? '접기' : '더보기'}
                 </Button>
               )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {(showAll ? regularCategories : regularCategories.slice(0, 8)).map(category => 
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+              {(showAll ? regularCategories : regularCategories.slice(0, 8)).map(category =>
                 renderCategoryButton(category)
               )}
             </div>
@@ -240,14 +282,14 @@ export function CategoryPicker({
       )}
 
       {/* 새 카테고리 추가 버튼 */}
-      <Card className="border-dashed border-2 border-gray-300 hover:border-blue-500/50 transition-colors">
-        <CardContent className="p-4">
+      <Card className='border-dashed border-2 border-gray-300 hover:border-blue-500/50 transition-colors'>
+        <CardContent className='p-4'>
           <Button
-            type="button"
-            variant="ghost"
-            className="w-full h-12 flex items-center gap-2 text-text-secondary hover:text-primary"
+            type='button'
+            variant='ghost'
+            className='w-full h-12 flex items-center gap-2 text-text-secondary hover:text-primary'
           >
-            <Plus className="h-5 w-5" />
+            <Plus className='h-5 w-5' />
             <span>새 카테고리 추가</span>
           </Button>
         </CardContent>

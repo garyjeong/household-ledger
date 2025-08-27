@@ -17,7 +17,7 @@ export const createRecurringRuleSchema = z.object({
     .min(1, '날짜 규칙이 필요합니다')
     .max(20, '날짜 규칙은 20자 이하여야 합니다')
     .refine(
-      (value) => {
+      value => {
         // D1-D31 (월별 특정일) 또는 MON, TUE, WED, THU, FRI, SAT, SUN (주별 특정요일)
         const monthlyPattern = /^D([1-9]|[12][0-9]|3[01])$/
         const weeklyPattern = /^(MON|TUE|WED|THU|FRI|SAT|SUN)$/
@@ -50,7 +50,7 @@ export const recurringRuleQuerySchema = z.object({
   isActive: z
     .string()
     .optional()
-    .transform((val) => {
+    .transform(val => {
       if (val === 'true') return true
       if (val === 'false') return false
       return undefined
@@ -59,14 +59,14 @@ export const recurringRuleQuerySchema = z.object({
     .string()
     .optional()
     .default('1')
-    .transform((val) => parseInt(val, 10))
-    .refine((val) => val > 0, '페이지는 1 이상이어야 합니다'),
+    .transform(val => parseInt(val, 10))
+    .refine(val => val > 0, '페이지는 1 이상이어야 합니다'),
   limit: z
     .string()
     .optional()
     .default('20')
-    .transform((val) => parseInt(val, 10))
-    .refine((val) => val > 0 && val <= 100, '한 페이지당 항목은 1-100개여야 합니다'),
+    .transform(val => parseInt(val, 10))
+    .refine(val => val > 0 && val <= 100, '한 페이지당 항목은 1-100개여야 합니다'),
 })
 
 // 응답 포맷터

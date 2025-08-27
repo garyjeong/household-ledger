@@ -10,9 +10,15 @@ interface GroupContextType {
   isLoading: boolean
   refreshGroups: () => Promise<void>
   switchGroup: (groupId: string | null) => void
-  createGroup: (name: string) => Promise<{ success: boolean; error?: string; group?: GroupWithMembers }>
-  generateInvite: (groupId: string) => Promise<{ success: boolean; error?: string; inviteUrl?: string; inviteCode?: string }>
-  joinGroupByCode: (inviteCode: string) => Promise<{ success: boolean; error?: string; group?: GroupWithMembers }>
+  createGroup: (
+    name: string
+  ) => Promise<{ success: boolean; error?: string; group?: GroupWithMembers }>
+  generateInvite: (
+    groupId: string
+  ) => Promise<{ success: boolean; error?: string; inviteUrl?: string; inviteCode?: string }>
+  joinGroupByCode: (
+    inviteCode: string
+  ) => Promise<{ success: boolean; error?: string; group?: GroupWithMembers }>
   leaveGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>
 }
 
@@ -60,7 +66,7 @@ export function GroupProvider({ children }: GroupProviderProps) {
           return
         }
       }
-      
+
       // 저장된 그룹이 없으면 첫 번째 그룹을 선택
       setCurrentGroup(groups[0])
       localStorage.setItem(CURRENT_GROUP_KEY, groups[0].id)
@@ -72,13 +78,13 @@ export function GroupProvider({ children }: GroupProviderProps) {
 
   const refreshGroups = async () => {
     if (!user) return
-    
+
     setIsLoading(true)
     try {
       const response = await fetch('/api/groups', {
         credentials: 'include',
       })
-      
+
       if (response.ok) {
         const data = await response.json()
         setGroups(data.groups || [])
@@ -139,10 +145,10 @@ export function GroupProvider({ children }: GroupProviderProps) {
       const data = await response.json()
 
       if (response.ok) {
-        return { 
-          success: true, 
+        return {
+          success: true,
           inviteUrl: data.inviteUrl,
-          inviteCode: data.inviteCode 
+          inviteCode: data.inviteCode,
         }
       } else {
         return { success: false, error: data.error || '초대 링크 생성에 실패했습니다.' }

@@ -3,18 +3,18 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { 
-  createAccountSchema, 
+import {
+  createAccountSchema,
   updateAccountSchema,
   type CreateAccountData,
-  type UpdateAccountData 
+  type UpdateAccountData,
 } from '@/lib/schemas/account'
-import { 
-  accountTypeLabels, 
+import {
+  accountTypeLabels,
   accountTypeIcons,
   formatNumberInput,
   parseNumberInput,
-  type AccountType 
+  type AccountType,
 } from '@/lib/utils/account'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -53,7 +53,7 @@ export function AccountForm({
   initialData,
   onSubmit,
   onCancel,
-  isLoading = false
+  isLoading = false,
 }: AccountFormProps) {
   const [balanceInput, setBalanceInput] = useState(
     initialData?.balance ? formatNumberInput(initialData.balance) : '0'
@@ -67,7 +67,7 @@ export function AccountForm({
     handleSubmit,
     formState: { errors },
     setValue,
-    watch
+    watch,
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -86,7 +86,7 @@ export function AccountForm({
   const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatNumberInput(e.target.value)
     setBalanceInput(formatted)
-    
+
     const numericValue = parseNumberInput(formatted)
     setValue('balance', numericValue)
   }
@@ -106,132 +106,121 @@ export function AccountForm({
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className='w-full max-w-md'>
       <CardHeader>
-        <CardTitle>
-          {mode === 'create' ? '새 계좌 추가' : '계좌 정보 수정'}
-        </CardTitle>
+        <CardTitle>{mode === 'create' ? '새 계좌 추가' : '계좌 정보 수정'}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onFormSubmit)} className='space-y-4'>
           {/* 계좌명 */}
-          <div className="space-y-2">
-            <Label htmlFor="name">계좌명</Label>
+          <div className='space-y-2'>
+            <Label htmlFor='name'>계좌명</Label>
             <Input
-              id="name"
-              placeholder="예: 신한은행 주거래"
+              id='name'
+              placeholder='예: 신한은행 주거래'
               {...register('name')}
               disabled={isLoading}
             />
-            {errors.name && (
-              <p className="text-sm text-red-600">{errors.name.message}</p>
-            )}
+            {errors.name && <p className='text-sm text-red-600'>{errors.name.message}</p>}
           </div>
 
           {/* 계좌 타입 */}
-          <div className="space-y-2">
+          <div className='space-y-2'>
             <Label>계좌 타입</Label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className='grid grid-cols-2 gap-2'>
               {Object.entries(accountTypeLabels).map(([type, label]) => {
                 const Icon = accountTypeIcons[type as AccountType]
                 const isSelected = selectedType === type
-                
+
                 return (
                   <label
                     key={type}
                     className={`
                       flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-colors
-                      ${isSelected 
-                        ? 'border-brand-600 bg-brand-50 text-brand-700' 
-                        : 'border-gray-200 hover:border-gray-300'
+                      ${
+                        isSelected
+                          ? 'border-brand-600 bg-brand-50 text-brand-700'
+                          : 'border-gray-200 hover:border-gray-300'
                       }
                     `}
                   >
                     <input
-                      type="radio"
+                      type='radio'
                       value={type}
                       {...register('type')}
-                      className="sr-only"
+                      className='sr-only'
                       disabled={isLoading}
                     />
-                    <Icon className={`h-4 w-4 ${isSelected ? 'text-brand-600' : 'text-gray-500'}`} />
-                    <span className="text-sm font-medium">{label}</span>
+                    <Icon
+                      className={`h-4 w-4 ${isSelected ? 'text-brand-600' : 'text-gray-500'}`}
+                    />
+                    <span className='text-sm font-medium'>{label}</span>
                   </label>
                 )
               })}
             </div>
-            {errors.type && (
-              <p className="text-sm text-red-600">{errors.type.message}</p>
-            )}
+            {errors.type && <p className='text-sm text-red-600'>{errors.type.message}</p>}
           </div>
 
           {/* 통화 */}
-          <div className="space-y-2">
-            <Label htmlFor="currency">통화</Label>
+          <div className='space-y-2'>
+            <Label htmlFor='currency'>통화</Label>
             <Input
-              id="currency"
+              id='currency'
               {...register('currency')}
               disabled={isLoading}
               readOnly
-              className="bg-gray-50"
+              className='bg-gray-50'
             />
-            {errors.currency && (
-              <p className="text-sm text-red-600">{errors.currency.message}</p>
-            )}
+            {errors.currency && <p className='text-sm text-red-600'>{errors.currency.message}</p>}
           </div>
 
           {/* 초기 잔액 */}
-          <div className="space-y-2">
-            <Label htmlFor="balance">
-              {mode === 'create' ? '초기 잔액' : '현재 잔액'}
-            </Label>
-            <div className="relative">
+          <div className='space-y-2'>
+            <Label htmlFor='balance'>{mode === 'create' ? '초기 잔액' : '현재 잔액'}</Label>
+            <div className='relative'>
               <Input
-                id="balance"
+                id='balance'
                 value={balanceInput}
                 onChange={handleBalanceChange}
-                placeholder="0"
+                placeholder='0'
                 disabled={isLoading}
-                className="pr-8"
+                className='pr-8'
               />
-              <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500">
+              <span className='absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-gray-500'>
                 원
               </span>
             </div>
-            {errors.balance && (
-              <p className="text-sm text-red-600">{errors.balance.message}</p>
-            )}
+            {errors.balance && <p className='text-sm text-red-600'>{errors.balance.message}</p>}
           </div>
 
           {/* 숨겨진 필드들 */}
-          <input type="hidden" {...register('ownerType')} />
-          <input type="hidden" {...register('ownerId')} />
+          <input type='hidden' {...register('ownerType')} />
+          <input type='hidden' {...register('ownerId')} />
 
           {/* 버튼 */}
-          <div className="flex gap-2 pt-4">
+          <div className='flex gap-2 pt-4'>
             {onCancel && (
               <Button
-                type="button"
-                variant="outline"
+                type='button'
+                variant='outline'
                 onClick={onCancel}
                 disabled={isLoading}
-                className="flex-1"
+                className='flex-1'
               >
                 취소
               </Button>
             )}
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="flex-1"
-            >
+            <Button type='submit' disabled={isLoading} className='flex-1'>
               {isLoading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2' />
                   {mode === 'create' ? '추가 중...' : '수정 중...'}
                 </>
+              ) : mode === 'create' ? (
+                '계좌 추가'
               ) : (
-                mode === 'create' ? '계좌 추가' : '수정 완료'
+                '수정 완료'
               )}
             </Button>
           </div>

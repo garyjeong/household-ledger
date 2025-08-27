@@ -6,20 +6,13 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { Plus, Calendar, TrendingDown, TrendingUp, ArrowRightLeft, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select'
 import { useLedgerStore } from '@/stores/ledger-store'
 import { fetchLegacyData, DataMapper, showUndoToast } from '@/lib/adapters/context-bridge'
 import { TransactionType, QuickAddFormData } from '@/types/ledger'
-import { 
-  Plus, 
-  Calendar, 
-  TrendingDown, 
-  TrendingUp, 
-  ArrowRightLeft,
-  Search
-} from 'lucide-react'
 
 // Form validation schema
 const quickAddSchema = z.object({
@@ -27,7 +20,8 @@ const quickAddSchema = z.object({
   type: z.enum(['EXPENSE', 'INCOME', 'TRANSFER'] as const, {
     message: '거래 타입을 선택해주세요',
   }),
-  amount: z.string()
+  amount: z
+    .string()
     .min(1, '금액을 입력해주세요')
     .regex(/^\d+$/, '숫자만 입력해주세요')
     .refine(val => parseInt(val) > 0, '금액은 0보다 커야 합니다')
@@ -45,10 +39,10 @@ interface QuickAddBarProps {
   autoFocus?: boolean
 }
 
-export function QuickAddBar({ 
-  className = '', 
+export function QuickAddBar({
+  className = '',
   position = 'top',
-  autoFocus = true 
+  autoFocus = true,
 }: QuickAddBarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [accounts, setAccounts] = useState<any[]>([])
@@ -57,7 +51,7 @@ export function QuickAddBar({
   const [accountSearch, setAccountSearch] = useState('')
   const [categorySearch, setCategorySearch] = useState('')
   const [suggestion, setSuggestion] = useState<string | null>(null)
-  
+
   const amountInputRef = useRef<HTMLInputElement>(null)
   const { addTransaction, isLoading, suggestCategory } = useLedgerStore()
 
@@ -175,49 +169,51 @@ export function QuickAddBar({
   })
 
   const typeIcons = {
-    EXPENSE: <TrendingDown className="h-4 w-4 text-red-600" />,
-    INCOME: <TrendingUp className="h-4 w-4 text-blue-600" />,
-    TRANSFER: <ArrowRightLeft className="h-4 w-4 text-purple-600" />,
+    EXPENSE: <TrendingDown className='h-4 w-4 text-red-600' />,
+    INCOME: <TrendingUp className='h-4 w-4 text-blue-600' />,
+    TRANSFER: <ArrowRightLeft className='h-4 w-4 text-purple-600' />,
   }
 
-  const positionClasses = position === 'top' 
-    ? 'top-0 sticky z-50' 
-    : 'bottom-0 fixed z-50'
+  const positionClasses = position === 'top' ? 'top-0 sticky z-50' : 'bottom-0 fixed z-50'
 
   return (
-    <div className={`${positionClasses} left-0 right-0 bg-white border-b border-stroke-200 shadow-sm ${className}`}>
-      <div className="max-w-4xl mx-auto p-4">
+    <div
+      className={`${positionClasses} left-0 right-0 bg-white border-b border-stroke-200 shadow-sm ${className}`}
+    >
+      <div className='max-w-4xl mx-auto p-4'>
         {!isExpanded ? (
           // Collapsed state - Simple input trigger
-          <div 
-            className="flex items-center gap-2 p-3 bg-surface-page rounded-lg border border-stroke-200 cursor-text hover:border-brand-600 transition-colors"
+          <div
+            className='flex items-center gap-2 p-3 bg-surface-page rounded-lg border border-stroke-200 cursor-text hover:border-brand-600 transition-colors'
             onClick={() => setIsExpanded(true)}
           >
-            <Plus className="h-5 w-5 text-brand-600" />
-            <span className="text-text-700 select-none">거래를 빠르게 추가하세요... (금액, 메모, 카테고리)</span>
-            <div className="ml-auto flex items-center gap-1 text-xs text-text-500">
-              <kbd className="px-2 py-1 bg-gray-100 rounded text-xs">Enter</kbd>
+            <Plus className='h-5 w-5 text-brand-600' />
+            <span className='text-text-700 select-none'>
+              거래를 빠르게 추가하세요... (금액, 메모, 카테고리)
+            </span>
+            <div className='ml-auto flex items-center gap-1 text-xs text-text-500'>
+              <kbd className='px-2 py-1 bg-gray-100 rounded text-xs'>Enter</kbd>
               <span>저장</span>
             </div>
           </div>
         ) : (
           // Expanded state - Full form
           <form onSubmit={handleSubmit(data => onSubmit(data, false))} onKeyDown={handleKeyDown}>
-            <div className="space-y-4">
+            <div className='space-y-4'>
               {/* Main input row */}
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className='flex items-center gap-2 flex-wrap'>
                 {/* Date */}
                 <Controller
                   control={control}
-                  name="date"
+                  name='date'
                   render={({ field }) => (
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4 text-text-500" />
+                    <div className='flex items-center gap-1'>
+                      <Calendar className='h-4 w-4 text-text-500' />
                       <Input
-                        type="date"
+                        type='date'
                         value={format(field.value, 'yyyy-MM-dd')}
-                        onChange={(e) => field.onChange(new Date(e.target.value))}
-                        className="w-auto text-sm"
+                        onChange={e => field.onChange(new Date(e.target.value))}
+                        className='w-auto text-sm'
                       />
                     </div>
                   )}
@@ -226,31 +222,28 @@ export function QuickAddBar({
                 {/* Type selector */}
                 <Controller
                   control={control}
-                  name="type"
+                  name='type'
                   render={({ field }) => (
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <div className="flex items-center gap-1">
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <div className='flex items-center gap-1'>
                         {typeIcons[field.value]}
-                        <SelectTrigger className="w-auto text-sm">
+                        <SelectTrigger className='w-auto text-sm'>
                           {field.value === 'EXPENSE' && '지출'}
                           {field.value === 'INCOME' && '수입'}
                           {field.value === 'TRANSFER' && '이체'}
                         </SelectTrigger>
                       </div>
                       <SelectContent>
-                        <SelectItem value="EXPENSE">
-                          <TrendingDown className="h-4 w-4 text-red-600 mr-2" />
+                        <SelectItem value='EXPENSE'>
+                          <TrendingDown className='h-4 w-4 text-red-600 mr-2' />
                           지출
                         </SelectItem>
-                        <SelectItem value="INCOME">
-                          <TrendingUp className="h-4 w-4 text-blue-600 mr-2" />
+                        <SelectItem value='INCOME'>
+                          <TrendingUp className='h-4 w-4 text-blue-600 mr-2' />
                           수입
                         </SelectItem>
-                        <SelectItem value="TRANSFER">
-                          <ArrowRightLeft className="h-4 w-4 text-purple-600 mr-2" />
+                        <SelectItem value='TRANSFER'>
+                          <ArrowRightLeft className='h-4 w-4 text-purple-600 mr-2' />
                           이체
                         </SelectItem>
                       </SelectContent>
@@ -261,22 +254,22 @@ export function QuickAddBar({
                 {/* Amount */}
                 <Controller
                   control={control}
-                  name="amount"
+                  name='amount'
                   render={({ field }) => (
-                    <div className="flex items-center">
+                    <div className='flex items-center'>
                       <Input
                         ref={amountInputRef}
-                        placeholder="금액"
+                        placeholder='금액'
                         value={formatAmount(field.value)}
-                        onChange={(e) => {
+                        onChange={e => {
                           const rawValue = e.target.value.replace(/[^\d]/g, '')
                           field.onChange(rawValue)
                         }}
-                        inputMode="numeric"
-                        className="w-32 text-right"
+                        inputMode='numeric'
+                        className='w-32 text-right'
                         autoFocus={autoFocus}
                       />
-                      <span className="ml-1 text-sm text-text-500">원</span>
+                      <span className='ml-1 text-sm text-text-500'>원</span>
                     </div>
                   )}
                 />
@@ -284,40 +277,36 @@ export function QuickAddBar({
                 {/* Category selector with search */}
                 <Controller
                   control={control}
-                  name="categoryId"
+                  name='categoryId'
                   render={({ field }) => (
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger className="w-40">
-                        <Search className="h-4 w-4 mr-2" />
-                        {field.value 
-                          ? categories.find(c => c.id === field.value)?.name 
-                          : '카테고리'
-                        }
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className='w-40'>
+                        <Search className='h-4 w-4 mr-2' />
+                        {field.value
+                          ? categories.find(c => c.id === field.value)?.name
+                          : '카테고리'}
                       </SelectTrigger>
                       <SelectContent>
-                        <div className="p-2">
+                        <div className='p-2'>
                           <Input
-                            placeholder="카테고리 검색..."
+                            placeholder='카테고리 검색...'
                             value={categorySearch}
-                            onChange={(e) => setCategorySearch(e.target.value)}
-                            className="text-sm"
+                            onChange={e => setCategorySearch(e.target.value)}
+                            className='text-sm'
                           />
                         </div>
                         {filteredCategories.map(category => (
                           <SelectItem key={category.id} value={category.id}>
-                            <div className="flex items-center gap-2">
+                            <div className='flex items-center gap-2'>
                               {category.color && (
-                                <div 
-                                  className="w-3 h-3 rounded-full"
+                                <div
+                                  className='w-3 h-3 rounded-full'
                                   style={{ backgroundColor: category.color }}
                                 />
                               )}
                               {category.name}
                               {category.isDefault && (
-                                <span className="text-xs text-text-500">기본</span>
+                                <span className='text-xs text-text-500'>기본</span>
                               )}
                             </div>
                           </SelectItem>
@@ -330,34 +319,26 @@ export function QuickAddBar({
                 {/* Account selector with search */}
                 <Controller
                   control={control}
-                  name="accountId"
+                  name='accountId'
                   render={({ field }) => (
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger className="w-32">
-                        {field.value 
-                          ? accounts.find(a => a.id === field.value)?.name 
-                          : '계좌'
-                        }
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className='w-32'>
+                        {field.value ? accounts.find(a => a.id === field.value)?.name : '계좌'}
                       </SelectTrigger>
                       <SelectContent>
-                        <div className="p-2">
+                        <div className='p-2'>
                           <Input
-                            placeholder="계좌 검색..."
+                            placeholder='계좌 검색...'
                             value={accountSearch}
-                            onChange={(e) => setAccountSearch(e.target.value)}
-                            className="text-sm"
+                            onChange={e => setAccountSearch(e.target.value)}
+                            className='text-sm'
                           />
                         </div>
                         {filteredAccounts.map(account => (
                           <SelectItem key={account.id} value={account.id}>
-                            <div className="flex items-center justify-between w-full">
+                            <div className='flex items-center justify-between w-full'>
                               <span>{account.name}</span>
-                              <span className="text-xs text-text-500 ml-2">
-                                {account.type}
-                              </span>
+                              <span className='text-xs text-text-500 ml-2'>{account.type}</span>
                             </div>
                           </SelectItem>
                         ))}
@@ -370,22 +351,22 @@ export function QuickAddBar({
               {/* Memo input */}
               <Controller
                 control={control}
-                name="memo"
+                name='memo'
                 render={({ field }) => (
-                  <div className="relative">
+                  <div className='relative'>
                     <Input
-                      placeholder="메모 (선택사항)"
+                      placeholder='메모 (선택사항)'
                       value={field.value || ''}
                       onChange={field.onChange}
-                      className="pr-20"
+                      className='pr-20'
                     />
                     {suggestion && (
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      <div className='absolute right-2 top-1/2 -translate-y-1/2'>
                         <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs text-brand-600 hover:text-brand-700"
+                          type='button'
+                          variant='ghost'
+                          size='sm'
+                          className='text-xs text-brand-600 hover:text-brand-700'
                           onClick={() => {
                             // Apply suggestion logic here
                             setSuggestion(null)
@@ -400,12 +381,12 @@ export function QuickAddBar({
               />
 
               {/* Action buttons */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center gap-2'>
                   <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
+                    type='button'
+                    variant='ghost'
+                    size='sm'
                     onClick={() => {
                       setIsExpanded(false)
                       reset()
@@ -413,32 +394,27 @@ export function QuickAddBar({
                   >
                     취소
                   </Button>
-                  
+
                   {Object.keys(errors).length > 0 && (
-                    <div className="text-sm text-red-600">
-                      {Object.values(errors)[0]?.message}
-                    </div>
+                    <div className='text-sm text-red-600'>{Object.values(errors)[0]?.message}</div>
                   )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="text-xs text-text-500">
-                    <kbd className="px-2 py-1 bg-gray-100 rounded">Enter</kbd> 저장 ·
-                    <kbd className="px-2 py-1 bg-gray-100 rounded ml-1">Shift+Enter</kbd> 저장 후 계속
+                <div className='flex items-center gap-2'>
+                  <div className='text-xs text-text-500'>
+                    <kbd className='px-2 py-1 bg-gray-100 rounded'>Enter</kbd> 저장 ·
+                    <kbd className='px-2 py-1 bg-gray-100 rounded ml-1'>Shift+Enter</kbd> 저장 후
+                    계속
                   </div>
-                  
-                  <Button
-                    type="submit"
-                    disabled={!isValid || isLoading}
-                    size="sm"
-                  >
+
+                  <Button type='submit' disabled={!isValid || isLoading} size='sm'>
                     {isLoading ? '저장중...' : '저장'}
                   </Button>
-                  
+
                   <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
+                    type='button'
+                    variant='outline'
+                    size='sm'
                     disabled={!isValid || isLoading}
                     onClick={handleSubmit(data => onSubmit(data, true))}
                   >
@@ -452,20 +428,16 @@ export function QuickAddBar({
       </div>
 
       {suggestion && (
-        <div className="bg-blue-50 border-t border-blue-200 px-4 py-2">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <span className="text-sm text-blue-800">{suggestion}</span>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSuggestion(null)}
-              >
+        <div className='bg-blue-50 border-t border-blue-200 px-4 py-2'>
+          <div className='max-w-4xl mx-auto flex items-center justify-between'>
+            <span className='text-sm text-blue-800'>{suggestion}</span>
+            <div className='flex gap-2'>
+              <Button variant='ghost' size='sm' onClick={() => setSuggestion(null)}>
                 무시
               </Button>
               <Button
-                variant="outline"
-                size="sm"
+                variant='outline'
+                size='sm'
                 onClick={() => {
                   // Apply auto-classification
                   setSuggestion(null)

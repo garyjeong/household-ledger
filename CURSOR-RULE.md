@@ -134,7 +134,7 @@ API Routes: kebab-case ([id]/route.ts)
 ```typescript
 // 항상 이 순서로 import
 1. React 관련
-2. Next.js 관련  
+2. Next.js 관련
 3. 외부 라이브러리
 4. 내부 컴포넌트 (@/components)
 5. 내부 라이브러리 (@/lib)
@@ -171,7 +171,7 @@ API Routes: kebab-case ([id]/route.ts)
 ```
 tests/
 ├── lib/           # 유틸리티 함수 테스트
-├── api/           # API 엔드포인트 테스트  
+├── api/           # API 엔드포인트 테스트
 ├── components/    # 컴포넌트 테스트
 └── integration/   # 통합 테스트
 ```
@@ -208,7 +208,7 @@ tests/
 
 ```markdown
 1. **모델 확인** → Prisma 스키마 검토
-2. **API 구현** → Zod 검증 + 보안 검증 
+2. **API 구현** → Zod 검증 + 보안 검증
 3. **컴포넌트 개발** → Radix UI 기반
 4. **페이지 통합** → App Router 활용
 5. **테스트 작성** → Jest + Testing Library
@@ -267,7 +267,7 @@ tests/
 
 ```markdown
 1. 질문 수신 후 PQS 점수 부여
-2. 부족한 항목별 개선 제안  
+2. 부족한 항목별 개선 제안
 3. 개선 예시 제시
 4. 다음 질문 작성 시 개선안 적용
 5. 개선 이력 문서화
@@ -289,7 +289,7 @@ tests/
 이 규칙들은 프로젝트 진행에 따라 업데이트될 수 있습니다:
 
 1. **Always Rules**: 절대 변경되지 않는 핵심 규칙
-2. **Context Rules**: 상황에 따라 적용되는 동적 규칙  
+2. **Context Rules**: 상황에 따라 적용되는 동적 규칙
 3. **Manual Rules**: 수동 검토가 필요한 규칙
 4. **Scope Rules**: 특정 범위에만 적용되는 규칙
 

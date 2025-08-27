@@ -207,13 +207,13 @@ export async function apiUpload<T = any>(
   file: File,
   onProgress?: (progress: number) => void
 ): Promise<ApiResponse<T>> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const formData = new FormData()
     formData.append('file', file)
 
     const xhr = new XMLHttpRequest()
 
-    xhr.upload.addEventListener('progress', (event) => {
+    xhr.upload.addEventListener('progress', event => {
       if (event.lengthComputable && onProgress) {
         const progress = (event.loaded / event.total) * 100
         onProgress(progress)
@@ -331,7 +331,7 @@ export const cache = {
   invalidatePattern: (pattern: string) => {
     // URL 패턴과 일치하는 캐시 엔트리 삭제
     Array.from(apiCache['cache'].keys())
-      .filter((key) => key.includes(pattern))
-      .forEach((key) => apiCache.delete(key.replace('GET:', '')))
+      .filter(key => key.includes(pattern))
+      .forEach(key => apiCache.delete(key.replace('GET:', '')))
   },
 }

@@ -3,11 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import Link from 'next/link'
-import { 
-  Tag, 
-  User,
-  Clock,
-} from 'lucide-react'
+import { Tag, User, Clock } from 'lucide-react'
 import AppHeader from '@/components/layouts/AppHeader'
 import { useAuth } from '@/contexts/auth-context'
 
@@ -51,10 +47,10 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">로그인 상태 확인 중...</p>
+      <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
+        <div className='text-center'>
+          <div className='animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-slate-900 mx-auto mb-4'></div>
+          <p className='text-gray-600'>로그인 상태 확인 중...</p>
         </div>
       </div>
     )
@@ -66,36 +62,32 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className='min-h-screen bg-slate-50'>
       {/* Header */}
-      <AppHeader 
-        showBackButton={true}
-        backHref="/ledger"
-        backText="가계부로"
-        title="설정"
-      />
+      <AppHeader showBackButton={true} backHref='/ledger' backText='가계부로' title='설정' />
 
       {/* Navigation Tabs */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex space-x-8" aria-label="설정 메뉴">
-            {settingsNavigation.map((item) => {
+      <div className='bg-white border-b border-slate-200'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+          <nav className='flex space-x-8' aria-label='설정 메뉴'>
+            {settingsNavigation.map(item => {
               const Icon = item.icon
               const isActive = pathname === item.href
-              
+
               return (
                 <Link
                   key={item.name}
                   href={item.href}
                   className={`
                     flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                    ${isActive
-                      ? 'border-slate-900 text-slate-900'
-                      : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                    ${
+                      isActive
+                        ? 'border-slate-900 text-slate-900'
+                        : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                     }
                   `}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className='h-5 w-5' />
                   {item.name}
                 </Link>
               )
@@ -105,10 +97,8 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <main>
-          {children}
-        </main>
+      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6'>
+        <main>{children}</main>
       </div>
     </div>
   )

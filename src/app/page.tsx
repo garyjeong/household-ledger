@@ -16,11 +16,46 @@ const createMonthlyStats = (period: string): MonthlyStats => ({
   partnerExpense: 720000,
   sharedExpense: 750000,
   categoryBreakdown: [
-    { categoryId: '1', categoryName: '식비', amount: 650000, percentage: 26.5, color: '#EF4444', icon: 'food' },
-    { categoryId: '2', categoryName: '교통비', amount: 420000, percentage: 17.1, color: '#3B82F6', icon: 'transport' },
-    { categoryId: '3', categoryName: '생활용품', amount: 380000, percentage: 15.5, color: '#10B981', icon: 'home' },
-    { categoryId: '4', categoryName: '커피/음료', amount: 290000, percentage: 11.8, color: '#F59E0B', icon: 'coffee' },
-    { categoryId: '5', categoryName: '쇼핑', amount: 260000, percentage: 10.6, color: '#EC4899', icon: 'shopping' },
+    {
+      categoryId: '1',
+      categoryName: '식비',
+      amount: 650000,
+      percentage: 26.5,
+      color: '#EF4444',
+      icon: 'food',
+    },
+    {
+      categoryId: '2',
+      categoryName: '교통비',
+      amount: 420000,
+      percentage: 17.1,
+      color: '#3B82F6',
+      icon: 'transport',
+    },
+    {
+      categoryId: '3',
+      categoryName: '생활용품',
+      amount: 380000,
+      percentage: 15.5,
+      color: '#10B981',
+      icon: 'home',
+    },
+    {
+      categoryId: '4',
+      categoryName: '커피/음료',
+      amount: 290000,
+      percentage: 11.8,
+      color: '#F59E0B',
+      icon: 'coffee',
+    },
+    {
+      categoryId: '5',
+      categoryName: '쇼핑',
+      amount: 260000,
+      percentage: 10.6,
+      color: '#EC4899',
+      icon: 'shopping',
+    },
   ],
   dailyTrend: [],
   budgetComparison: [
@@ -32,7 +67,7 @@ const createMonthlyStats = (period: string): MonthlyStats => ({
 
 /**
  * 신혼부부 가계부 메인 페이지
- * 
+ *
  * 기능:
  * - 월요약 대시보드
  * - 반응형 네비게이션 (모바일 하단탭 + 데스크탑 사이드바)
@@ -44,7 +79,7 @@ export default function HomePage() {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
-  
+
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
   const [monthlyStats, setMonthlyStats] = useState(() => createMonthlyStats(selectedMonth))
 
@@ -65,18 +100,27 @@ export default function HomePage() {
   }
 
   // 거래 저장 핸들러
-  const handleSaveTransaction = async (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleSaveTransaction = async (
+    transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>
+  ) => {
     try {
       // TODO: 실제 API 호출
       console.log('새 거래 저장:', transaction)
-      
+
       // 임시: 통계 업데이트 (실제로는 API에서 다시 가져옴)
       setMonthlyStats(prev => ({
         ...prev,
         totalExpense: prev.totalExpense + transaction.amount,
-        myExpense: transaction.person === 'me' ? prev.myExpense + transaction.amount : prev.myExpense,
-        partnerExpense: transaction.person === 'partner' ? prev.partnerExpense + transaction.amount : prev.partnerExpense,
-        sharedExpense: transaction.person === 'shared' ? prev.sharedExpense + transaction.amount : prev.sharedExpense,
+        myExpense:
+          transaction.person === 'me' ? prev.myExpense + transaction.amount : prev.myExpense,
+        partnerExpense:
+          transaction.person === 'partner'
+            ? prev.partnerExpense + transaction.amount
+            : prev.partnerExpense,
+        sharedExpense:
+          transaction.person === 'shared'
+            ? prev.sharedExpense + transaction.amount
+            : prev.sharedExpense,
       }))
 
       return Promise.resolve()
@@ -91,7 +135,7 @@ export default function HomePage() {
       {/* 반응형 레이아웃 */}
       <ResponsiveLayout onQuickAddClick={handleQuickAddClick}>
         {/* 메인 컨텐츠 */}
-        <div className="w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8">
+        <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
           <MonthlyDashboard
             stats={monthlyStats}
             selectedMonth={selectedMonth}

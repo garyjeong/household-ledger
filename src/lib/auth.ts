@@ -242,13 +242,13 @@ export async function findGroupsByUserId(userId: string): Promise<GroupWithMembe
       },
     })
 
-    return userGroups.map((membership) => ({
+    return userGroups.map(membership => ({
       id: membership.group.id.toString(),
       name: membership.group.name,
       ownerId: membership.group.ownerId.toString(),
       createdAt: membership.group.createdAt,
       memberCount: membership.group.members.length,
-      members: membership.group.members.map((member) => ({
+      members: membership.group.members.map(member => ({
         groupId: member.groupId.toString(),
         userId: member.userId.toString(),
         role: member.role,
@@ -279,31 +279,47 @@ export async function findGroupById(
   groupId: string,
   userId?: string
 ): Promise<GroupWithMembers | null> {
-  const group = mockGroups.find((g) => g.id === groupId)
-  if (!group) return null
+  try {
+    const { prisma } = await import('@/lib/prisma')
 
-  // 사용자가 지정된 경우 해당 그룹의 멤버인지 확인
-  if (userId) {
-    const isMember = mockGroupMembers.some(
-      (member) => member.groupId === groupId && member.userId === userId
-    )
-    if (!isMember) return null
-  }
+    const group = await prisma.group.findUnique({
+      where: { id: groupId },
+      include: {
+        members: {
+          include: {
+            user: true,
+          },
+        },
+        owner: true,
+      },
+    })
 
-  const groupMembers = mockGroupMembers
-    .filter((gm) => gm.groupId === group.id)
-    .map((gm) => ({
-      ...gm,
-      user: mockUsers.find((u) => u.id === gm.userId),
-    }))
+    if (!group) return null
 
-  const owner = mockUsers.find((u) => u.id === group.ownerId)
+    // 사용자가 지정된 경우 해당 그룹의 멤버인지 확인
+    if (userId) {
+      const isMember = group.members.some(member => member.userId === userId)
+      if (!isMember) return null
+    }
 
-  return {
-    ...group,
-    members: groupMembers,
-    owner,
-    memberCount: groupMembers.length,
+    return {
+      id: group.id,
+      name: group.name,
+      ownerId: group.ownerId,
+      createdAt: group.createdAt,
+      memberCount: group.members.length,
+      members: group.members.map(member => ({
+        groupId: member.groupId,
+        userId: member.userId,
+        role: member.role as 'OWNER' | 'ADMIN' | 'MEMBER',
+        joinedAt: member.joinedAt,
+        user: member.user,
+      })),
+      owner: group.owner,
+    }
+  } catch (error) {
+    console.error('Error finding group by ID:', error)
+    return null
   }
 }
 
@@ -312,7 +328,7 @@ export async function createGroup(data: CreateGroupData): Promise<Group> {
 
   try {
     // 트랜잭션을 사용하여 그룹과 소유자 멤버십을 동시에 생성
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async tx => {
       // 그룹 생성
       const newGroup = await tx.group.create({
         data: {
@@ -391,7 +407,7 @@ export async function validateInviteCode(
 export async function joinGroup(groupId: string, userId: string): Promise<boolean> {
   // 이미 멤버인지 확인
   const existingMember = mockGroupMembers.find(
-    (member) => member.groupId === groupId && member.userId === userId
+    member => member.groupId === groupId && member.userId === userId
   )
 
   if (existingMember) {
@@ -399,7 +415,7 @@ export async function joinGroup(groupId: string, userId: string): Promise<boolea
   }
 
   // 그룹이 존재하는지 확인
-  const group = mockGroups.find((g) => g.id === groupId)
+  const group = mockGroups.find(g => g.id === groupId)
   if (!group) {
     return false
   }
@@ -421,7 +437,7 @@ export async function joinGroup(groupId: string, userId: string): Promise<boolea
 
 export async function leaveGroup(groupId: string, userId: string): Promise<boolean> {
   const memberIndex = mockGroupMembers.findIndex(
-    (member) => member.groupId === groupId && member.userId === userId
+    member => member.groupId === groupId && member.userId === userId
   )
 
   if (memberIndex === -1) {
@@ -439,7 +455,7 @@ export async function leaveGroup(groupId: string, userId: string): Promise<boole
   mockGroupMembers.splice(memberIndex, 1)
 
   // 그룹 멤버 수 업데이트
-  const group = mockGroups.find((g) => g.id === groupId)
+  const group = mockGroups.find(g => g.id === groupId)
   if (group) {
     group.memberCount = (group.memberCount || 1) - 1
   }
@@ -453,7 +469,7 @@ export async function updateGroupMemberRole(
   newRole: 'ADMIN' | 'MEMBER'
 ): Promise<boolean> {
   const member = mockGroupMembers.find(
-    (member) => member.groupId === groupId && member.userId === userId
+    member => member.groupId === groupId && member.userId === userId
   )
 
   if (!member || member.role === 'OWNER') {
@@ -543,7 +559,7 @@ export async function verifyResourceOwnership(
     if (ownerType === 'GROUP') {
       // 그룹 소유 리소스: 현재 사용자가 해당 그룹의 멤버여야 함
       const membership = mockGroupMembers.find(
-        (member) => member.groupId === ownerId && member.userId === userId
+        member => member.groupId === ownerId && member.userId === userId
       )
 
       if (membership) {
@@ -589,7 +605,7 @@ export function getGroupMemberRole(
   groupId: string
 ): 'OWNER' | 'ADMIN' | 'MEMBER' | null {
   const membership = mockGroupMembers.find(
-    (member) => member.groupId === groupId && member.userId === userId
+    member => member.groupId === groupId && member.userId === userId
   )
   return membership?.role || null
 }

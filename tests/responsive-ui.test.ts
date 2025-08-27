@@ -113,7 +113,7 @@ test.describe('반응형 UI 테스트', () => {
         const buttons = page.getByRole('button')
         const links = page.getByRole('link')
 
-        const allInteractives = await Promise.all([buttons.all(), links.all()]).then((results) =>
+        const allInteractives = await Promise.all([buttons.all(), links.all()]).then(results =>
           results.flat()
         )
 
@@ -145,7 +145,7 @@ test.describe('반응형 UI 테스트', () => {
 
         // 모바일에서 텍스트가 너무 작지 않은지 확인
         if (width < 640) {
-          const titleStyles = await mainTitle.evaluate((el) => {
+          const titleStyles = await mainTitle.evaluate(el => {
             const computed = window.getComputedStyle(el)
             return {
               fontSize: parseInt(computed.fontSize),
@@ -265,10 +265,10 @@ test.describe('반응형 UI 테스트', () => {
 
     // Core Web Vitals 확인
     const metrics = await page.evaluate(() => {
-      return new Promise((resolve) => {
-        new PerformanceObserver((list) => {
+      return new Promise(resolve => {
+        new PerformanceObserver(list => {
           const entries = list.getEntries()
-          const lcp = entries.find((entry) => entry.entryType === 'largest-contentful-paint')
+          const lcp = entries.find(entry => entry.entryType === 'largest-contentful-paint')
           if (lcp) {
             resolve({ lcp: lcp.startTime })
           }

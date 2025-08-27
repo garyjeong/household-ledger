@@ -15,12 +15,12 @@ import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api-client'
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  
+
   // Dialog 상태
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [selectedCategory, setSelectedCategory] = useState<Category | undefined>()
-  
+
   const { currentGroup } = useGroup()
   const { user } = useAuth()
   const { showSuccess, showError } = useAlert()
@@ -29,7 +29,7 @@ export default function CategoriesPage() {
   useEffect(() => {
     const loadCategories = async () => {
       if (!currentGroup) return
-      
+
       setIsLoading(true)
       try {
         const response = await apiGet(`/api/categories?ownerType=GROUP&ownerId=${currentGroup.id}`)
@@ -113,9 +113,9 @@ export default function CategoriesPage() {
         const response = await apiPut(`/api/categories/${selectedCategory.id}`, data)
 
         if (response.ok) {
-          setCategories(prev => prev.map(c => 
-            c.id === selectedCategory.id ? response.data?.category : c
-          ))
+          setCategories(prev =>
+            prev.map(c => (c.id === selectedCategory.id ? response.data?.category : c))
+          )
           showSuccess('카테고리가 수정되었습니다.')
         } else {
           throw new Error(response.error || '카테고리 수정에 실패했습니다')
@@ -128,11 +128,11 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* 페이지 헤더 */}
       <div>
-        <h2 className="text-2xl font-bold text-text-900">카테고리 관리</h2>
-        <p className="text-text-600 mt-1">
+        <h2 className='text-2xl font-bold text-text-900'>카테고리 관리</h2>
+        <p className='text-text-600 mt-1'>
           거래 유형별 카테고리를 관리하고 커스텀 카테고리를 추가할 수 있습니다.
         </p>
       </div>
@@ -140,10 +140,10 @@ export default function CategoriesPage() {
       {/* 카테고리 목록 */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+          <CardTitle className='flex items-center justify-between'>
             <span>카테고리 목록</span>
             <Button onClick={handleCreate}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className='h-4 w-4 mr-2' />
               카테고리 추가
             </Button>
           </CardTitle>

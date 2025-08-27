@@ -33,7 +33,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // 소유자인지 확인 (소유자는 탈퇴할 수 없음)
-    const userMember = group.members.find((member) => member.userId === payload.userId)
+    const userMember = group.members.find(member => member.userId === payload.userId)
     if (userMember?.role === 'OWNER') {
       return NextResponse.json(
         {

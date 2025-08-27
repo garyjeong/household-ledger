@@ -47,9 +47,9 @@ describe('반응형 컴포넌트 테스트', () => {
   describe('Button 컴포넌트', () => {
     it('기본 스타일이 올바르게 적용되어야 한다', () => {
       render(<Button>테스트 버튼</Button>)
-      
+
       const button = screen.getByRole('button', { name: '테스트 버튼' })
-      
+
       expect(button).toBeInTheDocument()
       expect(button).toHaveClass('inline-flex', 'items-center', 'justify-center')
       expect(button).toHaveClass('rounded-lg')
@@ -57,18 +57,18 @@ describe('반응형 컴포넌트 테스트', () => {
     })
 
     it('다양한 크기 variant가 올바르게 적용되어야 한다', () => {
-      const { rerender } = render(<Button size="sm">작은 버튼</Button>)
+      const { rerender } = render(<Button size='sm'>작은 버튼</Button>)
       let button = screen.getByRole('button')
       expect(button).toHaveClass('h-8')
 
-      rerender(<Button size="lg">큰 버튼</Button>)
+      rerender(<Button size='lg'>큰 버튼</Button>)
       button = screen.getByRole('button')
       expect(button).toHaveClass('h-12')
     })
 
     it('터치 친화적 클래스가 적용되어야 한다', () => {
-      render(<Button className="btn-touch">터치 버튼</Button>)
-      
+      render(<Button className='btn-touch'>터치 버튼</Button>)
+
       const button = screen.getByRole('button')
       expect(button).toHaveClass('btn-touch')
     })
@@ -81,9 +81,7 @@ describe('반응형 컴포넌트 테스트', () => {
           <CardHeader>
             <CardTitle>테스트 카드</CardTitle>
           </CardHeader>
-          <CardContent>
-            카드 내용
-          </CardContent>
+          <CardContent>카드 내용</CardContent>
         </Card>
       )
 
@@ -96,12 +94,10 @@ describe('반응형 컴포넌트 테스트', () => {
     it('카드 헤더와 콘텐츠의 반응형 패딩이 적용되어야 한다', () => {
       render(
         <Card>
-          <CardHeader data-testid="card-header">
+          <CardHeader data-testid='card-header'>
             <CardTitle>헤더</CardTitle>
           </CardHeader>
-          <CardContent data-testid="card-content">
-            콘텐츠
-          </CardContent>
+          <CardContent data-testid='card-content'>콘텐츠</CardContent>
         </Card>
       )
 
@@ -115,10 +111,10 @@ describe('반응형 컴포넌트 테스트', () => {
 
   describe('Input 컴포넌트', () => {
     it('기본 입력 필드 스타일이 올바르게 적용되어야 한다', () => {
-      render(<Input placeholder="테스트 입력" />)
-      
+      render(<Input placeholder='테스트 입력' />)
+
       const input = screen.getByPlaceholderText('테스트 입력')
-      
+
       expect(input).toHaveClass('rounded-lg')
       expect(input).toHaveClass('border')
       expect(input).toHaveClass('transition-all', 'duration-200')
@@ -127,7 +123,7 @@ describe('반응형 컴포넌트 테스트', () => {
 
     it('포커스 상태 스타일이 적용되어야 한다', () => {
       render(<Input />)
-      
+
       const input = screen.getByRole('textbox')
       expect(input).toHaveClass('focus:outline-none')
       expect(input).toHaveClass('focus:ring-2')
@@ -140,11 +136,7 @@ describe('반응형 컴포넌트 테스트', () => {
       // 모바일 크기로 변경
       resizeWindow(375, 667)
 
-      render(
-        <div className="text-responsive-lg container-responsive">
-          모바일 테스트
-        </div>
-      )
+      render(<div className='text-responsive-lg container-responsive'>모바일 테스트</div>)
 
       const element = screen.getByText('모바일 테스트')
       expect(element).toHaveClass('text-responsive-lg')
@@ -153,7 +145,7 @@ describe('반응형 컴포넌트 테스트', () => {
 
     it('그리드 시스템이 올바르게 작동해야 한다', () => {
       render(
-        <div className="grid-responsive" data-testid="grid">
+        <div className='grid-responsive' data-testid='grid'>
           <div>아이템 1</div>
           <div>아이템 2</div>
           <div>아이템 3</div>
@@ -166,9 +158,9 @@ describe('반응형 컴포넌트 테스트', () => {
 
     it('사이드바 레이아웃이 올바르게 적용되어야 한다', () => {
       render(
-        <div className="sidebar-layout" data-testid="sidebar-layout">
-          <div className="sidebar">사이드바</div>
-          <div className="main-content">메인 콘텐츠</div>
+        <div className='sidebar-layout' data-testid='sidebar-layout'>
+          <div className='sidebar'>사이드바</div>
+          <div className='main-content'>메인 콘텐츠</div>
         </div>
       )
 
@@ -185,7 +177,7 @@ describe('반응형 컴포넌트 테스트', () => {
   describe('접근성 테스트', () => {
     it('버튼이 키보드로 접근 가능해야 한다', () => {
       render(<Button>접근 가능한 버튼</Button>)
-      
+
       const button = screen.getByRole('button')
       expect(button).toBeInTheDocument()
       expect(button.tagName).toBe('BUTTON')
@@ -194,8 +186,8 @@ describe('반응형 컴포넌트 테스트', () => {
     it('입력 필드에 적절한 라벨이 연결되어야 한다', () => {
       render(
         <div>
-          <label htmlFor="test-input">테스트 라벨</label>
-          <Input id="test-input" />
+          <label htmlFor='test-input'>테스트 라벨</label>
+          <Input id='test-input' />
         </div>
       )
 
@@ -240,7 +232,7 @@ describe('반응형 컴포넌트 테스트', () => {
   describe('애니메이션 클래스', () => {
     it('애니메이션 클래스가 올바르게 적용되어야 한다', () => {
       render(
-        <div className="animate-fade-in" data-testid="animated">
+        <div className='animate-fade-in' data-testid='animated'>
           애니메이션 테스트
         </div>
       )
@@ -251,7 +243,7 @@ describe('반응형 컴포넌트 테스트', () => {
 
     it('호버 효과 클래스가 적용되어야 한다', () => {
       render(
-        <div className="hover-desktop" data-testid="hoverable">
+        <div className='hover-desktop' data-testid='hoverable'>
           호버 테스트
         </div>
       )

@@ -155,7 +155,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       prismaUpdateData.categoryId = BigInt(updateData.categoryId)
     }
 
-    const updatedTransaction = await prisma.$transaction(async (tx) => {
+    const updatedTransaction = await prisma.$transaction(async tx => {
       // 거래 정보 업데이트
       const transaction = await tx.transaction.update({
         where: { id: BigInt(transactionId) },
@@ -281,7 +281,7 @@ export async function DELETE(
         : -existingTransaction.amount // 수입 취소 → 잔액 감소
 
     // 거래 삭제 및 계좌 잔액 복구
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async tx => {
       // 거래 삭제
       await tx.transaction.delete({
         where: { id: BigInt(transactionId) },

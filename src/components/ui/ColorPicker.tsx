@@ -28,71 +28,72 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className='space-y-3'>
       {label && <Label>{label}</Label>}
-      
+
       {/* 색상 팔레트 */}
-      <div className="grid grid-cols-6 gap-2">
-        {brandColorPalette.map((color) => (
+      <div className='grid grid-cols-6 gap-2'>
+        {brandColorPalette.map(color => (
           <button
             key={color.value}
-            type="button"
+            type='button'
             onClick={() => handlePaletteSelect(color.value)}
             className={`
               relative w-8 h-8 rounded-lg border-2 transition-all
-              ${value === color.value 
-                ? 'border-gray-900 scale-110' 
-                : 'border-gray-200 hover:border-gray-300'
+              ${
+                value === color.value
+                  ? 'border-gray-900 scale-110'
+                  : 'border-gray-200 hover:border-gray-300'
               }
             `}
             style={{ backgroundColor: color.value }}
             title={color.name}
           >
             {value === color.value && (
-              <Check className="absolute inset-0 m-auto h-4 w-4 text-white drop-shadow-sm" />
+              <Check className='absolute inset-0 m-auto h-4 w-4 text-white drop-shadow-sm' />
             )}
           </button>
         ))}
       </div>
 
       {/* 커스텀 색상 입력 */}
-      <div className="flex gap-2 items-end">
-        <div className="flex-1">
-          <Label htmlFor="custom-color" className="text-sm text-gray-600">
+      <div className='flex gap-2 items-end'>
+        <div className='flex-1'>
+          <Label htmlFor='custom-color' className='text-sm text-gray-600'>
             또는 직접 입력
           </Label>
           <Input
-            id="custom-color"
-            type="text"
+            id='custom-color'
+            type='text'
             value={customColor}
             onChange={handleCustomColorChange}
-            placeholder="#RRGGBB"
-            className="font-mono text-sm"
+            placeholder='#RRGGBB'
+            className='font-mono text-sm'
           />
         </div>
-        
+
         {/* 색상 미리보기 */}
         <div
-          className="w-10 h-10 rounded-lg border border-gray-200 flex-shrink-0"
+          className='w-10 h-10 rounded-lg border border-gray-200 flex-shrink-0'
           style={{ backgroundColor: customColor }}
-          title="선택된 색상"
+          title='선택된 색상'
         />
       </div>
 
       {/* HTML5 색상 선택기 */}
-      <div className="flex items-center gap-2">
+      <div className='flex items-center gap-2'>
         <input
-          type="color"
+          type='color'
           value={customColor}
-          onChange={(e) => {
+          onChange={e => {
             const color = e.target.value
             setCustomColor(color)
             onChange(color)
           }}
-          className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
-          title="색상 선택기"
+          className='w-8 h-8 rounded border border-gray-300 cursor-pointer'
+          title='색상 선택기'
         />
-        <span className="text-sm text-gray-500">색상 선택기 사용</span>
+        <span className='text-sm text-gray-500'>색상 선택기 사용</span>
       </div>
     </div>
   )

@@ -19,6 +19,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:coverage:watch": "jest --coverage --watch",
+    "test:coverage:ci": "jest --coverage --ci --watchAll=false --passWithNoTests",
+    "test:coverage:threshold": "jest --coverage --passWithNoTests",
     "test:api": "jest tests/api",
     "test:lib": "jest tests/lib",
     "test:components": "jest tests/components",
@@ -26,7 +29,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
-    "test:responsive": "playwright test tests/responsive-ui.test.ts"
+    "test:responsive": "playwright test tests/responsive-ui.test.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
@@ -72,8 +76,10 @@
     "autoprefixer": "^10.4.21",
     "eslint": "^9",
     "eslint-config-next": "15.5.0",
+    "husky": "^9.1.7",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
+    "lint-staged": "^16.1.5",
     "playwright": "^1.55.0",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
@@ -83,5 +89,14 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.20.5",
     "typescript": "^5"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css,scss}": [
+      "prettier --write"
+    ]
   }
 }

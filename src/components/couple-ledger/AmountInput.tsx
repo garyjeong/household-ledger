@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState, useCallback, useEffect } from 'react'
+import { Delete, Check } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Delete, Check } from 'lucide-react'
 import { AmountInputProps } from '@/types/couple-ledger'
 
 /**
@@ -30,7 +30,7 @@ export function AmountInput({
     // 숫자만 추출
     const digits = amount.replace(/[^\d]/g, '')
     if (!digits) return ''
-    
+
     // 천단위 콤마 추가
     return parseInt(digits).toLocaleString('ko-KR')
   }, [])
@@ -41,17 +41,23 @@ export function AmountInput({
   }, [])
 
   // 금액 변경 처리
-  const handleAmountChange = useCallback((newAmount: string) => {
-    const formatted = formatAmount(newAmount)
-    onChange(formatted)
-  }, [formatAmount, onChange])
+  const handleAmountChange = useCallback(
+    (newAmount: string) => {
+      const formatted = formatAmount(newAmount)
+      onChange(formatted)
+    },
+    [formatAmount, onChange]
+  )
 
   // 키패드 숫자 입력
-  const handleKeypadNumber = useCallback((digit: string) => {
-    const currentDigits = getDigitsOnly(value)
-    const newDigits = currentDigits + digit
-    handleAmountChange(newDigits)
-  }, [value, getDigitsOnly, handleAmountChange])
+  const handleKeypadNumber = useCallback(
+    (digit: string) => {
+      const currentDigits = getDigitsOnly(value)
+      const newDigits = currentDigits + digit
+      handleAmountChange(newDigits)
+    },
+    [value, getDigitsOnly, handleAmountChange]
+  )
 
   // 천단위 빠른 입력
   const handleThousands = useCallback(() => {
@@ -77,17 +83,22 @@ export function AmountInput({
   // 키보드 입력 처리 (데스크탑)
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     // 숫자 키만 허용
-    if (!/^\d$/.test(e.key) && 
-        !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key)) {
+    if (
+      !/^\d$/.test(e.key) &&
+      !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter'].includes(e.key)
+    ) {
       e.preventDefault()
     }
   }, [])
 
   // 직접 입력 처리
-  const handleDirectInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value
-    handleAmountChange(newValue)
-  }, [handleAmountChange])
+  const handleDirectInput = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value
+      handleAmountChange(newValue)
+    },
+    [handleAmountChange]
+  )
 
   // 포커스 처리
   useEffect(() => {
@@ -100,47 +111,47 @@ export function AmountInput({
   const displayValue = value ? `${value}원` : ''
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       {/* 금액 입력 필드 */}
-      <div className="relative">
+      <div className='relative'>
         <Input
           ref={setInputRef}
-          type="text"
-          inputMode="none" // 모바일에서 키보드 숨김
+          type='text'
+          inputMode='none' // 모바일에서 키보드 숨김
           value={displayValue}
           onChange={handleDirectInput}
           onKeyDown={handleKeyDown}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholder={`${placeholder}원`}
-          className="text-right text-xl font-bold amount-display h-14 pr-12 text-text-primary"
+          className='text-right text-xl font-bold amount-display h-14 pr-12 text-text-primary'
           autoFocus={autoFocus}
         />
         {value && (
           <Button
-            type="button"
-            variant="ghost"
-            size="sm"
+            type='button'
+            variant='ghost'
+            size='sm'
             onClick={handleClear}
-            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-surface-tertiary"
+            className='absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-surface-tertiary'
           >
-            <Delete className="h-4 w-4 text-text-muted" />
+            <Delete className='h-4 w-4 text-text-muted' />
           </Button>
         )}
       </div>
 
       {/* 모바일 커스텀 키패드 */}
       {showKeypad && (
-        <Card className="p-4 touch-device:block hover-device:hidden">
-          <div className="grid grid-cols-3 gap-3">
+        <Card className='p-4 touch-device:block hover-device:hidden'>
+          <div className='grid grid-cols-3 gap-3'>
             {/* 숫자 키패드 1-9 */}
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
               <Button
                 key={num}
-                type="button"
-                variant="outline"
+                type='button'
+                variant='outline'
                 onClick={() => handleKeypadNumber(num.toString())}
-                className="touch-target text-lg font-semibold hover:bg-surface-secondary"
+                className='touch-target text-lg font-semibold hover:bg-surface-secondary'
               >
                 {num}
               </Button>
@@ -148,42 +159,42 @@ export function AmountInput({
 
             {/* 하단 행: 천단위, 0, 백스페이스 */}
             <Button
-              type="button"
-              variant="outline"
+              type='button'
+              variant='outline'
               onClick={handleThousands}
-              className="touch-target text-sm font-medium text-primary hover:bg-primary/10"
+              className='touch-target text-sm font-medium text-primary hover:bg-primary/10'
             >
               000
             </Button>
-            
+
             <Button
-              type="button"
-              variant="outline"
+              type='button'
+              variant='outline'
               onClick={() => handleKeypadNumber('0')}
-              className="touch-target text-lg font-semibold hover:bg-surface-secondary"
+              className='touch-target text-lg font-semibold hover:bg-surface-secondary'
             >
               0
             </Button>
-            
+
             <Button
-              type="button"
-              variant="outline"
+              type='button'
+              variant='outline'
               onClick={handleBackspace}
-              className="touch-target hover:bg-surface-secondary"
+              className='touch-target hover:bg-surface-secondary'
             >
-              <Delete className="h-5 w-5 text-text-muted" />
+              <Delete className='h-5 w-5 text-text-muted' />
             </Button>
           </div>
 
           {/* 빠른 금액 버튼 */}
-          <div className="grid grid-cols-4 gap-2 mt-4">
-            {[1000, 5000, 10000, 50000].map((amount) => (
+          <div className='grid grid-cols-4 gap-2 mt-4'>
+            {[1000, 5000, 10000, 50000].map(amount => (
               <Button
                 key={amount}
-                type="button"
-                variant="ghost"
+                type='button'
+                variant='ghost'
                 onClick={() => handleAmountChange(amount.toString())}
-                className="h-10 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-secondary"
+                className='h-10 text-sm text-text-secondary hover:text-text-primary hover:bg-surface-secondary'
               >
                 {amount.toLocaleString()}원
               </Button>
@@ -193,8 +204,8 @@ export function AmountInput({
       )}
 
       {/* 데스크탑 힌트 */}
-      <div className="hover-device:block touch-device:hidden">
-        <p className="text-xs text-text-muted text-center">
+      <div className='hover-device:block touch-device:hidden'>
+        <p className='text-xs text-text-muted text-center'>
           숫자 키로 직접 입력 가능 • Enter: 다음 단계
         </p>
       </div>

@@ -56,13 +56,13 @@ export const accountQuerySchema = z.object({
   ownerType: z.enum(['USER', 'GROUP']).optional(),
   ownerId: z
     .string()
-    .transform((val) => parseInt(val, 10))
+    .transform(val => parseInt(val, 10))
     .pipe(z.number().int().positive())
     .optional(),
   type: z.enum(['CASH', 'CARD', 'BANK', 'OTHER']).optional(),
   isActive: z
     .string()
-    .transform((val) => val === 'true')
+    .transform(val => val === 'true')
     .pipe(z.boolean())
     .optional(),
   currency: z.string().length(3).optional(),

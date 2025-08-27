@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+
+# Coverage
+coverage/
+
+# Environment files
+.env*
+
+# Database
+*.db
+*.sqlite
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Git
+.git/
+.husky/
+
+# Config files that should not be formatted
+next-env.d.ts
+*.config.js
+*.config.ts
+*.config.mjs
+
+# Prisma generated files
+prisma/migrations/
+
+# Test results
+test-results/
+playwright-report/
+
+# Lock files
+package-lock.json
+yarn.lock

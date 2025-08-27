@@ -1,16 +1,6 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select'
-import { useLedgerStore } from '@/stores/ledger-store'
-import { fetchLegacyData, DataMapper, showUndoToast } from '@/lib/adapters/context-bridge'
-import { BulkInputRow, Transaction, TransactionType } from '@/types/ledger'
 import { format, parse, isValid } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import {
@@ -25,6 +15,23 @@ import {
   EyeOff,
   Copy,
 } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select'
+import { useLedgerStore } from '@/stores/ledger-store'
+import { fetchLegacyData, DataMapper, showUndoToast } from '@/lib/adapters/context-bridge'
+import { BulkInputRow, Transaction, TransactionType } from '@/types/ledger'
 
 interface BulkInputProps {
   className?: string
@@ -57,12 +64,15 @@ export function BulkInput({ className = '' }: BulkInputProps) {
   const parseTextInput = (text: string): BulkInputRow[] => {
     if (!text.trim()) return []
 
-    const lines = text.trim().split('\n').filter(line => line.trim())
-    
+    const lines = text
+      .trim()
+      .split('\n')
+      .filter(line => line.trim())
+
     return lines.map((line, index) => {
       const parts = line.trim().split(/\s+/)
       const errors: string[] = []
-      
+
       // Basic validation for required parts
       if (parts.length < 3) {
         errors.push('형식이 올바르지 않습니다 (최소 날짜, 메모, 금액 필요)')
@@ -106,14 +116,14 @@ export function BulkInput({ className = '' }: BulkInputProps) {
         const amountIndex = line.lastIndexOf(amount)
         const dateEndIndex = line.indexOf(dateStr) + dateStr.length
         const memoText = line.substring(dateEndIndex, amountIndex).trim()
-        
+
         // Split memo text to extract category and account info
         const memoParts = memoText.split(/\s+/)
         memo = memoParts[0] || ''
 
         // Try to extract category and account from remaining parts
         const remainingParts = memoParts.slice(1)
-        
+
         // Look for category matches
         for (const part of remainingParts) {
           if (!category && dataMapper) {
@@ -162,22 +172,19 @@ export function BulkInput({ className = '' }: BulkInputProps) {
 
   // Parse various date formats
   const parseDateString = (dateStr: string): Date | null => {
-    const formats = [
-      'MM/dd',
-      'M/d', 
-      'yyyy-MM-dd',
-      'yyyy/MM/dd',
-      'MM-dd',
-      'M-d',
-    ]
+    const formats = ['MM/dd', 'M/d', 'yyyy-MM-dd', 'yyyy/MM/dd', 'MM-dd', 'M-d']
 
     for (const formatStr of formats) {
       try {
         let fullDateStr = dateStr
-        
+
         // Add current year for MM/dd format
-        if (formatStr.includes('MM/dd') || formatStr.includes('M/d') || 
-            formatStr.includes('MM-dd') || formatStr.includes('M-d')) {
+        if (
+          formatStr.includes('MM/dd') ||
+          formatStr.includes('M/d') ||
+          formatStr.includes('MM-dd') ||
+          formatStr.includes('M-d')
+        ) {
           const currentYear = new Date().getFullYear()
           fullDateStr = `${currentYear}/${dateStr.replace('-', '/')}`
           const parsed = parse(fullDateStr, 'yyyy/M/d', new Date())
@@ -207,27 +214,30 @@ export function BulkInput({ className = '' }: BulkInputProps) {
 
   // Update individual row
   const updateRow = (index: number, field: keyof BulkInputRow, value: string) => {
-    setParsedRows(prev => prev.map(row => {
-      if (row.index === index + 1) {
-        const updated = { ...row, [field]: value }
-        
-        // Re-validate row
-        const errors: string[] = []
-        
-        if (!updated.date) errors.push('날짜가 필요합니다')
-        if (!updated.amount || isNaN(parseInt(updated.amount))) errors.push('올바른 금액이 필요합니다')
-        if (!updated.memo.trim()) errors.push('메모가 필요합니다')
-        if (!updated.category) errors.push('카테고리를 선택해주세요')
-        if (!updated.account) errors.push('계좌를 선택해주세요')
-        
-        return {
-          ...updated,
-          isValid: errors.length === 0,
-          errors,
+    setParsedRows(prev =>
+      prev.map(row => {
+        if (row.index === index + 1) {
+          const updated = { ...row, [field]: value }
+
+          // Re-validate row
+          const errors: string[] = []
+
+          if (!updated.date) errors.push('날짜가 필요합니다')
+          if (!updated.amount || isNaN(parseInt(updated.amount)))
+            errors.push('올바른 금액이 필요합니다')
+          if (!updated.memo.trim()) errors.push('메모가 필요합니다')
+          if (!updated.category) errors.push('카테고리를 선택해주세요')
+          if (!updated.account) errors.push('계좌를 선택해주세요')
+
+          return {
+            ...updated,
+            isValid: errors.length === 0,
+            errors,
+          }
         }
-      }
-      return row
-    }))
+        return row
+      })
+    )
   }
 
   // Auto-map category for row
@@ -264,7 +274,7 @@ export function BulkInput({ className = '' }: BulkInputProps) {
       const transactions: Transaction[] = validRows.map(row => {
         const category = categories.find(c => c.name === row.category) || categories[0]
         const account = accounts.find(a => a.name === row.account) || accounts[0]
-        
+
         return {
           id: `bulk-${Date.now()}-${row.index}`,
           type: 'EXPENSE' as TransactionType, // Default to expense, could be enhanced
@@ -290,12 +300,11 @@ export function BulkInput({ className = '' }: BulkInputProps) {
       await importTransactions(transactions)
 
       showUndoToast('일괄 가져오기', () => undoLastAction())
-      
+
       // Close dialog and reset
       setShowDialog(false)
       setRawText('')
       setParsedRows([])
-      
     } catch (error) {
       console.error('Bulk import error:', error)
     } finally {
@@ -316,34 +325,34 @@ export function BulkInput({ className = '' }: BulkInputProps) {
     <>
       <Card className={className}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5 text-brand-600" />
+          <CardTitle className='flex items-center gap-2'>
+            <Upload className='h-5 w-5 text-brand-600' />
             일괄 입력
           </CardTitle>
-          <p className="text-sm text-text-600">
-            여러 거래를 한 번에 입력할 수 있습니다
-          </p>
+          <p className='text-sm text-text-600'>여러 거래를 한 번에 입력할 수 있습니다</p>
         </CardHeader>
 
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowDialog(true)}
-                className="flex-1"
-              >
-                <FileText className="h-4 w-4 mr-2" />
+          <div className='space-y-4'>
+            <div className='flex items-center gap-2'>
+              <Button variant='outline' onClick={() => setShowDialog(true)} className='flex-1'>
+                <FileText className='h-4 w-4 mr-2' />
                 텍스트로 입력하기
               </Button>
             </div>
 
-            <div className="text-sm text-text-600 space-y-1">
-              <p className="font-medium">지원 형식:</p>
-              <ul className="list-disc list-inside space-y-1 text-xs">
-                <li><code>날짜 메모 금액 카테고리 계좌</code></li>
-                <li><code>8/24 점심 12000 식비 카드</code></li>
-                <li><code>2024-08-23 커피 4800 식비 현금</code></li>
+            <div className='text-sm text-text-600 space-y-1'>
+              <p className='font-medium'>지원 형식:</p>
+              <ul className='list-disc list-inside space-y-1 text-xs'>
+                <li>
+                  <code>날짜 메모 금액 카테고리 계좌</code>
+                </li>
+                <li>
+                  <code>8/24 점심 12000 식비 카드</code>
+                </li>
+                <li>
+                  <code>2024-08-23 커피 4800 식비 현금</code>
+                </li>
               </ul>
             </div>
           </div>
@@ -352,7 +361,7 @@ export function BulkInput({ className = '' }: BulkInputProps) {
 
       {/* Bulk Input Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
+        <DialogContent className='sm:max-w-4xl max-h-[90vh] flex flex-col'>
           <DialogHeader>
             <DialogTitle>일괄 거래 입력</DialogTitle>
             <DialogDescription>
@@ -360,55 +369,59 @@ export function BulkInput({ className = '' }: BulkInputProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex-1 overflow-hidden grid grid-cols-2 gap-4">
+          <div className='flex-1 overflow-hidden grid grid-cols-2 gap-4'>
             {/* Input area */}
-            <div className="flex flex-col space-y-4">
+            <div className='flex flex-col space-y-4'>
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label htmlFor="bulk-text">거래 데이터 입력</Label>
+                <div className='flex items-center justify-between mb-2'>
+                  <Label htmlFor='bulk-text'>거래 데이터 입력</Label>
                   <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
+                    type='button'
+                    variant='ghost'
+                    size='sm'
                     onClick={() => handleTextChange(exampleText)}
                   >
-                    <Copy className="h-3 w-3 mr-1" />
+                    <Copy className='h-3 w-3 mr-1' />
                     예시 붙여넣기
                   </Button>
                 </div>
                 <textarea
-                  id="bulk-text"
-                  className="w-full h-64 p-3 border border-stroke-200 rounded-lg resize-none font-mono text-sm"
+                  id='bulk-text'
+                  className='w-full h-64 p-3 border border-stroke-200 rounded-lg resize-none font-mono text-sm'
                   placeholder={exampleText}
                   value={rawText}
-                  onChange={(e) => handleTextChange(e.target.value)}
+                  onChange={e => handleTextChange(e.target.value)}
                 />
               </div>
 
               {/* Format guide */}
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">입력 형식 가이드</CardTitle>
+                <CardHeader className='pb-3'>
+                  <CardTitle className='text-sm'>입력 형식 가이드</CardTitle>
                 </CardHeader>
-                <CardContent className="text-xs space-y-2">
+                <CardContent className='text-xs space-y-2'>
                   <div>
-                    <span className="font-medium">기본 형식:</span>
-                    <code className="block bg-gray-100 p-2 rounded mt-1">
+                    <span className='font-medium'>기본 형식:</span>
+                    <code className='block bg-gray-100 p-2 rounded mt-1'>
                       날짜 메모 금액 [카테고리] [계좌]
                     </code>
                   </div>
                   <div>
-                    <span className="font-medium">날짜 형식:</span>
-                    <span className="text-text-600 ml-2">
-                      MM/dd, yyyy-MM-dd, MM-dd 등
-                    </span>
+                    <span className='font-medium'>날짜 형식:</span>
+                    <span className='text-text-600 ml-2'>MM/dd, yyyy-MM-dd, MM-dd 등</span>
                   </div>
                   <div>
-                    <span className="font-medium">예시:</span>
-                    <div className="bg-gray-50 p-2 rounded mt-1 space-y-1">
-                      <div><code>8/24 점심 12000 식비 카드</code></div>
-                      <div><code>08-23 커피 4800 식비 현금</code></div>
-                      <div><code>2024-08-22 교통비 1500 교통 체크카드</code></div>
+                    <span className='font-medium'>예시:</span>
+                    <div className='bg-gray-50 p-2 rounded mt-1 space-y-1'>
+                      <div>
+                        <code>8/24 점심 12000 식비 카드</code>
+                      </div>
+                      <div>
+                        <code>08-23 커피 4800 식비 현금</code>
+                      </div>
+                      <div>
+                        <code>2024-08-22 교통비 1500 교통 체크카드</code>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -416,91 +429,91 @@ export function BulkInput({ className = '' }: BulkInputProps) {
             </div>
 
             {/* Preview area */}
-            <div className="flex flex-col space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+            <div className='flex flex-col space-y-4'>
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center gap-2'>
                   <Label>미리보기</Label>
                   {totalRowsCount > 0 && (
-                    <Badge variant="outline">
+                    <Badge variant='outline'>
                       {validRowsCount}/{totalRowsCount} 유효
                     </Badge>
                   )}
                 </div>
                 <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
+                  type='button'
+                  variant='ghost'
+                  size='sm'
                   onClick={() => setShowPreview(!showPreview)}
                 >
-                  {showPreview ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                  {showPreview ? <EyeOff className='h-3 w-3' /> : <Eye className='h-3 w-3' />}
                   {showPreview ? '숨기기' : '보기'}
                 </Button>
               </div>
 
               {showPreview && parsedRows.length > 0 && (
-                <div className="border border-stroke-200 rounded-lg overflow-hidden">
-                  <div className="max-h-80 overflow-y-auto">
-                    <table className="w-full text-xs">
-                      <thead className="bg-surface-page sticky top-0">
+                <div className='border border-stroke-200 rounded-lg overflow-hidden'>
+                  <div className='max-h-80 overflow-y-auto'>
+                    <table className='w-full text-xs'>
+                      <thead className='bg-surface-page sticky top-0'>
                         <tr>
-                          <th className="p-2 text-left">상태</th>
-                          <th className="p-2 text-left">날짜</th>
-                          <th className="p-2 text-left">메모</th>
-                          <th className="p-2 text-left">금액</th>
-                          <th className="p-2 text-left">카테고리</th>
-                          <th className="p-2 text-left">계좌</th>
+                          <th className='p-2 text-left'>상태</th>
+                          <th className='p-2 text-left'>날짜</th>
+                          <th className='p-2 text-left'>메모</th>
+                          <th className='p-2 text-left'>금액</th>
+                          <th className='p-2 text-left'>카테고리</th>
+                          <th className='p-2 text-left'>계좌</th>
                         </tr>
                       </thead>
                       <tbody>
                         {parsedRows.map((row, index) => (
-                          <tr 
+                          <tr
                             key={row.index}
                             className={`border-t border-stroke-100 ${
                               row.isValid ? 'bg-green-50' : 'bg-red-50'
                             }`}
                           >
-                            <td className="p-2">
-                              <div className="flex items-center gap-1">
+                            <td className='p-2'>
+                              <div className='flex items-center gap-1'>
                                 {row.isValid ? (
-                                  <CheckCircle className="h-3 w-3 text-green-600" />
+                                  <CheckCircle className='h-3 w-3 text-green-600' />
                                 ) : (
-                                  <AlertCircle className="h-3 w-3 text-red-600" />
+                                  <AlertCircle className='h-3 w-3 text-red-600' />
                                 )}
                               </div>
                             </td>
-                            <td className="p-2">
+                            <td className='p-2'>
                               <Input
-                                type="date"
+                                type='date'
                                 value={row.date}
-                                onChange={(e) => updateRow(index, 'date', e.target.value)}
-                                className="text-xs h-6 p-1"
+                                onChange={e => updateRow(index, 'date', e.target.value)}
+                                className='text-xs h-6 p-1'
                               />
                             </td>
-                            <td className="p-2">
+                            <td className='p-2'>
                               <Input
                                 value={row.memo}
-                                onChange={(e) => updateRow(index, 'memo', e.target.value)}
-                                className="text-xs h-6 p-1"
+                                onChange={e => updateRow(index, 'memo', e.target.value)}
+                                className='text-xs h-6 p-1'
                               />
                             </td>
-                            <td className="p-2">
+                            <td className='p-2'>
                               <Input
                                 value={row.amount}
-                                onChange={(e) => updateRow(index, 'amount', e.target.value)}
-                                className="text-xs h-6 p-1 w-16"
-                                inputMode="numeric"
+                                onChange={e => updateRow(index, 'amount', e.target.value)}
+                                className='text-xs h-6 p-1 w-16'
+                                inputMode='numeric'
                               />
                             </td>
-                            <td className="p-2">
-                              <div className="flex items-center gap-1">
+                            <td className='p-2'>
+                              <div className='flex items-center gap-1'>
                                 <Select
                                   value={categories.find(c => c.name === row.category)?.id || ''}
-                                  onValueChange={(categoryId) => {
+                                  onValueChange={categoryId => {
                                     const category = categories.find(c => c.id === categoryId)
                                     if (category) updateRow(index, 'category', category.name)
                                   }}
                                 >
-                                  <SelectTrigger className="text-xs h-6 p-1 min-w-20">
+                                  <SelectTrigger className='text-xs h-6 p-1 min-w-20'>
                                     {row.category || '선택'}
                                   </SelectTrigger>
                                   <SelectContent>
@@ -512,27 +525,27 @@ export function BulkInput({ className = '' }: BulkInputProps) {
                                   </SelectContent>
                                 </Select>
                                 <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
+                                  type='button'
+                                  variant='ghost'
+                                  size='sm'
+                                  className='h-6 w-6 p-0'
                                   onClick={() => autoMapCategory(index)}
-                                  title="자동 매핑"
+                                  title='자동 매핑'
                                 >
-                                  <RefreshCw className="h-3 w-3" />
+                                  <RefreshCw className='h-3 w-3' />
                                 </Button>
                               </div>
                             </td>
-                            <td className="p-2">
-                              <div className="flex items-center gap-1">
+                            <td className='p-2'>
+                              <div className='flex items-center gap-1'>
                                 <Select
                                   value={accounts.find(a => a.name === row.account)?.id || ''}
-                                  onValueChange={(accountId) => {
+                                  onValueChange={accountId => {
                                     const account = accounts.find(a => a.id === accountId)
                                     if (account) updateRow(index, 'account', account.name)
                                   }}
                                 >
-                                  <SelectTrigger className="text-xs h-6 p-1 min-w-16">
+                                  <SelectTrigger className='text-xs h-6 p-1 min-w-16'>
                                     {row.account || '선택'}
                                   </SelectTrigger>
                                   <SelectContent>
@@ -544,14 +557,14 @@ export function BulkInput({ className = '' }: BulkInputProps) {
                                   </SelectContent>
                                 </Select>
                                 <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
+                                  type='button'
+                                  variant='ghost'
+                                  size='sm'
+                                  className='h-6 w-6 p-0'
                                   onClick={() => autoMapAccount(index)}
-                                  title="자동 매핑"
+                                  title='자동 매핑'
                                 >
-                                  <RefreshCw className="h-3 w-3" />
+                                  <RefreshCw className='h-3 w-3' />
                                 </Button>
                               </div>
                             </td>
@@ -565,29 +578,33 @@ export function BulkInput({ className = '' }: BulkInputProps) {
 
               {/* Validation summary */}
               {parsedRows.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-1">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
+                <div className='space-y-2'>
+                  <div className='flex items-center gap-4 text-sm'>
+                    <div className='flex items-center gap-1'>
+                      <CheckCircle className='h-4 w-4 text-green-600' />
                       <span>유효: {validRowsCount}건</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <AlertCircle className="h-4 w-4 text-red-600" />
+                    <div className='flex items-center gap-1'>
+                      <AlertCircle className='h-4 w-4 text-red-600' />
                       <span>오류: {totalRowsCount - validRowsCount}건</span>
                     </div>
                   </div>
 
                   {/* Show errors for invalid rows */}
                   {parsedRows.some(row => !row.isValid) && (
-                    <div className="text-xs text-red-600 space-y-1">
-                      {parsedRows.filter(row => !row.isValid).map(row => (
-                        <div key={row.index}>
-                          <span className="font-medium">{row.index}번째 줄:</span>
-                          {row.errors.map((error, i) => (
-                            <span key={i} className="ml-1">{error}</span>
-                          ))}
-                        </div>
-                      ))}
+                    <div className='text-xs text-red-600 space-y-1'>
+                      {parsedRows
+                        .filter(row => !row.isValid)
+                        .map(row => (
+                          <div key={row.index}>
+                            <span className='font-medium'>{row.index}번째 줄:</span>
+                            {row.errors.map((error, i) => (
+                              <span key={i} className='ml-1'>
+                                {error}
+                              </span>
+                            ))}
+                          </div>
+                        ))}
                     </div>
                   )}
                 </div>
@@ -596,21 +613,17 @@ export function BulkInput({ className = '' }: BulkInputProps) {
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setShowDialog(false)}
-            >
+            <Button type='button' variant='ghost' onClick={() => setShowDialog(false)}>
               취소
             </Button>
             <Button
-              type="button"
+              type='button'
               onClick={handleImport}
               disabled={validRowsCount === 0 || isProcessing}
             >
               {isProcessing ? (
                 <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  <RefreshCw className='h-4 w-4 mr-2 animate-spin' />
                   처리 중...
                 </>
               ) : (

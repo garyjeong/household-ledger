@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const validationResult = joinGroupSchema.safeParse(body)
 
     if (!validationResult.success) {
-      const errors = validationResult.error.issues.map((err) => err.message).join(', ')
+      const errors = validationResult.error.issues.map(err => err.message).join(', ')
       return NextResponse.json({ error: errors }, { status: 400 })
     }
 

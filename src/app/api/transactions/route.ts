@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { verifyToken, extractTokenFromHeader, verifyAccountOwnership } from '@/lib/auth'
 import {
@@ -6,7 +7,6 @@ import {
   transactionQuerySchema,
   formatTransactionForResponse,
 } from '@/lib/schemas/transaction'
-import { z } from 'zod'
 
 /**
  * GET /api/transactions

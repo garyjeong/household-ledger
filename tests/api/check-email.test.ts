@@ -108,4 +108,3 @@ describe('Check Email API', () => {
     })
   })
 })
-

@@ -8,14 +8,14 @@ export const balanceQuerySchema = z.object({
   includeProjection: z
     .string()
     .optional()
-    .transform((val) => val === 'true')
+    .transform(val => val === 'true')
     .default(false), // 고정 지출을 고려한 예상 잔액 포함 여부
   projectionMonths: z
     .string()
     .optional()
     .default('3')
-    .transform((val) => parseInt(val, 10))
-    .refine((val) => val > 0 && val <= 12, '예상 기간은 1-12개월 사이여야 합니다'),
+    .transform(val => parseInt(val, 10))
+    .refine(val => val > 0 && val <= 12, '예상 기간은 1-12개월 사이여야 합니다'),
 })
 
 // 계좌별 잔액 정보
@@ -73,7 +73,7 @@ export function formatBalanceResponse(data: {
   const { accounts, recurringExpenses = [], includeProjection = false, projectionMonths = 3 } = data
 
   // 계좌별 잔액 정보
-  const accountBalances: AccountBalance[] = accounts.map((account) => ({
+  const accountBalances: AccountBalance[] = accounts.map(account => ({
     id: account.id.toString(),
     name: account.name,
     type: account.type,
@@ -84,7 +84,7 @@ export function formatBalanceResponse(data: {
 
   // 전체 잔액 계산 (활성 계좌만)
   const totalBalance = accountBalances
-    .filter((account) => account.isActive)
+    .filter(account => account.isActive)
     .reduce((sum, account) => sum + account.balance, 0)
 
   // 기본 응답
@@ -97,15 +97,15 @@ export function formatBalanceResponse(data: {
 
   // 고정 지출 정보 추가
   if (includeProjection && recurringExpenses.length > 0) {
-    const activeRecurringExpenses = recurringExpenses.filter((expense) => expense.isActive)
+    const activeRecurringExpenses = recurringExpenses.filter(expense => expense.isActive)
 
     // 월별/주별 고정 지출 계산
     const monthlyTotal = activeRecurringExpenses
-      .filter((expense) => expense.frequency === 'MONTHLY')
+      .filter(expense => expense.frequency === 'MONTHLY')
       .reduce((sum, expense) => sum + Number(expense.amount), 0)
 
     const weeklyTotal = activeRecurringExpenses
-      .filter((expense) => expense.frequency === 'WEEKLY')
+      .filter(expense => expense.frequency === 'WEEKLY')
       .reduce((sum, expense) => sum + Number(expense.amount), 0)
 
     const monthlyFromWeekly = (weeklyTotal * 52) / 12 // 주별을 월별로 환산
@@ -114,7 +114,7 @@ export function formatBalanceResponse(data: {
       monthly: monthlyTotal,
       weekly: weeklyTotal,
       total: monthlyTotal + monthlyFromWeekly,
-      items: activeRecurringExpenses.map((expense) => ({
+      items: activeRecurringExpenses.map(expense => ({
         id: expense.id.toString(),
         amount: Number(expense.amount),
         frequency: expense.frequency,

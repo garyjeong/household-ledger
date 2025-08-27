@@ -17,38 +17,40 @@
     border-style: solid;
     border-color: #e5e7eb;
   }
-  
+
   body {
     @apply bg-white text-gray-900 font-sans;
-    font-feature-settings: 'rlig' 1, 'calt' 1;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
   }
-  
+
   /* 스크롤바 스타일링 */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
-  
+
   ::-webkit-scrollbar-track {
     @apply bg-gray-50;
   }
-  
+
   ::-webkit-scrollbar-thumb {
     @apply bg-gray-300 rounded-full;
   }
-  
+
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-gray-400;
   }
-  
+
   /* 포커스 스타일 통일 */
   :focus-visible {
     @apply outline-none ring-2 ring-blue-500/50 ring-offset-2;
   }
-  
+
   /* 선택 영역 스타일 */
   ::selection {
     @apply bg-blue-500/20 text-gray-900;
@@ -61,49 +63,120 @@
   .card-hover {
     @apply transition-all duration-200 hover:shadow-lg;
   }
-  
+
   /* 터치 타겟 */
   .touch-target {
     @apply min-h-[44px] min-w-[44px];
   }
-  
+
   .touch-target-sm {
     @apply min-h-[32px] min-w-[32px];
   }
-  
+
   /* 반응형 컨테이너 */
   .container-responsive {
-    @apply w-full max-w-none px-4;
+    @apply w-full max-w-7xl mx-auto px-4;
   }
-  
+
   @screen sm {
     .container-responsive {
-      @apply max-w-2xl px-6;
+      @apply px-6;
     }
   }
-  
-  @screen md {
+
+  @screen lg {
     .container-responsive {
-      @apply max-w-4xl px-8;
+      @apply px-8;
     }
   }
-  
+
+  /* 터치 친화적 버튼 */
+  .btn-touch {
+    @apply min-h-[44px] min-w-[44px] touch-manipulation;
+  }
+
+  /* 반응형 그리드 */
+  .grid-responsive {
+    @apply grid grid-cols-1;
+  }
+
+  @screen sm {
+    .grid-responsive {
+      @apply grid-cols-2;
+    }
+  }
+
+  @screen md {
+    .grid-responsive {
+      @apply grid-cols-3;
+    }
+  }
+
+  /* 데스크탑 호버 효과 */
+  @media (hover: hover) {
+    .hover-desktop:hover {
+      @apply shadow-md scale-[1.02];
+    }
+  }
+
+  /* 반응형 텍스트 크기 */
+  .text-responsive-lg {
+    @apply text-base;
+  }
+
+  @screen sm {
+    .text-responsive-lg {
+      @apply text-lg;
+    }
+  }
+
+  /* 사이드바 레이아웃 */
+  .sidebar-layout {
+    @apply flex flex-col gap-4;
+  }
+
+  @screen lg {
+    .sidebar-layout {
+      @apply grid grid-cols-5 gap-6;
+    }
+  }
+
+  .sidebar {
+    @apply w-full;
+  }
+
+  @screen lg {
+    .sidebar {
+      @apply col-span-1;
+    }
+  }
+
+  .main-content {
+    @apply w-full;
+  }
+
+  @screen lg {
+    .main-content {
+      @apply col-span-4;
+    }
+  }
+
   /* 모바일 전용 스타일 */
   .mobile-only {
     @apply block;
   }
-  
+
   @screen md {
     .mobile-only {
       @apply hidden;
     }
   }
-  
+
   /* 데스크탑 전용 스타일 */
   .desktop-only {
     @apply hidden;
   }
-  
+
   @screen md {
     .desktop-only {
       @apply block;
@@ -116,8 +189,28 @@
   .hover-device:hover .hover-lift {
     @apply translate-y-[-1px] shadow-lg;
   }
-  
+
   .touch-device .hover-lift:active {
     @apply translate-y-[1px] shadow-sm;
+  }
+
+  /* 토스트 애니메이션 */
+  .animate-in {
+    animation: slideInFromRight 0.3s ease-out;
+  }
+
+  .slide-in-from-right-full {
+    transform: translateX(100%);
+  }
+
+  @keyframes slideInFromRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
   }
 }

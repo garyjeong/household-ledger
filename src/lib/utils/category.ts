@@ -165,7 +165,7 @@ export function filterCategoriesByType<T extends { type: TransactionType }>(
   type?: TransactionType
 ): T[] {
   if (!type) return categories
-  return categories.filter((category) => category.type === type)
+  return categories.filter(category => category.type === type)
 }
 
 /**
@@ -175,7 +175,7 @@ export function groupCategoriesByDefault<T extends { isDefault: boolean }>(
   categories: T[]
 ): { default: T[]; custom: T[] } {
   return {
-    default: categories.filter((cat) => cat.isDefault),
-    custom: categories.filter((cat) => !cat.isDefault),
+    default: categories.filter(cat => cat.isDefault),
+    custom: categories.filter(cat => !cat.isDefault),
   }
 }

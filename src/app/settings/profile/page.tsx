@@ -12,7 +12,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { apiGet, apiPut } from '@/lib/api-client'
 import { useAlert } from '@/contexts/alert-context'
 
-
 // 닉네임 업데이트 스키마
 const nicknameUpdateSchema = z.object({
   name: z.string().min(1, '닉네임을 입력해주세요').max(50, '닉네임은 50자 이하로 입력해주세요'),
@@ -24,7 +23,7 @@ const passwordChangeSchema = z
     newPassword: z.string().min(8, '새 비밀번호는 최소 8자 이상이어야 합니다.'),
     confirmPassword: z.string().min(1, '새 비밀번호 확인을 입력해주세요.'),
   })
-  .refine((data) => data.newPassword === data.confirmPassword, {
+  .refine(data => data.newPassword === data.confirmPassword, {
     message: '새 비밀번호와 확인 비밀번호가 일치하지 않습니다.',
     path: ['confirmPassword'],
   })
@@ -149,40 +148,36 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       {/* 페이지 헤더 */}
       <div>
-        <h2 className="text-xl font-bold text-slate-900">프로필 설정</h2>
-        <p className="text-slate-600 text-sm">
-          닉네임과 비밀번호를 변경할 수 있습니다.
-        </p>
+        <h2 className='text-xl font-bold text-slate-900'>프로필 설정</h2>
+        <p className='text-slate-600 text-sm'>닉네임과 비밀번호를 변경할 수 있습니다.</p>
       </div>
 
       {/* 내 정보 (최상단) */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <UserCheck className="h-4 w-4 text-slate-600" />
-            내 정보
+        <CardHeader className='pb-3'>
+          <CardTitle className='flex items-center gap-2 text-lg'>
+            <UserCheck className='h-4 w-4 text-slate-600' />내 정보
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex flex-col">
-              <Label className="text-xs font-medium text-slate-500 mb-1">이메일 주소</Label>
-              <p className="text-sm font-medium text-slate-900">{userInfo?.email || '-'}</p>
+        <CardContent className='pt-0'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <div className='flex flex-col'>
+              <Label className='text-xs font-medium text-slate-500 mb-1'>이메일 주소</Label>
+              <p className='text-sm font-medium text-slate-900'>{userInfo?.email || '-'}</p>
             </div>
-            <div className="flex flex-col">
-              <Label className="text-xs font-medium text-slate-500 mb-1">가입일</Label>
-              <p className="text-sm font-medium text-slate-900">
-                {userInfo?.createdAt 
+            <div className='flex flex-col'>
+              <Label className='text-xs font-medium text-slate-500 mb-1'>가입일</Label>
+              <p className='text-sm font-medium text-slate-900'>
+                {userInfo?.createdAt
                   ? new Date(userInfo.createdAt).toLocaleDateString('ko-KR', {
                       year: 'numeric',
                       month: 'long',
-                      day: 'numeric'
+                      day: 'numeric',
                     })
-                  : '-'
-                }
+                  : '-'}
               </p>
             </div>
           </div>
@@ -191,46 +186,48 @@ export default function ProfilePage() {
 
       {/* 닉네임 변경 */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <User className="h-4 w-4 text-slate-600" />
+        <CardHeader className='pb-3'>
+          <CardTitle className='flex items-center gap-2 text-lg'>
+            <User className='h-4 w-4 text-slate-600' />
             닉네임 변경
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent className='pt-0'>
           <form onSubmit={nicknameForm.handleSubmit(handleNicknameUpdate)}>
-            <div className="flex items-start gap-3">
-              <div className="flex-1">
-                <Label htmlFor="nickname" className="text-xs font-medium text-slate-500 mb-1 block">닉네임</Label>
+            <div className='flex items-start gap-3'>
+              <div className='flex-1'>
+                <Label htmlFor='nickname' className='text-xs font-medium text-slate-500 mb-1 block'>
+                  닉네임
+                </Label>
                 <Input
-                  id="nickname"
-                  placeholder="닉네임을 입력하세요"
+                  id='nickname'
+                  placeholder='닉네임을 입력하세요'
                   {...nicknameForm.register('name')}
                   disabled={isNicknameLoading}
-                  className="text-sm"
+                  className='text-sm'
                 />
               </div>
               <Button
-                type="submit"
+                type='submit'
                 disabled={isNicknameLoading}
-                size="sm"
-                className="bg-slate-900 hover:bg-slate-800 mt-5"
+                size='sm'
+                className='bg-slate-900 hover:bg-slate-800 mt-5'
               >
                 {isNicknameLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent mr-1" />
+                    <div className='animate-spin rounded-full h-3 w-3 border border-white border-t-transparent mr-1' />
                     저장중
                   </>
                 ) : (
                   <>
-                    <Save className="h-3 w-3 mr-1" />
+                    <Save className='h-3 w-3 mr-1' />
                     변경
                   </>
                 )}
               </Button>
             </div>
             {nicknameForm.formState.errors.name && (
-              <p className="text-xs text-red-600 mt-2">
+              <p className='text-xs text-red-600 mt-2'>
                 {nicknameForm.formState.errors.name.message}
               </p>
             )}
@@ -240,43 +237,48 @@ export default function ProfilePage() {
 
       {/* 비밀번호 변경 */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <UserCheck className="h-4 w-4 text-slate-600" />
+        <CardHeader className='pb-3'>
+          <CardTitle className='flex items-center gap-2 text-lg'>
+            <UserCheck className='h-4 w-4 text-slate-600' />
             비밀번호 변경
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
-          <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)} className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <CardContent className='pt-0'>
+          <form onSubmit={passwordForm.handleSubmit(handlePasswordChange)} className='space-y-3'>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
               {/* 새 비밀번호 */}
               <div>
-                <Label htmlFor="newPassword" className="text-xs font-medium text-slate-500 mb-1 block">새 비밀번호</Label>
-                <div className="relative">
+                <Label
+                  htmlFor='newPassword'
+                  className='text-xs font-medium text-slate-500 mb-1 block'
+                >
+                  새 비밀번호
+                </Label>
+                <div className='relative'>
                   <Input
-                    id="newPassword"
+                    id='newPassword'
                     type={showNewPassword ? 'text' : 'password'}
-                    placeholder="새 비밀번호"
+                    placeholder='새 비밀번호'
                     {...passwordForm.register('newPassword')}
                     disabled={isPasswordLoading}
-                    className="text-sm pr-10"
+                    className='text-sm pr-10'
                   />
                   <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-2 hover:bg-transparent"
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    className='absolute right-0 top-0 h-full px-2 hover:bg-transparent'
                     onClick={() => setShowNewPassword(!showNewPassword)}
                   >
                     {showNewPassword ? (
-                      <EyeOff className="h-3 w-3 text-slate-400" />
+                      <EyeOff className='h-3 w-3 text-slate-400' />
                     ) : (
-                      <Eye className="h-3 w-3 text-slate-400" />
+                      <Eye className='h-3 w-3 text-slate-400' />
                     )}
                   </Button>
                 </div>
                 {passwordForm.formState.errors.newPassword && (
-                  <p className="text-xs text-red-600 mt-1">
+                  <p className='text-xs text-red-600 mt-1'>
                     {passwordForm.formState.errors.newPassword.message}
                   </p>
                 )}
@@ -284,53 +286,58 @@ export default function ProfilePage() {
 
               {/* 새 비밀번호 확인 */}
               <div>
-                <Label htmlFor="confirmPassword" className="text-xs font-medium text-slate-500 mb-1 block">새 비밀번호 확인</Label>
-                <div className="relative">
+                <Label
+                  htmlFor='confirmPassword'
+                  className='text-xs font-medium text-slate-500 mb-1 block'
+                >
+                  새 비밀번호 확인
+                </Label>
+                <div className='relative'>
                   <Input
-                    id="confirmPassword"
+                    id='confirmPassword'
                     type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="비밀번호 확인"
+                    placeholder='비밀번호 확인'
                     {...passwordForm.register('confirmPassword')}
                     disabled={isPasswordLoading}
-                    className="text-sm pr-10"
+                    className='text-sm pr-10'
                   />
                   <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-2 hover:bg-transparent"
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    className='absolute right-0 top-0 h-full px-2 hover:bg-transparent'
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="h-3 w-3 text-slate-400" />
+                      <EyeOff className='h-3 w-3 text-slate-400' />
                     ) : (
-                      <Eye className="h-3 w-3 text-slate-400" />
+                      <Eye className='h-3 w-3 text-slate-400' />
                     )}
                   </Button>
                 </div>
                 {passwordForm.formState.errors.confirmPassword && (
-                  <p className="text-xs text-red-600 mt-1">
+                  <p className='text-xs text-red-600 mt-1'>
                     {passwordForm.formState.errors.confirmPassword.message}
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className='flex justify-end pt-2'>
               <Button
-                type="submit"
+                type='submit'
                 disabled={isPasswordLoading}
-                size="sm"
-                className="bg-slate-900 hover:bg-slate-800"
+                size='sm'
+                className='bg-slate-900 hover:bg-slate-800'
               >
                 {isPasswordLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-3 w-3 border border-white border-t-transparent mr-1" />
+                    <div className='animate-spin rounded-full h-3 w-3 border border-white border-t-transparent mr-1' />
                     변경중
                   </>
                 ) : (
                   <>
-                    <UserCheck className="h-3 w-3 mr-1" />
+                    <UserCheck className='h-3 w-3 mr-1' />
                     비밀번호 저장
                   </>
                 )}

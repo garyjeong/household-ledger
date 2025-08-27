@@ -37,7 +37,7 @@ export function AlertProvider({ children }: AlertProviderProps) {
     isOpen: false,
     type: 'info',
     message: '',
-    title: undefined
+    title: undefined,
   })
 
   const showAlert = (type: AlertType, message: string, title?: string) => {
@@ -45,7 +45,7 @@ export function AlertProvider({ children }: AlertProviderProps) {
       isOpen: true,
       type,
       message,
-      title
+      title,
     })
   }
 
@@ -70,13 +70,15 @@ export function AlertProvider({ children }: AlertProviderProps) {
   }
 
   return (
-    <AlertContext.Provider value={{ 
-      showAlert, 
-      showSuccess, 
-      showError, 
-      showWarning, 
-      showInfo 
-    }}>
+    <AlertContext.Provider
+      value={{
+        showAlert,
+        showSuccess,
+        showError,
+        showWarning,
+        showInfo,
+      }}
+    >
       {children}
       <AlertModal
         isOpen={alertState.isOpen}

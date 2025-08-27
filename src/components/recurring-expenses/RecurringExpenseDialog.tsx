@@ -1,16 +1,11 @@
 'use client'
 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { 
-  RecurringExpenseForm, 
-  type RecurringExpenseData, 
-  type Account, 
-  type Category 
+  RecurringExpenseForm,
+  type RecurringExpenseData,
+  type Account,
+  type Category,
 } from './RecurringExpenseForm'
 
 interface RecurringExpenseDialogProps {
@@ -50,14 +45,12 @@ export function RecurringExpenseDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto'>
         <DialogHeader>
-          <DialogTitle>
-            {mode === 'create' ? '고정 지출 추가' : '고정 지출 수정'}
-          </DialogTitle>
+          <DialogTitle>{mode === 'create' ? '고정 지출 추가' : '고정 지출 수정'}</DialogTitle>
         </DialogHeader>
-        
-        <div className="mt-4">
+
+        <div className='mt-4'>
           <RecurringExpenseForm
             mode={mode}
             initialData={initialData}

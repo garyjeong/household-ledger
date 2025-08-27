@@ -80,5 +80,5 @@ export function calculatePercentage(current: number, total: number): number {
  * Sleep utility for async operations
  */
 export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+  return new Promise(resolve => setTimeout(resolve, ms))
 }

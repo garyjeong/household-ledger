@@ -22,9 +22,7 @@ jest.mock('@/components/ui/card', () => ({
 }))
 
 jest.mock('@/components/ui/button', () => ({
-  Button: ({ children, onClick }: any) => (
-    <button onClick={onClick}>{children}</button>
-  ),
+  Button: ({ children, onClick }: any) => <button onClick={onClick}>{children}</button>,
 }))
 
 // 테스트 컴포넌트
@@ -33,26 +31,20 @@ function TestComponent() {
 
   return (
     <div>
-      <button onClick={() => showSuccess('성공 메시지')}>
-        Success Toast
-      </button>
-      <button onClick={() => showError('에러 메시지')}>
-        Error Toast
-      </button>
-      <button onClick={() => showWarning('경고 메시지')}>
-        Warning Toast
-      </button>
-      <button onClick={() => showInfo('정보 메시지')}>
-        Info Toast
-      </button>
-      <button onClick={() => showSuccess('액션 토스트', { 
-        action: { label: '되돌리기', onClick: () => {} }
-      })}>
+      <button onClick={() => showSuccess('성공 메시지')}>Success Toast</button>
+      <button onClick={() => showError('에러 메시지')}>Error Toast</button>
+      <button onClick={() => showWarning('경고 메시지')}>Warning Toast</button>
+      <button onClick={() => showInfo('정보 메시지')}>Info Toast</button>
+      <button
+        onClick={() =>
+          showSuccess('액션 토스트', {
+            action: { label: '되돌리기', onClick: () => {} },
+          })
+        }
+      >
         Action Toast
       </button>
-      <button onClick={dismissAll}>
-        Dismiss All
-      </button>
+      <button onClick={dismissAll}>Dismiss All</button>
     </div>
   )
 }
@@ -68,7 +60,7 @@ describe('ToastProvider', () => {
 
   it('성공 토스트를 표시해야 한다', async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-    
+
     render(
       <ToastProvider>
         <TestComponent />
@@ -84,7 +76,7 @@ describe('ToastProvider', () => {
 
   it('에러 토스트를 표시해야 한다', async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-    
+
     render(
       <ToastProvider>
         <TestComponent />
@@ -100,7 +92,7 @@ describe('ToastProvider', () => {
 
   it('경고 토스트를 표시해야 한다', async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-    
+
     render(
       <ToastProvider>
         <TestComponent />
@@ -116,7 +108,7 @@ describe('ToastProvider', () => {
 
   it('정보 토스트를 표시해야 한다', async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-    
+
     render(
       <ToastProvider>
         <TestComponent />
@@ -132,7 +124,7 @@ describe('ToastProvider', () => {
 
   it('액션 버튼이 있는 토스트를 표시해야 한다', async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-    
+
     render(
       <ToastProvider>
         <TestComponent />
@@ -149,7 +141,7 @@ describe('ToastProvider', () => {
 
   it('토스트 닫기 버튼이 작동해야 한다', async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-    
+
     render(
       <ToastProvider>
         <TestComponent />
@@ -165,7 +157,7 @@ describe('ToastProvider', () => {
     // 닫기 버튼 클릭 (X 버튼)
     const closeButtons = screen.getAllByRole('button')
     const closeButton = closeButtons.find(btn => btn.textContent === '')
-    
+
     if (closeButton) {
       await user.click(closeButton)
 
@@ -182,7 +174,7 @@ describe('ToastProvider', () => {
 
   it('모든 토스트 닫기가 작동해야 한다', async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-    
+
     render(
       <ToastProvider>
         <TestComponent />
@@ -212,7 +204,7 @@ describe('ToastProvider', () => {
 
   it('자동 삭제가 작동해야 한다', async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-    
+
     render(
       <ToastProvider defaultDuration={3000}>
         <TestComponent />
@@ -240,7 +232,7 @@ describe('ToastProvider', () => {
 
   it('최대 토스트 수를 제한해야 한다', async () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
-    
+
     render(
       <ToastProvider maxToasts={2}>
         <TestComponent />
@@ -260,7 +252,7 @@ describe('ToastProvider', () => {
 
   it('다른 위치에 토스트를 표시할 수 있어야 한다', () => {
     const { container } = render(
-      <ToastProvider position="bottom-left">
+      <ToastProvider position='bottom-left'>
         <TestComponent />
       </ToastProvider>
     )

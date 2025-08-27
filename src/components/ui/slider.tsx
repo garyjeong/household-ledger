@@ -11,14 +11,7 @@ export interface SliderProps {
   className?: string
 }
 
-export function Slider({
-  value,
-  onValueChange,
-  max,
-  min,
-  step,
-  className = '',
-}: SliderProps) {
+export function Slider({ value, onValueChange, max, min, step, className = '' }: SliderProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseInt(e.target.value)
     onValueChange([newValue])
@@ -27,13 +20,13 @@ export function Slider({
   return (
     <div className={`relative ${className}`}>
       <input
-        type="range"
+        type='range'
         min={min}
         max={max}
         step={step}
         value={value[0]}
         onChange={handleChange}
-        className="w-full h-2 bg-surface-tertiary rounded-lg appearance-none cursor-pointer slider-thumb"
+        className='w-full h-2 bg-surface-tertiary rounded-lg appearance-none cursor-pointer slider-thumb'
       />
       <style jsx>{`
         .slider-thumb::-webkit-slider-thumb {
@@ -41,7 +34,7 @@ export function Slider({
           height: 20px;
           width: 20px;
           border-radius: 50%;
-          background: #3B82F6;
+          background: #3b82f6;
           cursor: pointer;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
@@ -49,7 +42,7 @@ export function Slider({
           height: 20px;
           width: 20px;
           border-radius: 50%;
-          background: #3B82F6;
+          background: #3b82f6;
           cursor: pointer;
           border: none;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

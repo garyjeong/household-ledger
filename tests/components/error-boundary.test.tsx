@@ -4,7 +4,11 @@
 
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { ErrorBoundary, ErrorBoundaryWrapper, withErrorBoundary } from '@/components/error/ErrorBoundary'
+import {
+  ErrorBoundary,
+  ErrorBoundaryWrapper,
+  withErrorBoundary,
+} from '@/components/error/ErrorBoundary'
 
 // Mock the error handler
 jest.mock('@/lib/error-handler', () => ({
@@ -79,7 +83,7 @@ describe('ErrorBoundary', () => {
   it('에러가 발생했을 때 에러 UI를 표시해야 한다', () => {
     render(
       <ErrorBoundary>
-        <ThrowError shouldThrow={true} errorMessage="Component crashed!" />
+        <ThrowError shouldThrow={true} errorMessage='Component crashed!' />
       </ErrorBoundary>
     )
 
@@ -136,7 +140,7 @@ describe('ErrorBoundary', () => {
   it('상세 정보 토글이 작동해야 한다', () => {
     render(
       <ErrorBoundary>
-        <ThrowError shouldThrow={true} errorMessage="Detailed error message" />
+        <ThrowError shouldThrow={true} errorMessage='Detailed error message' />
       </ErrorBoundary>
     )
 
@@ -161,7 +165,7 @@ describe('ErrorBoundary', () => {
 
   it('레벨에 따른 다른 타이틀을 표시해야 한다', () => {
     render(
-      <ErrorBoundary level="app">
+      <ErrorBoundary level='app'>
         <ThrowError shouldThrow={true} />
       </ErrorBoundary>
     )
@@ -171,7 +175,7 @@ describe('ErrorBoundary', () => {
 
   it('컴포넌트 이름을 표시해야 한다', () => {
     render(
-      <ErrorBoundary componentName="TestComponent">
+      <ErrorBoundary componentName='TestComponent'>
         <ThrowError shouldThrow={true} />
       </ErrorBoundary>
     )
@@ -181,7 +185,7 @@ describe('ErrorBoundary', () => {
 
   it('앱 레벨에서는 홈으로 가기 버튼이 표시되지 않아야 한다', () => {
     render(
-      <ErrorBoundary level="app">
+      <ErrorBoundary level='app'>
         <ThrowError shouldThrow={true} />
       </ErrorBoundary>
     )
@@ -191,7 +195,7 @@ describe('ErrorBoundary', () => {
 
   it('페이지/컴포넌트 레벨에서는 홈으로 가기 버튼이 표시되어야 한다', () => {
     render(
-      <ErrorBoundary level="page">
+      <ErrorBoundary level='page'>
         <ThrowError shouldThrow={true} />
       </ErrorBoundary>
     )
@@ -203,7 +207,7 @@ describe('ErrorBoundary', () => {
 describe('ErrorBoundaryWrapper', () => {
   it('래퍼 컴포넌트가 올바르게 작동해야 한다', () => {
     render(
-      <ErrorBoundaryWrapper level="page" componentName="WrapperTest">
+      <ErrorBoundaryWrapper level='page' componentName='WrapperTest'>
         <ThrowError shouldThrow={true} />
       </ErrorBoundaryWrapper>
     )

@@ -20,6 +20,285 @@ import {
   updateGroupMemberRole,
 } from '@/lib/auth'
 
+// Mock Prisma
+const mockUsers = [
+  {
+    id: '1',
+    email: 'smat91@naver.com',
+    nickname: '개뤼',
+    // Pre-computed bcrypt hash for 'Wjdwhdans91!'
+    passwordHash: '$2a$10$n9CM.jYlQuJxQGSdF4j6j.5fZ0H6RWQH0.2h4/E5RzSGq9p8BH6fG',
+    createdAt: new Date(),
+  },
+  {
+    id: '2',
+    email: 'user2@example.com',
+    nickname: '유저2',
+    passwordHash: '$2a$10$hashedpassword2',
+    createdAt: new Date(),
+  },
+]
+
+const mockGroups = [
+  {
+    id: 'group1',
+    name: '테스트 그룹',
+    ownerId: '1',
+    createdAt: new Date(),
+  },
+]
+
+const mockGroupMembers = [
+  {
+    groupId: 'group1',
+    userId: '1',
+    role: 'OWNER' as const,
+    joinedAt: new Date(),
+  },
+]
+
+const mockPrisma = {
+  user: {
+    findUnique: jest.fn(),
+    create: jest.fn(),
+    findMany: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  },
+  group: {
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  },
+  groupMember: {
+    findMany: jest.fn(),
+    findUnique: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    deleteMany: jest.fn(),
+  },
+  inviteCode: {
+    findUnique: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  },
+  $transaction: jest.fn(),
+}
+
+// Mock the prisma module
+jest.mock('@/lib/prisma', () => ({
+  prisma: mockPrisma,
+}))
+
+// Mock bcrypt
+jest.mock('bcryptjs', () => ({
+  hash: jest.fn().mockResolvedValue('$2a$10$hashedpassword'),
+  compare: jest.fn().mockImplementation((password: string, hash: string) => {
+    // For testing, just check if it's the expected password
+    return Promise.resolve(password === 'Wjdwhdans91!')
+  }),
+}))
+
+// Setup mock implementations
+beforeEach(() => {
+  jest.clearAllMocks()
+
+  // Reset mock data
+  mockUsers.length = 0
+  mockUsers.push(
+    {
+      id: '1',
+      email: 'smat91@naver.com',
+      nickname: '개뤼',
+      passwordHash: '$2a$10$n9CM.jYlQuJxQGSdF4j6j.5fZ0H6RWQH0.2h4/E5RzSGq9p8BH6fG',
+      createdAt: new Date(),
+    },
+    {
+      id: '2',
+      email: 'user2@example.com',
+      nickname: '유저2',
+      passwordHash: '$2a$10$hashedpassword2',
+      createdAt: new Date(),
+    }
+  )
+
+  mockGroups.length = 0
+  mockGroups.push({
+    id: 'group1',
+    name: '테스트 그룹',
+    ownerId: '1',
+    createdAt: new Date(),
+  })
+
+  mockGroupMembers.length = 0
+  mockGroupMembers.push({
+    groupId: 'group1',
+    userId: '1',
+    role: 'OWNER' as const,
+    joinedAt: new Date(),
+  })
+
+  // Mock user operations
+  mockPrisma.user.findUnique.mockImplementation(({ where }) => {
+    if (where.email) {
+      return Promise.resolve(mockUsers.find(u => u.email === where.email) || null)
+    }
+    if (where.id) {
+      return Promise.resolve(mockUsers.find(u => u.id === where.id) || null)
+    }
+    return Promise.resolve(null)
+  })
+
+  mockPrisma.user.create.mockImplementation(({ data }) => {
+    const newUser = {
+      id: (mockUsers.length + 1).toString(),
+      email: data.email,
+      nickname: data.nickname,
+      passwordHash: data.passwordHash,
+      createdAt: new Date(),
+    }
+    mockUsers.push(newUser)
+    return Promise.resolve(newUser)
+  })
+
+  // Mock group operations
+  mockPrisma.group.findUnique.mockImplementation(({ where, include }) => {
+    const group = mockGroups.find(g => g.id === where.id)
+    if (!group) return Promise.resolve(null)
+
+    if (include?.members) {
+      const members = mockGroupMembers
+        .filter(m => m.groupId === group.id)
+        .map(m => ({
+          ...m,
+          user: mockUsers.find(u => u.id === m.userId),
+        }))
+      return Promise.resolve({ ...group, members })
+    }
+    return Promise.resolve(group)
+  })
+
+  mockPrisma.group.create.mockImplementation(({ data }) => {
+    // Check if group with same name already exists for the owner
+    const existingGroup = mockGroups.find(g => g.name === data.name && g.ownerId === data.ownerId)
+    if (existingGroup) {
+      throw new Error('Unique constraint failed')
+    }
+
+    const newGroup = {
+      id: `group${mockGroups.length + 1}`,
+      name: data.name,
+      ownerId: data.ownerId,
+      createdAt: new Date(),
+    }
+    mockGroups.push(newGroup)
+
+    return Promise.resolve(newGroup)
+  })
+
+  mockPrisma.group.findMany.mockImplementation(({ where, include }) => {
+    let groups = mockGroups
+
+    if (where?.members?.some?.userId) {
+      const userId = where.members.some.userId
+      const userGroupIds = mockGroupMembers.filter(m => m.userId === userId).map(m => m.groupId)
+      groups = mockGroups.filter(g => userGroupIds.includes(g.id))
+    }
+
+    if (include?.members) {
+      return Promise.resolve(
+        groups.map(group => ({
+          ...group,
+          members: mockGroupMembers
+            .filter(m => m.groupId === group.id)
+            .map(m => ({
+              ...m,
+              user: mockUsers.find(u => u.id === m.userId),
+            })),
+        }))
+      )
+    }
+
+    return Promise.resolve(groups)
+  })
+
+  // Mock group member operations
+  mockPrisma.groupMember.findUnique.mockImplementation(({ where }) => {
+    return Promise.resolve(
+      mockGroupMembers.find(
+        m =>
+          m.groupId === where.groupId_userId?.groupId && m.userId === where.groupId_userId?.userId
+      ) || null
+    )
+  })
+
+  mockPrisma.groupMember.create.mockImplementation(({ data }) => {
+    const existing = mockGroupMembers.find(
+      m => m.groupId === data.groupId && m.userId === data.userId
+    )
+    if (existing) {
+      throw new Error('Unique constraint failed')
+    }
+
+    const newMember = {
+      groupId: data.groupId,
+      userId: data.userId,
+      role: data.role || ('MEMBER' as const),
+      joinedAt: new Date(),
+    }
+    mockGroupMembers.push(newMember)
+    return Promise.resolve(newMember)
+  })
+
+  mockPrisma.groupMember.delete.mockImplementation(({ where }) => {
+    const index = mockGroupMembers.findIndex(
+      m => m.groupId === where.groupId_userId?.groupId && m.userId === where.groupId_userId?.userId
+    )
+    if (index >= 0) {
+      const deleted = mockGroupMembers.splice(index, 1)[0]
+      return Promise.resolve(deleted)
+    }
+    throw new Error('Record to delete does not exist')
+  })
+
+  mockPrisma.groupMember.update.mockImplementation(({ where, data }) => {
+    const member = mockGroupMembers.find(
+      m => m.groupId === where.groupId_userId?.groupId && m.userId === where.groupId_userId?.userId
+    )
+    if (member) {
+      Object.assign(member, data)
+      return Promise.resolve(member)
+    }
+    throw new Error('Record to update not found')
+  })
+
+  // Mock transaction support
+  mockPrisma.$transaction.mockImplementation(async callback => {
+    const result = await callback(mockPrisma)
+
+    // For group creation, automatically add owner as member
+    if (
+      result &&
+      result.id &&
+      result.ownerId &&
+      !mockGroupMembers.find(m => m.groupId === result.id && m.userId === result.ownerId)
+    ) {
+      mockGroupMembers.push({
+        groupId: result.id,
+        userId: result.ownerId,
+        role: 'OWNER' as const,
+        joinedAt: new Date(),
+      })
+    }
+
+    return result
+  })
+})
+
 describe('Auth Library', () => {
   describe('JWT Functions', () => {
     const mockPayload = {
@@ -175,7 +454,7 @@ describe('Auth Library', () => {
 
         expect(user).toBeTruthy()
         expect(user?.email).toBe('smat91@naver.com')
-        expect(user?.nickname).toBe('Gary')
+        expect(user?.nickname).toBe('개뤼')
       })
 
       it('should return null for non-existing user', async () => {
@@ -196,7 +475,7 @@ describe('Auth Library', () => {
         expect(user).toBeTruthy()
         expect(user?.id).toBe('1')
         expect(user?.email).toBe('smat91@naver.com')
-        expect(user?.nickname).toBe('Gary')
+        expect(user?.nickname).toBe('개뤼')
       })
 
       it('should return null for non-existing user id', async () => {
@@ -476,7 +755,7 @@ describe('Auth Library', () => {
 
         // 역할 변경 확인
         const group = await findGroupById(newGroup.id)
-        const member = group?.members.find((m) => m.userId === '2')
+        const member = group?.members.find(m => m.userId === '2')
         expect(member?.role).toBe('ADMIN')
       })
 

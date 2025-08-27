@@ -1,17 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  Building, 
-  CreditCard, 
-  PiggyBank, 
+import {
+  Building,
+  CreditCard,
+  PiggyBank,
   Wallet2,
   MoreVertical,
   Eye,
   EyeOff,
   TrendingUp,
   TrendingDown,
-  AlertTriangle
+  AlertTriangle,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -60,12 +60,12 @@ const getAccountTypeLabel = (type: string): string => {
   }
 }
 
-export function AccountBalanceList({ 
-  ownerType, 
-  ownerId, 
+export function AccountBalanceList({
+  ownerType,
+  ownerId,
   showInactive = false,
   onAccountClick,
-  className = '' 
+  className = '',
 }: AccountBalanceListProps) {
   // 상태 관리
   const [accounts, setAccounts] = useState<AccountBalance[]>([])
@@ -124,9 +124,7 @@ export function AccountBalanceList({
   }
 
   // 필터링된 계좌 목록
-  const filteredAccounts = showInactive 
-    ? accounts 
-    : accounts.filter(account => account.isActive)
+  const filteredAccounts = showInactive ? accounts : accounts.filter(account => account.isActive)
 
   if (isLoading) {
     return (
@@ -135,14 +133,14 @@ export function AccountBalanceList({
           <CardTitle>계좌별 잔액</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className='space-y-3'>
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="flex items-center space-x-4">
-                  <div className="h-10 w-10 bg-slate-200 rounded-full"></div>
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-                    <div className="h-3 bg-slate-200 rounded w-1/2"></div>
+              <div key={i} className='animate-pulse'>
+                <div className='flex items-center space-x-4'>
+                  <div className='h-10 w-10 bg-slate-200 rounded-full'></div>
+                  <div className='flex-1 space-y-2'>
+                    <div className='h-4 bg-slate-200 rounded w-3/4'></div>
+                    <div className='h-3 bg-slate-200 rounded w-1/2'></div>
                   </div>
                 </div>
               </div>
@@ -156,20 +154,15 @@ export function AccountBalanceList({
   if (error) {
     return (
       <Card className={`border-red-200 ${className}`}>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3 text-red-600">
-            <AlertTriangle className="h-5 w-5" />
+        <CardContent className='p-6'>
+          <div className='flex items-center gap-3 text-red-600'>
+            <AlertTriangle className='h-5 w-5' />
             <div>
-              <h3 className="font-medium">계좌 정보 로드 실패</h3>
-              <p className="text-sm text-red-500">{error}</p>
+              <h3 className='font-medium'>계좌 정보 로드 실패</h3>
+              <p className='text-sm text-red-500'>{error}</p>
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={loadAccounts}
-            className="mt-3"
-          >
+          <Button variant='outline' size='sm' onClick={loadAccounts} className='mt-3'>
             다시 시도
           </Button>
         </CardContent>
@@ -184,14 +177,10 @@ export function AccountBalanceList({
           <CardTitle>계좌별 잔액</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <Wallet2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              계좌가 없습니다
-            </h3>
-            <p className="text-gray-600">
-              계좌를 추가해서 잔액을 관리해보세요
-            </p>
+          <div className='text-center py-8'>
+            <Wallet2 className='h-12 w-12 text-gray-400 mx-auto mb-4' />
+            <h3 className='text-lg font-medium text-gray-900 mb-2'>계좌가 없습니다</h3>
+            <p className='text-gray-600'>계좌를 추가해서 잔액을 관리해보세요</p>
           </div>
         </CardContent>
       </Card>
@@ -201,31 +190,27 @@ export function AccountBalanceList({
   return (
     <Card className={className}>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className='flex items-center justify-between'>
           <CardTitle>계좌별 잔액</CardTitle>
-          <div className="flex items-center gap-2">
+          <div className='flex items-center gap-2'>
             <Button
-              variant="ghost"
-              size="sm"
+              variant='ghost'
+              size='sm'
               onClick={() => setShowBalances(!showBalances)}
-              className="h-8 w-8 p-0"
+              className='h-8 w-8 p-0'
             >
-              {showBalances ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
+              {showBalances ? <EyeOff className='h-4 w-4' /> : <Eye className='h-4 w-4' />}
             </Button>
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent>
-        <div className="space-y-3">
-          {filteredAccounts.map((account) => {
+        <div className='space-y-3'>
+          {filteredAccounts.map(account => {
             const IconComponent = getAccountIcon(account.type)
             const balanceStatus = getBalanceStatus(account.balance)
-            
+
             return (
               <div
                 key={account.id}
@@ -236,51 +221,52 @@ export function AccountBalanceList({
                 `}
                 onClick={() => onAccountClick?.(account.id)}
               >
-                <div className="flex items-center gap-3">
-                  <div className={`
+                <div className='flex items-center gap-3'>
+                  <div
+                    className={`
                     p-2 rounded-full
                     ${account.isActive ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}
-                  `}>
-                    <IconComponent className="h-4 w-4" />
+                  `}
+                  >
+                    <IconComponent className='h-4 w-4' />
                   </div>
-                  
+
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-medium text-gray-900">
-                        {account.name}
-                      </h4>
-                      <Badge variant="outline" className="text-xs">
+                    <div className='flex items-center gap-2'>
+                      <h4 className='font-medium text-gray-900'>{account.name}</h4>
+                      <Badge variant='outline' className='text-xs'>
                         {getAccountTypeLabel(account.type)}
                       </Badge>
                       {!account.isActive && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant='secondary' className='text-xs'>
                           비활성
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600">
-                      {account.currency}
-                    </p>
+                    <p className='text-sm text-gray-600'>{account.currency}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <div className="text-right">
-                    <div className={`
+                <div className='flex items-center gap-2'>
+                  <div className='text-right'>
+                    <div
+                      className={`
                       font-semibold
-                      ${balanceStatus === 'positive' ? 'text-green-600' : 
-                        balanceStatus === 'negative' ? 'text-red-600' : 'text-gray-600'}
-                    `}>
-                      {showBalances ? (
-                        formatCurrency(account.balance, account.currency)
-                      ) : (
-                        '••••••'
-                      )}
+                      ${
+                        balanceStatus === 'positive'
+                          ? 'text-green-600'
+                          : balanceStatus === 'negative'
+                            ? 'text-red-600'
+                            : 'text-gray-600'
+                      }
+                    `}
+                    >
+                      {showBalances ? formatCurrency(account.balance, account.currency) : '••••••'}
                     </div>
-                    
+
                     {balanceStatus === 'negative' && showBalances && (
-                      <div className="flex items-center gap-1 text-red-500 text-xs">
-                        <TrendingDown className="h-3 w-3" />
+                      <div className='flex items-center gap-1 text-red-500 text-xs'>
+                        <TrendingDown className='h-3 w-3' />
                         <span>마이너스</span>
                       </div>
                     )}
@@ -288,17 +274,17 @@ export function AccountBalanceList({
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreVertical className="h-4 w-4" />
+                      <Button variant='ghost' size='sm' className='h-8 w-8 p-0'>
+                        <MoreVertical className='h-4 w-4' />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align='end'>
                       <DropdownMenuItem onClick={() => onAccountClick?.(account.id)}>
-                        <Building className="h-4 w-4 mr-2" />
+                        <Building className='h-4 w-4 mr-2' />
                         상세 보기
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => {}}>
-                        <TrendingUp className="h-4 w-4 mr-2" />
+                        <TrendingUp className='h-4 w-4 mr-2' />
                         거래 내역
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -310,12 +296,10 @@ export function AccountBalanceList({
         </div>
 
         {/* 요약 정보 */}
-        <div className="mt-4 pt-4 border-t">
-          <div className="flex justify-between text-sm text-gray-600">
+        <div className='mt-4 pt-4 border-t'>
+          <div className='flex justify-between text-sm text-gray-600'>
             <span>총 {filteredAccounts.length}개 계좌</span>
-            <span>
-              활성: {filteredAccounts.filter(acc => acc.isActive).length}개
-            </span>
+            <span>활성: {filteredAccounts.filter(acc => acc.isActive).length}개</span>
           </div>
         </div>
       </CardContent>

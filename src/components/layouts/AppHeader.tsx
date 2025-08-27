@@ -3,14 +3,10 @@
 import React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { ArrowLeft, LogOut, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
 import { useGroup } from '@/contexts/group-context'
-import {
-  ArrowLeft,
-  LogOut,
-  Settings,
-} from 'lucide-react'
 
 interface AppHeaderProps {
   showBackButton?: boolean
@@ -34,62 +30,64 @@ export default function AppHeader({
   const { currentGroup } = useGroup()
 
   // 그룹 정보를 보여줄 때는 currentGroup에서 제목과 부제목을 가져옴
-  const displayTitle = showGroupInfo ? (currentGroup?.name || '가계부') : title
-  const displaySubtitle = showGroupInfo ? 
-    (currentGroup ? `${currentGroup.memberCount}명 참여` : '그룹 선택 필요') : 
-    subtitle
+  const displayTitle = showGroupInfo ? currentGroup?.name || '가계부' : title
+  const displaySubtitle = showGroupInfo
+    ? currentGroup
+      ? `${currentGroup.memberCount}명 참여`
+      : '그룹 선택 필요'
+    : subtitle
 
   return (
-    <div className="bg-white border-b border-slate-200 sticky top-0 z-40 backdrop-blur-sm bg-white/95">
-      <div className="container-responsive">
-        <div className="flex items-center justify-between h-14 sm:h-16">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+    <div className='bg-white border-b border-slate-200 sticky top-0 z-40 backdrop-blur-sm bg-white/95'>
+      <div className='container-responsive'>
+        <div className='flex items-center justify-between h-14 sm:h-16'>
+          <div className='flex items-center gap-2 sm:gap-4 min-w-0 flex-1'>
             {showBackButton && (
               <>
-                <Link 
-                  href={backHref} 
-                  className="flex items-center gap-1 sm:gap-2 text-slate-600 hover:text-slate-900 cursor-pointer transition-colors btn-touch p-1"
+                <Link
+                  href={backHref}
+                  className='flex items-center gap-1 sm:gap-2 text-slate-600 hover:text-slate-900 cursor-pointer transition-colors btn-touch p-1'
                 >
-                  <ArrowLeft className="h-4 w-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm font-medium hidden xs:inline">{backText}</span>
+                  <ArrowLeft className='h-4 w-4 flex-shrink-0' />
+                  <span className='text-xs sm:text-sm font-medium hidden xs:inline'>
+                    {backText}
+                  </span>
                 </Link>
-                
-                <div className="h-4 sm:h-6 w-px bg-slate-300 hidden xs:block"></div>
+
+                <div className='h-4 sm:h-6 w-px bg-slate-300 hidden xs:block'></div>
               </>
             )}
-            
-            <div className="min-w-0 flex-1">
+
+            <div className='min-w-0 flex-1'>
               {displayTitle && (
-                <h1 className="text-base sm:text-xl font-bold text-slate-900 truncate">
+                <h1 className='text-base sm:text-xl font-bold text-slate-900 truncate'>
                   {displayTitle}
                 </h1>
               )}
               {displaySubtitle && (
-                <p className="text-2xs sm:text-xs text-slate-500 truncate">
-                  {displaySubtitle}
-                </p>
+                <p className='text-2xs sm:text-xs text-slate-500 truncate'>{displaySubtitle}</p>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className='flex items-center gap-3'>
             <Button
-              variant="ghost"
-              size="sm"
+              variant='ghost'
+              size='sm'
               onClick={() => router.push('/settings/profile')}
-              className="text-slate-600 hover:text-slate-900 cursor-pointer"
-              title="설정"
+              className='text-slate-600 hover:text-slate-900 cursor-pointer'
+              title='설정'
             >
-              <Settings className="h-4 w-4" />
+              <Settings className='h-4 w-4' />
             </Button>
             <Button
-              variant="ghost"
-              size="sm"
+              variant='ghost'
+              size='sm'
               onClick={logout}
-              className="text-slate-600 hover:text-slate-900 cursor-pointer"
-              title="로그아웃"
+              className='text-slate-600 hover:text-slate-900 cursor-pointer'
+              title='로그아웃'
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className='h-4 w-4' />
             </Button>
           </div>
         </div>

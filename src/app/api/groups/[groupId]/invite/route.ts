@@ -33,7 +33,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // 관리자 권한 확인 (OWNER 또는 ADMIN만 초대 가능)
-    const userMember = group.members.find((member) => member.userId === payload.userId)
+    const userMember = group.members.find(member => member.userId === payload.userId)
     if (!userMember || (userMember.role !== 'OWNER' && userMember.role !== 'ADMIN')) {
       return NextResponse.json({ error: '초대 권한이 없습니다.' }, { status: 403 })
     }

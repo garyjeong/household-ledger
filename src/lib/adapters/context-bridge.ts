@@ -3,10 +3,10 @@
  * 변경 최소화 원칙: 기존 코드 영향 없이 새로운 상태 관리 시스템 통합
  */
 
+import { useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { useGroup } from '@/contexts/group-context'
 import { useLedgerStore } from '@/stores/ledger-store'
-import { useEffect } from 'react'
 
 /**
  * Context와 Zustand 스토어를 동기화하는 Hook
@@ -130,7 +130,7 @@ export class DataMapper {
   }
 
   findAccountByName(name: string): LegacyAccount | null {
-    return this.accounts.find((acc) => acc.name.toLowerCase().includes(name.toLowerCase())) || null
+    return this.accounts.find(acc => acc.name.toLowerCase().includes(name.toLowerCase())) || null
   }
 
   findCategoryByName(
@@ -138,7 +138,7 @@ export class DataMapper {
     type?: 'EXPENSE' | 'INCOME' | 'TRANSFER'
   ): LegacyCategory | null {
     return (
-      this.categories.find((cat) => {
+      this.categories.find(cat => {
         const nameMatch = cat.name.toLowerCase().includes(name.toLowerCase())
         const typeMatch = !type || cat.type === type
         return nameMatch && typeMatch
@@ -147,18 +147,18 @@ export class DataMapper {
   }
 
   getAccountName(id: string): string {
-    return this.accounts.find((acc) => acc.id === id)?.name || '알 수 없는 계좌'
+    return this.accounts.find(acc => acc.id === id)?.name || '알 수 없는 계좌'
   }
 
   getCategoryName(id: string): string {
-    return this.categories.find((cat) => cat.id === id)?.name || '알 수 없는 카테고리'
+    return this.categories.find(cat => cat.id === id)?.name || '알 수 없는 카테고리'
   }
 
   // Fuzzy search for better matching
   searchAccount(query: string): LegacyAccount[] {
     const normalizedQuery = query.toLowerCase().trim()
     return this.accounts
-      .filter((acc) => acc.name.toLowerCase().includes(normalizedQuery))
+      .filter(acc => acc.name.toLowerCase().includes(normalizedQuery))
       .sort((a, b) => {
         // 정확한 매치를 우선순위로
         const aExact = a.name.toLowerCase() === normalizedQuery
@@ -172,7 +172,7 @@ export class DataMapper {
   searchCategory(query: string, type?: 'EXPENSE' | 'INCOME' | 'TRANSFER'): LegacyCategory[] {
     const normalizedQuery = query.toLowerCase().trim()
     return this.categories
-      .filter((cat) => {
+      .filter(cat => {
         const nameMatch = cat.name.toLowerCase().includes(normalizedQuery)
         const typeMatch = !type || cat.type === type
         return nameMatch && typeMatch
@@ -236,14 +236,14 @@ export function showToast(toast: Omit<ToastMessage, 'id'>) {
   const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`
   const fullToast = { ...toast, id }
 
-  toastCallbacks.forEach((callback) => callback(fullToast))
+  toastCallbacks.forEach(callback => callback(fullToast))
 }
 
 export function onToast(callback: (toast: ToastMessage) => void) {
   toastCallbacks.push(callback)
 
   return () => {
-    toastCallbacks = toastCallbacks.filter((cb) => cb !== callback)
+    toastCallbacks = toastCallbacks.filter(cb => cb !== callback)
   }
 }
 

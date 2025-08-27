@@ -42,12 +42,12 @@ export const transactionQuerySchema = z.object({
   page: z
     .string()
     .default('1')
-    .transform((val) => parseInt(val, 10))
+    .transform(val => parseInt(val, 10))
     .pipe(z.number().int().positive()),
   limit: z
     .string()
     .default('20')
-    .transform((val) => parseInt(val, 10))
+    .transform(val => parseInt(val, 10))
     .pipe(z.number().int().positive().max(100)),
 })
 
@@ -66,7 +66,7 @@ export const quickAddSchema = z.object({
     .string()
     .min(1, '금액을 입력해주세요')
     .regex(/^\d+$/, '금액은 숫자만 입력할 수 있습니다')
-    .transform((val) => parseInt(val, 10))
+    .transform(val => parseInt(val, 10))
     .pipe(z.number().int().positive().max(999999999)),
   categoryId: z.string().min(1, '카테고리를 선택해주세요'),
   accountId: z.string().min(1, '계좌를 선택해주세요'),

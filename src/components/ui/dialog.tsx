@@ -30,15 +30,15 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-modal">
+    <div className='fixed inset-0 z-modal'>
       {/* 배경 오버레이 */}
-      <div 
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+      <div
+        className='absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in'
         onClick={() => onOpenChange?.(false)}
       />
-      
+
       {/* 모달 컨텐츠 */}
-      <div className="relative z-10 flex items-center justify-center min-h-full p-4">
+      <div className='relative z-10 flex items-center justify-center min-h-full p-4'>
         {children}
       </div>
     </div>
@@ -52,11 +52,13 @@ export interface DialogContentProps {
 
 export function DialogContent({ children, className = '' }: DialogContentProps) {
   return (
-    <div className={`
+    <div
+      className={`
       bg-white rounded-lg shadow-lg border border-gray-200 
       animate-scale-in max-w-md w-full max-h-[90vh] overflow-y-auto
       ${className}
-    `}>
+    `}
+    >
       {children}
     </div>
   )
@@ -68,11 +70,7 @@ export interface DialogHeaderProps {
 }
 
 export function DialogHeader({ children, className = '' }: DialogHeaderProps) {
-  return (
-    <div className={`p-6 pb-4 border-b border-gray-200 ${className}`}>
-      {children}
-    </div>
-  )
+  return <div className={`p-6 pb-4 border-b border-gray-200 ${className}`}>{children}</div>
 }
 
 export interface DialogTitleProps {
@@ -81,11 +79,7 @@ export interface DialogTitleProps {
 }
 
 export function DialogTitle({ children, className = '' }: DialogTitleProps) {
-  return (
-    <h2 className={`text-lg font-semibold text-text-primary ${className}`}>
-      {children}
-    </h2>
-  )
+  return <h2 className={`text-lg font-semibold text-text-primary ${className}`}>{children}</h2>
 }
 
 export interface DialogDescriptionProps {
@@ -94,11 +88,7 @@ export interface DialogDescriptionProps {
 }
 
 export function DialogDescription({ children, className = '' }: DialogDescriptionProps) {
-  return (
-    <p className={`text-sm text-text-secondary ${className}`}>
-      {children}
-    </p>
-  )
+  return <p className={`text-sm text-text-secondary ${className}`}>{children}</p>
 }
 
 export interface DialogFooterProps {
@@ -108,7 +98,9 @@ export interface DialogFooterProps {
 
 export function DialogFooter({ children, className = '' }: DialogFooterProps) {
   return (
-    <div className={`flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 p-6 pt-4 border-t border-gray-200 ${className}`}>
+    <div
+      className={`flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 p-6 pt-4 border-t border-gray-200 ${className}`}
+    >
       {children}
     </div>
   )

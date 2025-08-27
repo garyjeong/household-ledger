@@ -157,7 +157,7 @@ export function runTestCases(
   testCases: TestCase[],
   testFn: (testCase: TestCase) => void | Promise<void>
 ) {
-  testCases.forEach((testCase) => {
+  testCases.forEach(testCase => {
     it(testCase.name, async () => {
       if (testCase.setup) {
         await testCase.setup()

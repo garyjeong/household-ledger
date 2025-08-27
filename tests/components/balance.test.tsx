@@ -82,7 +82,7 @@ describe('BalanceCard', () => {
   })
 
   it('잔액 정보를 올바르게 표시해야 한다', async () => {
-    render(<BalanceCard ownerType="USER" ownerId="1" />)
+    render(<BalanceCard ownerType='USER' ownerId='1' />)
 
     await waitFor(() => {
       expect(screen.getByText('전체 잔액')).toBeInTheDocument()
@@ -93,7 +93,7 @@ describe('BalanceCard', () => {
   it('로딩 상태를 올바르게 표시해야 한다', () => {
     ;(fetch as jest.Mock).mockImplementation(() => new Promise(() => {}))
 
-    render(<BalanceCard ownerType="USER" ownerId="1" />)
+    render(<BalanceCard ownerType='USER' ownerId='1' />)
 
     expect(document.querySelector('.animate-pulse')).toBeInTheDocument()
   })
@@ -101,7 +101,7 @@ describe('BalanceCard', () => {
   it('에러 상태를 올바르게 표시해야 한다', async () => {
     ;(fetch as jest.Mock).mockRejectedValue(new Error('Network error'))
 
-    render(<BalanceCard ownerType="USER" ownerId="1" />)
+    render(<BalanceCard ownerType='USER' ownerId='1' />)
 
     await waitFor(() => {
       expect(screen.getByText('잔액 로드 실패')).toBeInTheDocument()
@@ -122,11 +122,11 @@ describe('BalanceWidget', () => {
   })
 
   it('컴팩트 모드에서 잔액 정보를 표시해야 한다', async () => {
-    render(<BalanceWidget ownerType="USER" ownerId="1" compact={true} />)
+    render(<BalanceWidget ownerType='USER' ownerId='1' compact={true} />)
 
     await waitFor(() => {
-      expect(screen.getByText('전체 잔액')).toBeInTheDocument()
-      expect(screen.getByText('2,000,000원')).toBeInTheDocument()
+      expect(screen.getByText('잔액')).toBeInTheDocument()
+      expect(screen.getByText('₩2,000,000')).toBeInTheDocument()
     })
   })
 
@@ -141,11 +141,11 @@ describe('BalanceWidget', () => {
       json: async () => negativeBalanceResponse,
     })
 
-    render(<BalanceWidget ownerType="USER" ownerId="1" />)
+    render(<BalanceWidget ownerType='USER' ownerId='1' />)
 
     await waitFor(() => {
-      expect(screen.getByText('-100,000원')).toBeInTheDocument()
-      expect(screen.getByText('잔액 부족')).toBeInTheDocument()
+      expect(screen.getByText('-₩100,000')).toBeInTheDocument()
+      expect(screen.getByText('총 잔액')).toBeInTheDocument()
     })
   })
 })

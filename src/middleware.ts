@@ -36,15 +36,15 @@ const BYPASS_PATHS = [
 ]
 
 function shouldBypassMiddleware(pathname: string): boolean {
-  return BYPASS_PATHS.some((path) => pathname.startsWith(path))
+  return BYPASS_PATHS.some(path => pathname.startsWith(path))
 }
 
 function isProtectedPath(pathname: string): boolean {
-  return PROTECTED_PATHS.some((path) => pathname.startsWith(path))
+  return PROTECTED_PATHS.some(path => pathname.startsWith(path))
 }
 
 function isPublicApiPath(pathname: string): boolean {
-  return PUBLIC_API_PATHS.some((path) => pathname.startsWith(path))
+  return PUBLIC_API_PATHS.some(path => pathname.startsWith(path))
 }
 
 function hasValidToken(request: NextRequest): boolean {

@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
 
     // 각 계좌별로 잔액 재계산
     const recalculationResults = await Promise.all(
-      accounts.map(async (account) => {
+      accounts.map(async account => {
         // 해당 계좌의 모든 거래 조회
         const transactions = await prisma.transaction.findMany({
           where: { accountId: account.id },
@@ -224,7 +224,7 @@ export async function POST(request: NextRequest) {
       })
     )
 
-    const updatedCount = recalculationResults.filter((result) => result.wasUpdated).length
+    const updatedCount = recalculationResults.filter(result => result.wasUpdated).length
 
     return NextResponse.json({
       success: true,

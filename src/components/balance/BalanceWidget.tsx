@@ -1,255 +1,187 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { 
-  Wallet, 
-  Eye, 
-  EyeOff, 
-  RefreshCw,
-  AlertCircle,
-  TrendingUp,
-  TrendingDown
-} from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { type BalanceResponse } from '@/lib/schemas/balance'
+import React, { useState, useEffect } from 'react'
+import { Wallet, TrendingUp, TrendingDown, DollarSign } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { apiGet } from '@/lib/api-client'
 
 interface BalanceWidgetProps {
   ownerType: 'USER' | 'GROUP'
   ownerId: string
   showProjection?: boolean
   compact?: boolean
-  onClick?: () => void
   className?: string
 }
 
-export function BalanceWidget({ 
-  ownerType, 
-  ownerId, 
+interface BalanceData {
+  totalBalance: number
+  monthlyIncome: number
+  monthlyExpense: number
+  projectedBalance?: number
+  currency: string
+}
+
+export function BalanceWidget({
+  ownerType,
+  ownerId,
   showProjection = false,
   compact = false,
-  onClick,
-  className = '' 
+  className = '',
 }: BalanceWidgetProps) {
-  // 상태 관리
-  const [balanceData, setBalanceData] = useState<BalanceResponse | null>(null)
+  const [balanceData, setBalanceData] = useState<BalanceData>({
+    totalBalance: 0,
+    monthlyIncome: 0,
+    monthlyExpense: 0,
+    projectedBalance: 0,
+    currency: 'KRW',
+  })
   const [isLoading, setIsLoading] = useState(true)
-  const [showBalance, setShowBalance] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  // 잔액 데이터 로드
-  const loadBalance = async () => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const params = new URLSearchParams({
-        ownerType,
-        ownerId,
-        includeProjection: showProjection.toString(),
-        projectionMonths: '1',
-      })
-
-      const response = await fetch(`/api/balance?${params}`, {
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch balance')
-      }
-
-      const data = await response.json()
-      setBalanceData(data)
-    } catch (error) {
-      console.error('Balance loading error:', error)
-      setError(error instanceof Error ? error.message : '잔액을 불러오는데 실패했습니다')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // 초기 로드
   useEffect(() => {
-    loadBalance()
-  }, [ownerType, ownerId, showProjection])
+    const loadBalanceData = async () => {
+      if (!ownerId) return
 
-  // 잔액 포맷팅
-  const formatCurrency = (amount: number, currency = 'KRW', short = false): string => {
-    if (short && currency === 'KRW') {
-      if (Math.abs(amount) >= 100000000) {
-        return `${(amount / 100000000).toFixed(1)}억원`
-      } else if (Math.abs(amount) >= 10000) {
-        return `${(amount / 10000).toFixed(0)}만원`
+      try {
+        setIsLoading(true)
+        const response = await fetch(`/api/balance?ownerType=${ownerType}&ownerId=${ownerId}`)
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch balance data')
+        }
+
+        const data = await response.json()
+        setBalanceData({
+          totalBalance: data.totalBalance || 0,
+          monthlyIncome: data.monthlyIncome || 0,
+          monthlyExpense: data.monthlyExpense || 0,
+          projectedBalance: data.projectedBalance || 0,
+          currency: data.currency || 'KRW',
+        })
+      } catch (error) {
+        console.error('Failed to load balance data:', error)
+        // Fallback to zero values on error
+        setBalanceData({
+          totalBalance: 0,
+          monthlyIncome: 0,
+          monthlyExpense: 0,
+          projectedBalance: 0,
+          currency: 'KRW',
+        })
+      } finally {
+        setIsLoading(false)
       }
     }
-    
-    if (currency === 'KRW') {
-      return `${amount.toLocaleString()}원`
-    }
-    return `${amount.toLocaleString()} ${currency}`
+
+    loadBalanceData()
+  }, [ownerType, ownerId])
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('ko-KR', {
+      style: 'currency',
+      currency: balanceData.currency,
+    }).format(amount)
   }
 
-  // 잔액 상태
-  const getBalanceStatus = (balance: number): 'positive' | 'negative' | 'zero' => {
-    if (balance > 0) return 'positive'
-    if (balance < 0) return 'negative'
-    return 'zero'
-  }
+  const isPositive = balanceData.totalBalance >= 0
 
-  if (isLoading) {
+  if (compact) {
     return (
-      <Card className={`${className} ${onClick ? 'cursor-pointer hover:shadow-md' : ''}`}>
-        <CardContent className={`${compact ? 'p-4' : 'p-6'}`}>
-          <div className="animate-pulse">
-            <div className="flex items-center space-x-3">
-              <div className="h-8 w-8 bg-slate-200 rounded-full"></div>
-              <div className="flex-1">
-                <div className="h-4 bg-slate-200 rounded w-20 mb-2"></div>
-                <div className="h-6 bg-slate-200 rounded w-32"></div>
-              </div>
+      <Card className={`${className}`}>
+        <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+          <CardTitle className='text-xs sm:text-sm font-medium text-slate-700'>잔액</CardTitle>
+          <Wallet
+            className={`h-4 w-4 sm:h-5 sm:w-5 ${isPositive ? 'text-blue-600' : 'text-red-600'}`}
+          />
+        </CardHeader>
+        <CardContent className='pb-3 sm:pb-6'>
+          {isLoading ? (
+            <div className='space-y-2'>
+              <div className='h-6 bg-slate-200 rounded animate-pulse'></div>
+              <div className='h-3 bg-slate-200 rounded animate-pulse w-3/4'></div>
             </div>
-          </div>
+          ) : (
+            <>
+              <div
+                className={`text-xl sm:text-2xl font-bold ${isPositive ? 'text-blue-900' : 'text-red-900'}`}
+              >
+                {formatCurrency(balanceData.totalBalance)}
+              </div>
+              <p className='text-xs text-slate-600 mt-1'>사용 가능 금액</p>
+            </>
+          )}
         </CardContent>
       </Card>
     )
   }
-
-  if (error) {
-    return (
-      <Card className={`border-red-200 ${className}`}>
-        <CardContent className={`${compact ? 'p-4' : 'p-6'}`}>
-          <div className="flex items-center gap-2 text-red-600">
-            <AlertCircle className="h-4 w-4" />
-            <span className="text-sm">잔액 로드 실패</span>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (!balanceData) return null
-
-  const balanceStatus = getBalanceStatus(balanceData.totalBalance)
-  const activeAccounts = balanceData.accountBalances.filter(account => account.isActive)
-  
-  // 다음 달 예상 잔액 변화
-  const nextMonthChange = balanceData.projection?.months?.[0] 
-    ? balanceData.projection.months[0].projectedBalance - balanceData.totalBalance
-    : null
 
   return (
-    <Card 
-      className={`${className} ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
-      onClick={onClick}
-    >
-      <CardContent className={`${compact ? 'p-4' : 'p-6'}`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`
-              p-2 rounded-full
-              ${balanceStatus === 'positive' ? 'bg-green-100 text-green-600' : 
-                balanceStatus === 'negative' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'}
-            `}>
-              <Wallet className={`${compact ? 'h-4 w-4' : 'h-5 w-5'}`} />
+    <Card className={`bg-white border-slate-200 shadow-sm ${className}`}>
+      <CardHeader className='border-b border-slate-100 pb-4'>
+        <CardTitle className='text-lg font-semibold text-slate-900 flex items-center gap-2'>
+          <Wallet className='h-5 w-5 text-slate-600' />
+          잔액 현황
+        </CardTitle>
+      </CardHeader>
+      <CardContent className='pt-6'>
+        {isLoading ? (
+          <div className='space-y-4'>
+            <div className='h-8 bg-slate-200 rounded animate-pulse'></div>
+            <div className='grid grid-cols-2 gap-4'>
+              <div className='h-16 bg-slate-200 rounded animate-pulse'></div>
+              <div className='h-16 bg-slate-200 rounded animate-pulse'></div>
             </div>
-            
-            <div>
-              <div className="flex items-center gap-2">
-                <span className={`text-sm text-gray-600 ${compact ? 'text-xs' : ''}`}>
-                  전체 잔액
-                </span>
-                {!compact && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowBalance(!showBalance)
-                    }}
-                    className="h-6 w-6 p-0"
+          </div>
+        ) : (
+          <div className='space-y-6'>
+            {/* Total Balance */}
+            <div className='text-center'>
+              <div
+                className={`text-3xl font-bold ${isPositive ? 'text-slate-900' : 'text-red-600'}`}
+              >
+                {formatCurrency(balanceData.totalBalance)}
+              </div>
+              <p className='text-sm text-slate-500 mt-1'>총 잔액</p>
+            </div>
+
+            {/* Monthly Summary */}
+            <div className='grid grid-cols-2 gap-4'>
+              <div className='text-center p-3 bg-green-50 rounded-lg'>
+                <TrendingUp className='h-5 w-5 text-green-600 mx-auto mb-2' />
+                <div className='text-lg font-semibold text-green-900'>
+                  {formatCurrency(balanceData.monthlyIncome)}
+                </div>
+                <p className='text-xs text-green-600'>이번 달 수입</p>
+              </div>
+
+              <div className='text-center p-3 bg-red-50 rounded-lg'>
+                <TrendingDown className='h-5 w-5 text-red-600 mx-auto mb-2' />
+                <div className='text-lg font-semibold text-red-900'>
+                  {formatCurrency(balanceData.monthlyExpense)}
+                </div>
+                <p className='text-xs text-red-600'>이번 달 지출</p>
+              </div>
+            </div>
+
+            {/* Projection (if enabled) */}
+            {showProjection && balanceData.projectedBalance !== undefined && (
+              <div className='border-t pt-4'>
+                <div className='flex items-center justify-between'>
+                  <span className='text-sm text-slate-600'>월말 예상 잔액</span>
+                  <div
+                    className={`text-lg font-semibold ${
+                      balanceData.projectedBalance >= 0 ? 'text-slate-900' : 'text-red-600'
+                    }`}
                   >
-                    {showBalance ? (
-                      <EyeOff className="h-3 w-3" />
-                    ) : (
-                      <Eye className="h-3 w-3" />
-                    )}
-                  </Button>
-                )}
+                    {formatCurrency(balanceData.projectedBalance)}
+                  </div>
+                </div>
               </div>
-              
-              <div className={`font-bold ${
-                compact ? 'text-lg' : 'text-xl'
-              } ${
-                balanceStatus === 'positive' ? 'text-green-600' : 
-                balanceStatus === 'negative' ? 'text-red-600' : 'text-gray-600'
-              }`}>
-                {showBalance ? (
-                  formatCurrency(balanceData.totalBalance, balanceData.currency, compact)
-                ) : (
-                  '••••••••'
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col items-end gap-1">
-            {!compact && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  loadBalance()
-                }}
-                className="h-6 w-6 p-0"
-              >
-                <RefreshCw className="h-3 w-3" />
-              </Button>
             )}
-            
-            <Badge variant="outline" className="text-xs">
-              {activeAccounts.length}개 계좌
-            </Badge>
-            
-            {/* 다음 달 예상 변화 */}
-            {showProjection && nextMonthChange && showBalance && (
-              <Badge 
-                variant={nextMonthChange < 0 ? 'destructive' : 'default'}
-                className="text-xs"
-              >
-                {nextMonthChange < 0 ? (
-                  <TrendingDown className="h-3 w-3 mr-1" />
-                ) : (
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                )}
-                다음달 {nextMonthChange >= 0 ? '+' : ''}{formatCurrency(nextMonthChange, balanceData.currency, true)}
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        {/* 부가 정보 (compact 모드가 아닐 때) */}
-        {!compact && balanceData.recurringExpenses && (
-          <div className="mt-3 pt-3 border-t">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">월 고정 지출</span>
-              <span className="font-medium text-red-600">
-                -{formatCurrency(balanceData.recurringExpenses.total, balanceData.currency, true)}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* 경고 표시 */}
-        {balanceStatus === 'negative' && (
-          <div className="mt-2 text-xs text-red-600 flex items-center gap-1">
-            <AlertCircle className="h-3 w-3" />
-            <span>잔액 부족</span>
           </div>
         )}
       </CardContent>
     </Card>
   )
 }
+
+export default BalanceWidget

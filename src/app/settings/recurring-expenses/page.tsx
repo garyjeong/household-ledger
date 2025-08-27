@@ -5,9 +5,16 @@ import { Plus, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
-import { RecurringExpenseList, type RecurringExpense } from '@/components/recurring-expenses/RecurringExpenseList'
+import {
+  RecurringExpenseList,
+  type RecurringExpense,
+} from '@/components/recurring-expenses/RecurringExpenseList'
 import { RecurringExpenseDialog } from '@/components/recurring-expenses/RecurringExpenseDialog'
-import { type RecurringExpenseData, type Account, type Category } from '@/components/recurring-expenses/RecurringExpenseForm'
+import {
+  type RecurringExpenseData,
+  type Account,
+  type Category,
+} from '@/components/recurring-expenses/RecurringExpenseForm'
 import { useAuth } from '@/contexts/auth-context'
 import { useGroup } from '@/contexts/group-context'
 
@@ -42,11 +49,7 @@ export default function RecurringExpensesPage() {
 
     setIsLoading(true)
     try {
-      await Promise.all([
-        loadRecurringExpenses(),
-        loadAccounts(),
-        loadCategories(),
-      ])
+      await Promise.all([loadRecurringExpenses(), loadAccounts(), loadCategories()])
     } catch (error) {
       console.error('Data loading error:', error)
       toast({
@@ -303,44 +306,42 @@ export default function RecurringExpensesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* 페이지 헤더 */}
-      <div className="flex items-center justify-between">
+      <div className='flex items-center justify-between'>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">고정 지출 관리</h1>
-          <p className="text-gray-600 mt-1">
-            정기적으로 발생하는 지출을 등록하고 관리하세요
-          </p>
+          <h1 className='text-2xl font-bold text-gray-900'>고정 지출 관리</h1>
+          <p className='text-gray-600 mt-1'>정기적으로 발생하는 지출을 등록하고 관리하세요</p>
         </div>
-        
+
         <Button
           onClick={openCreateDialog}
           disabled={!hasRequiredData}
-          className="flex items-center gap-2"
+          className='flex items-center gap-2'
         >
-          <Plus className="h-4 w-4" />
+          <Plus className='h-4 w-4' />
           고정 지출 추가
         </Button>
       </div>
 
       {/* 필수 데이터 확인 경고 */}
       {!hasRequiredData && (
-        <Card className="border-orange-200 bg-orange-50">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5" />
+        <Card className='border-orange-200 bg-orange-50'>
+          <CardContent className='p-4'>
+            <div className='flex items-start gap-3'>
+              <AlertCircle className='h-5 w-5 text-orange-600 mt-0.5' />
               <div>
-                <h3 className="font-medium text-orange-800">
+                <h3 className='font-medium text-orange-800'>
                   고정 지출을 추가하려면 계좌가 필요합니다
                 </h3>
-                <p className="text-sm text-orange-700 mt-1">
+                <p className='text-sm text-orange-700 mt-1'>
                   먼저 계좌를 추가한 후 고정 지출을 등록해보세요.
                 </p>
                 <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-2 border-orange-300 text-orange-700 hover:bg-orange-100"
-                  onClick={() => window.location.href = '/settings/accounts'}
+                  variant='outline'
+                  size='sm'
+                  className='mt-2 border-orange-300 text-orange-700 hover:bg-orange-100'
+                  onClick={() => (window.location.href = '/settings/accounts')}
                 >
                   계좌 관리로 이동
                 </Button>
@@ -364,20 +365,24 @@ export default function RecurringExpensesPage() {
         isOpen={isDialogOpen}
         onClose={closeDialog}
         mode={dialogMode}
-        initialData={selectedExpense ? {
-          id: selectedExpense.id,
-          ownerType,
-          ownerId,
-          startDate: selectedExpense.startDate,
-          frequency: selectedExpense.frequency,
-          dayRule: selectedExpense.dayRule,
-          amount: selectedExpense.amount,
-          accountId: selectedExpense.accountId,
-          categoryId: selectedExpense.categoryId,
-          merchant: selectedExpense.merchant,
-          memo: selectedExpense.memo,
-          isActive: selectedExpense.isActive,
-        } : undefined}
+        initialData={
+          selectedExpense
+            ? {
+                id: selectedExpense.id,
+                ownerType,
+                ownerId,
+                startDate: selectedExpense.startDate,
+                frequency: selectedExpense.frequency,
+                dayRule: selectedExpense.dayRule,
+                amount: selectedExpense.amount,
+                accountId: selectedExpense.accountId,
+                categoryId: selectedExpense.categoryId,
+                merchant: selectedExpense.merchant,
+                memo: selectedExpense.memo,
+                isActive: selectedExpense.isActive,
+              }
+            : undefined
+        }
         accounts={accounts}
         categories={categories}
         ownerType={ownerType}

@@ -247,12 +247,12 @@ export class GlobalErrorHandler {
     this.notificationCallbacks.push(callback)
 
     return () => {
-      this.notificationCallbacks = this.notificationCallbacks.filter((cb) => cb !== callback)
+      this.notificationCallbacks = this.notificationCallbacks.filter(cb => cb !== callback)
     }
   }
 
   private notifyUser(report: ErrorReport) {
-    this.notificationCallbacks.forEach((callback) => {
+    this.notificationCallbacks.forEach(callback => {
       try {
         callback(report)
       } catch (e) {
@@ -266,7 +266,7 @@ export class GlobalErrorHandler {
     if (typeof window === 'undefined') return
 
     // JavaScript 런타임 에러
-    window.addEventListener('error', (event) => {
+    window.addEventListener('error', event => {
       this.handleError(new Error(event.message), {
         url: event.filename,
         additionalContext: {
@@ -277,7 +277,7 @@ export class GlobalErrorHandler {
     })
 
     // Promise rejection 에러
-    window.addEventListener('unhandledrejection', (event) => {
+    window.addEventListener('unhandledrejection', event => {
       const error = event.reason instanceof Error ? event.reason : new Error(String(event.reason))
       this.handleError(error, {
         additionalContext: {
@@ -357,7 +357,7 @@ export async function withRetry<T>(
       }
 
       // 지연 후 재시도
-      await new Promise((resolve) => setTimeout(resolve, delay * attempt))
+      await new Promise(resolve => setTimeout(resolve, delay * attempt))
     }
   }
 

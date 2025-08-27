@@ -1,15 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { type CreateCategoryData, type UpdateCategoryData } from '@/lib/schemas/category'
 import { CategoryForm } from './CategoryForm'
 import { type Category } from './CategoryList'
-import { type CreateCategoryData, type UpdateCategoryData } from '@/lib/schemas/category'
 
 interface CategoryDialogProps {
   mode: 'create' | 'edit'
@@ -24,7 +19,7 @@ export function CategoryDialog({
   open,
   onOpenChange,
   category,
-  onSubmit
+  onSubmit,
 }: CategoryDialogProps) {
   const [isLoading, setIsLoading] = useState(false)
 
@@ -47,25 +42,29 @@ export function CategoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className='sm:max-w-md'>
         <DialogHeader>
-          <DialogTitle>
-            {mode === 'create' ? '새 카테고리 추가' : '카테고리 정보 수정'}
-          </DialogTitle>
+          <DialogTitle>{mode === 'create' ? '새 카테고리 추가' : '카테고리 정보 수정'}</DialogTitle>
         </DialogHeader>
-        
-        <div className="-mt-6"> {/* Dialog header와의 간격 조정 */}
+
+        <div className='-mt-6'>
+          {' '}
+          {/* Dialog header와의 간격 조정 */}
           <CategoryForm
             mode={mode}
-            initialData={category ? {
-              id: category.id,
-              name: category.name,
-              type: category.type,
-              color: category.color,
-              ownerType: category.ownerType,
-              ownerId: category.ownerId,
-              isDefault: category.isDefault,
-            } : undefined}
+            initialData={
+              category
+                ? {
+                    id: category.id,
+                    name: category.name,
+                    type: category.type,
+                    color: category.color,
+                    ownerType: category.ownerType,
+                    ownerId: category.ownerId,
+                    isDefault: category.isDefault,
+                  }
+                : undefined
+            }
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             isLoading={isLoading}

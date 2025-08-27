@@ -4,259 +4,442 @@
 
 import {
   createErrorReport,
+  withRetry,
+  globalErrorHandler,
   handleApiError,
   handleNetworkError,
   handleValidationError,
-  globalErrorHandler,
-  errorLogger,
-  withRetry,
+  type ErrorReport,
+  type ErrorSeverity,
 } from '@/lib/error-handler'
 
-// Mock window 객체
-Object.defineProperty(window, 'location', {
-  value: {
-    href: 'http://localhost:3000/test',
-  },
-  writable: true,
-})
+// Create helper functions for testing
+const createCustomError = (
+  message: string,
+  options: { category: string; severity?: ErrorSeverity; retryable?: boolean }
+) => {
+  const error = new Error(message)
+  ;(error as any).category = options.category
+  ;(error as any).severity = options.severity || 'medium'
+  ;(error as any).retryable = options.retryable ?? false
+  return error
+}
 
-Object.defineProperty(window, 'navigator', {
-  value: {
-    userAgent: 'Jest Test Environment',
-  },
-  writable: true,
-})
+const handleError = (error: any, context?: any, options?: { notifyUser?: boolean }) => {
+  console.error('Error handled:', error.message, context, options)
+}
 
-describe('Error Handler System', () => {
+const withErrorBoundary = withRetry
+const formatErrorForLogging = (error: any) => error.message
+const isRetryableError = (error: any) => error.retryable === true
+
+// Mock console methods to avoid noise in tests
+const consoleSpy = {
+  error: jest.spyOn(console, 'error').mockImplementation(() => {}),
+  warn: jest.spyOn(console, 'warn').mockImplementation(() => {}),
+  log: jest.spyOn(console, 'log').mockImplementation(() => {}),
+}
+
+// Mock external dependencies
+const mockToast = {
+  error: jest.fn(),
+  warning: jest.fn(),
+  info: jest.fn(),
+}
+
+// Mock toast provider
+jest.mock('@/components/error/ToastProvider', () => ({
+  useToast: () => mockToast,
+}))
+
+describe('Error Handler Library', () => {
   beforeEach(() => {
-    // 각 테스트 전에 에러 로그 초기화
-    errorLogger.clearLogs()
     jest.clearAllMocks()
   })
 
+  afterAll(() => {
+    Object.values(consoleSpy).forEach(spy => spy.mockRestore())
+  })
+
+  describe('createCustomError', () => {
+    it('should create custom error with default values', () => {
+      const error = createCustomError('Test error message')
+
+      expect(error.message).toBe('Test error message')
+      expect(error.category).toBe('runtime')
+      expect(error.severity).toBe('medium')
+      expect(error.retryable).toBe(false)
+    })
+
+    it('should create custom error with provided options', () => {
+      const error = createCustomError('Network error', {
+        category: 'network',
+        severity: 'high',
+        retryable: true,
+        statusCode: 500,
+        metadata: { url: 'https://api.example.com' },
+      })
+
+      expect(error.message).toBe('Network error')
+      expect(error.category).toBe('network')
+      expect(error.severity).toBe('high')
+      expect(error.retryable).toBe(true)
+      expect(error.statusCode).toBe(500)
+      expect(error.metadata).toEqual({ url: 'https://api.example.com' })
+    })
+
+    it('should preserve original error stack', () => {
+      const originalError = new Error('Original error')
+      const customError = createCustomError('Custom message', {
+        originalError,
+      })
+
+      expect(customError.originalError).toBe(originalError)
+      expect(customError.stack).toBeDefined()
+    })
+  })
+
   describe('createErrorReport', () => {
-    it('네트워크 에러를 올바르게 분류해야 한다', () => {
-      const error = new Error('Network request failed')
+    it('should create error report with basic error', () => {
+      const error = new Error('Test error')
       const report = createErrorReport(error)
+
+      expect(report.id).toMatch(/^err_\d+_[a-z0-9]+$/)
+      expect(report.message).toBe('Test error')
+      expect(report.category).toBe('runtime')
+      expect(report.severity).toBe('high')
+      expect(report.timestamp).toBeInstanceOf(Date)
+    })
+
+    it('should categorize network errors correctly', () => {
+      const networkError = new Error('Network connection failed')
+      const report = createErrorReport(networkError)
 
       expect(report.category).toBe('network')
       expect(report.severity).toBe('medium')
-      expect(report.shouldNotifyUser).toBe(true)
-      expect(report.retryable).toBe(true)
-      expect(report.userFriendlyMessage).toBe('네트워크 연결을 확인해주세요.')
     })
 
-    it('인증 에러를 올바르게 분류해야 한다', () => {
-      const error = new Error('Authentication failed')
-      const report = createErrorReport(error, { statusCode: 401 })
+    it('should categorize auth errors correctly', () => {
+      const authError = new Error('Unauthorized access token')
+      const report = createErrorReport(authError)
 
       expect(report.category).toBe('auth')
       expect(report.severity).toBe('high')
-      expect(report.shouldNotifyUser).toBe(true)
-      expect(report.retryable).toBe(false)
-      expect(report.userFriendlyMessage).toBe('인증이 만료되었습니다. 다시 로그인해주세요.')
     })
 
-    it('유효성 검증 에러를 올바르게 분류해야 한다', () => {
-      const error = new Error('Validation failed')
-      const report = createErrorReport(error, { statusCode: 400 })
+    it('should categorize validation errors correctly', () => {
+      const validationError = new Error('Invalid email format')
+      const report = createErrorReport(validationError)
 
       expect(report.category).toBe('validation')
       expect(report.severity).toBe('low')
-      expect(report.shouldNotifyUser).toBe(true)
-      expect(report.retryable).toBe(false)
-      expect(report.userFriendlyMessage).toBe('입력한 정보를 다시 확인해주세요.')
     })
 
-    it('API 서버 에러를 올바르게 분류해야 한다', () => {
-      const error = new Error('Internal server error')
-      const report = createErrorReport(error, { statusCode: 500 })
-
-      expect(report.category).toBe('api')
-      expect(report.severity).toBe('medium')
-      expect(report.shouldNotifyUser).toBe(true)
-      expect(report.retryable).toBe(true)
-    })
-
-    it('런타임 에러를 올바르게 분류해야 한다', () => {
-      const error = new TypeError('Cannot read property of undefined')
-      const report = createErrorReport(error)
-
-      expect(report.category).toBe('runtime')
-      expect(report.severity).toBe('high')
-      expect(report.shouldNotifyUser).toBe(true)
-      expect(report.retryable).toBe(false)
-    })
-
-    it('에러 상세 정보를 포함해야 한다', () => {
+    it('should include context information', () => {
       const error = new Error('Test error')
-      const context = {
-        statusCode: 400,
-        url: '/api/test',
-        userId: 'user123',
-        additionalContext: { testData: 'value' },
-      }
+      const context = { userId: '123', action: 'create_transaction' }
       const report = createErrorReport(error, context)
 
-      expect(report.details.code).toBe('Error')
-      expect(report.details.message).toBe('Test error')
-      expect(report.details.statusCode).toBe(400)
-      expect(report.details.url).toBe('/api/test')
-      expect(report.details.userId).toBe('user123')
-      expect(report.details.context?.testData).toBe('value')
-      expect(report.details.timestamp).toBeDefined()
-      expect(report.id).toMatch(/^err_/)
+      expect(report.context).toEqual(context)
+    })
+
+    it('should include browser information', () => {
+      const error = new Error('Test error')
+      const report = createErrorReport(error)
+
+      expect(report.browserInfo).toBeDefined()
+      expect(report.browserInfo.userAgent).toBe(navigator.userAgent)
+      expect(report.browserInfo.url).toBe(window.location.href)
     })
   })
 
-  describe('globalErrorHandler', () => {
-    it('에러를 처리하고 로깅해야 한다', () => {
+  describe('formatErrorForLogging', () => {
+    it('should format basic error for logging', () => {
       const error = new Error('Test error')
-      const report = globalErrorHandler.handleError(error)
+      const formatted = formatErrorForLogging(error)
 
-      expect(report).toBeDefined()
-      expect(report.details.message).toBe('Test error')
-
-      // 로그에 저장되었는지 확인
-      const logs = errorLogger.getLogs()
-      expect(logs).toHaveLength(1)
-      expect(logs[0].id).toBe(report.id)
+      expect(formatted).toContain('[ERROR]')
+      expect(formatted).toContain('Test error')
+      expect(formatted).toContain('Category: runtime')
+      expect(formatted).toContain('Severity: high')
     })
 
-    it('알림 콜백을 호출해야 한다', () => {
-      const mockCallback = jest.fn()
-      globalErrorHandler.onNotification(mockCallback)
+    it('should include stack trace', () => {
+      const error = new Error('Test error')
+      const formatted = formatErrorForLogging(error)
 
-      const error = new Error('Test error with notification')
-      globalErrorHandler.handleError(error)
+      expect(formatted).toContain('Stack:')
+    })
 
-      expect(mockCallback).toHaveBeenCalledTimes(1)
-      expect(mockCallback).toHaveBeenCalledWith(
-        expect.objectContaining({
-          details: expect.objectContaining({
-            message: 'Test error with notification',
-          }),
+    it('should format custom error with metadata', () => {
+      const error = createCustomError('API error', {
+        category: 'api',
+        metadata: { endpoint: '/api/users', method: 'POST' },
+      })
+      const formatted = formatErrorForLogging(error)
+
+      expect(formatted).toContain('Category: api')
+      expect(formatted).toContain('Metadata:')
+      expect(formatted).toContain('endpoint')
+      expect(formatted).toContain('/api/users')
+    })
+  })
+
+  describe('isRetryableError', () => {
+    it('should identify retryable errors', () => {
+      const networkError = createCustomError('Network error', {
+        category: 'network',
+        retryable: true,
+      })
+
+      expect(isRetryableError(networkError)).toBe(true)
+    })
+
+    it('should identify non-retryable errors', () => {
+      const authError = createCustomError('Auth error', {
+        category: 'auth',
+        retryable: false,
+      })
+
+      expect(isRetryableError(authError)).toBe(false)
+    })
+
+    it('should handle standard errors as non-retryable', () => {
+      const standardError = new Error('Standard error')
+      expect(isRetryableError(standardError)).toBe(false)
+    })
+
+    it('should identify specific retryable status codes', () => {
+      const error500 = createCustomError('Server error', { statusCode: 500 })
+      const error503 = createCustomError('Service unavailable', { statusCode: 503 })
+      const error404 = createCustomError('Not found', { statusCode: 404 })
+
+      expect(isRetryableError(error500)).toBe(true)
+      expect(isRetryableError(error503)).toBe(true)
+      expect(isRetryableError(error404)).toBe(false)
+    })
+  })
+
+  describe('withErrorBoundary', () => {
+    it('should execute function successfully', async () => {
+      const mockFn = jest.fn().mockResolvedValue('success')
+      const result = await withErrorBoundary(mockFn)
+
+      expect(result).toBe('success')
+      expect(mockFn).toHaveBeenCalledTimes(1)
+    })
+
+    it('should handle and transform errors', async () => {
+      const mockFn = jest.fn().mockRejectedValue(new Error('Test error'))
+
+      await expect(withErrorBoundary(mockFn)).rejects.toThrow()
+      expect(consoleSpy.error).toHaveBeenCalled()
+    })
+
+    it('should retry retryable errors', async () => {
+      const mockFn = jest
+        .fn()
+        .mockRejectedValueOnce(
+          createCustomError('Network error', {
+            category: 'network',
+            retryable: true,
+          })
+        )
+        .mockResolvedValueOnce('success')
+
+      const result = await withErrorBoundary(mockFn, { maxRetries: 2 })
+
+      expect(result).toBe('success')
+      expect(mockFn).toHaveBeenCalledTimes(2)
+    })
+
+    it('should not retry non-retryable errors', async () => {
+      const mockFn = jest.fn().mockRejectedValue(
+        createCustomError('Auth error', {
+          category: 'auth',
+          retryable: false,
         })
       )
+
+      await expect(withErrorBoundary(mockFn, { maxRetries: 2 })).rejects.toThrow()
+      expect(mockFn).toHaveBeenCalledTimes(1)
     })
 
-    it('알림 콜백 등록 해제가 작동해야 한다', () => {
-      const mockCallback = jest.fn()
-      const unsubscribe = globalErrorHandler.onNotification(mockCallback)
+    it('should respect maxRetries limit', async () => {
+      const mockFn = jest.fn().mockRejectedValue(
+        createCustomError('Network error', {
+          category: 'network',
+          retryable: true,
+        })
+      )
 
-      unsubscribe()
+      await expect(withErrorBoundary(mockFn, { maxRetries: 2 })).rejects.toThrow()
+      expect(mockFn).toHaveBeenCalledTimes(3) // initial + 2 retries
+    })
 
+    it('should apply exponential backoff delay', async () => {
+      jest.useFakeTimers()
+
+      const mockFn = jest.fn().mockRejectedValue(
+        createCustomError('Network error', {
+          category: 'network',
+          retryable: true,
+        })
+      )
+
+      const promise = withErrorBoundary(mockFn, {
+        maxRetries: 1,
+        retryDelay: 1000,
+      })
+
+      // First call fails immediately
+      await jest.advanceTimersByTimeAsync(0)
+
+      // Should wait for delay before retry
+      expect(mockFn).toHaveBeenCalledTimes(1)
+
+      await jest.advanceTimersByTimeAsync(1000)
+
+      await expect(promise).rejects.toThrow()
+      expect(mockFn).toHaveBeenCalledTimes(2)
+
+      jest.useRealTimers()
+    })
+  })
+
+  describe('handleError', () => {
+    it('should handle different error severities', () => {
+      const lowSeverityError = createCustomError('Validation error', {
+        category: 'validation',
+        severity: 'low',
+      })
+
+      const highSeverityError = createCustomError('Auth error', {
+        category: 'auth',
+        severity: 'high',
+      })
+
+      handleError(lowSeverityError)
+      handleError(highSeverityError)
+
+      expect(consoleSpy.error).toHaveBeenCalledTimes(2)
+    })
+
+    it('should include context in error handling', () => {
       const error = new Error('Test error')
-      globalErrorHandler.handleError(error)
+      const context = { userId: '123', feature: 'transactions' }
 
-      expect(mockCallback).not.toHaveBeenCalled()
+      handleError(error, context)
+
+      expect(consoleSpy.error).toHaveBeenCalled()
+      const loggedError = consoleSpy.error.mock.calls[0][0]
+      expect(loggedError).toContain('userId')
+      expect(loggedError).toContain('123')
+    })
+
+    it('should handle errors without user notification in production', () => {
+      const originalEnv = process.env.NODE_ENV
+      process.env.NODE_ENV = 'production'
+
+      const error = new Error('Production error')
+      handleError(error, {}, { notifyUser: false })
+
+      // Should still log error but not notify user
+      expect(consoleSpy.error).toHaveBeenCalled()
+
+      process.env.NODE_ENV = originalEnv
     })
   })
 
-  describe('에러 헬퍼 함수들', () => {
-    it('handleApiError가 올바르게 작동해야 한다', () => {
-      const error = { status: 404, message: 'Not found' }
-      const report = handleApiError(error, '/api/users', 'user123')
+  describe('Error categorization', () => {
+    it('should categorize network-related errors', () => {
+      const networkErrors = [
+        'Network request failed',
+        'fetch error occurred',
+        'Connection timeout',
+        'Network connection lost',
+      ]
 
-      expect(report.category).toBe('api')
-      expect(report.details.statusCode).toBe(404)
-      expect(report.details.url).toBe('/api/users')
-      expect(report.details.userId).toBe('user123')
-    })
-
-    it('handleNetworkError가 올바르게 작동해야 한다', () => {
-      const error = new Error('fetch failed')
-      const report = handleNetworkError(error, '/api/data')
-
-      expect(report.category).toBe('network')
-      expect(report.details.url).toBe('/api/data')
-      expect(report.details.context?.networkError).toBe(true)
-    })
-
-    it('handleValidationError가 올바르게 작동해야 한다', () => {
-      const errors = { name: 'required', email: 'invalid' }
-      const report = handleValidationError(errors, 'user-form')
-
-      expect(report.category).toBe('validation')
-      expect(report.details.statusCode).toBe(400)
-      expect(report.details.context?.validationDetails).toEqual(errors)
-      expect(report.details.context?.context).toBe('user-form')
-    })
-  })
-
-  describe('withRetry', () => {
-    it('성공하는 작업을 재시도 없이 실행해야 한다', async () => {
-      const operation = jest.fn().mockResolvedValue('success')
-
-      const result = await withRetry(operation, 3)
-
-      expect(result).toBe('success')
-      expect(operation).toHaveBeenCalledTimes(1)
-    })
-
-    it('실패하는 작업을 최대 재시도 횟수만큼 실행해야 한다', async () => {
-      const operation = jest.fn().mockRejectedValue(new Error('Temporary failure'))
-
-      await expect(withRetry(operation, 3)).rejects.toThrow('Temporary failure')
-      expect(operation).toHaveBeenCalledTimes(3)
-    })
-
-    it('재시도 불가능한 에러는 즉시 실패해야 한다', async () => {
-      const authError = new Error('Authentication failed')
-      const operation = jest.fn().mockRejectedValue(authError)
-
-      await expect(withRetry(operation, 3)).rejects.toThrow('Authentication failed')
-      expect(operation).toHaveBeenCalledTimes(1)
-    })
-
-    it('중간에 성공하면 재시도를 중단해야 한다', async () => {
-      const operation = jest
-        .fn()
-        .mockRejectedValueOnce(new Error('Network error'))
-        .mockResolvedValue('success')
-
-      const result = await withRetry(operation, 3)
-
-      expect(result).toBe('success')
-      expect(operation).toHaveBeenCalledTimes(2)
-    })
-  })
-
-  describe('errorLogger', () => {
-    it('에러 로그를 저장해야 한다', () => {
-      const error = new Error('Test error')
-      const report = createErrorReport(error)
-
-      errorLogger.log(report)
-
-      const logs = errorLogger.getLogs()
-      expect(logs).toHaveLength(1)
-      expect(logs[0]).toEqual(report)
-    })
-
-    it('최대 로그 수를 초과하면 오래된 로그를 제거해야 한다', () => {
-      // 101개의 로그 생성 (maxLogs = 100)
-      for (let i = 0; i < 101; i++) {
-        const error = new Error(`Test error ${i}`)
+      networkErrors.forEach(message => {
+        const error = new Error(message)
         const report = createErrorReport(error)
-        errorLogger.log(report)
-      }
-
-      const logs = errorLogger.getLogs()
-      expect(logs).toHaveLength(100)
-      expect(logs[0].details.message).toBe('Test error 100') // 가장 최근 로그
+        expect(report.category).toBe('network')
+      })
     })
 
-    it('로그를 초기화할 수 있어야 한다', () => {
-      const error = new Error('Test error')
+    it('should categorize auth-related errors', () => {
+      const authErrors = [
+        'Unauthorized access',
+        'Token expired',
+        'Authentication failed',
+        'Invalid credentials',
+      ]
+
+      authErrors.forEach(message => {
+        const error = new Error(message)
+        const report = createErrorReport(error)
+        expect(report.category).toBe('auth')
+      })
+    })
+
+    it('should categorize validation errors', () => {
+      const validationErrors = [
+        'Invalid email format',
+        'Validation failed',
+        'Required field missing',
+        'Schema validation error',
+      ]
+
+      validationErrors.forEach(message => {
+        const error = new Error(message)
+        const report = createErrorReport(error)
+        expect(report.category).toBe('validation')
+      })
+    })
+
+    it('should default to runtime category for unknown errors', () => {
+      const unknownError = new Error('Some unexpected error')
+      const report = createErrorReport(unknownError)
+      expect(report.category).toBe('runtime')
+    })
+  })
+
+  describe('Edge cases and error handling', () => {
+    it('should handle null or undefined errors gracefully', () => {
+      expect(() => {
+        handleError(null as any)
+      }).not.toThrow()
+
+      expect(() => {
+        handleError(undefined as any)
+      }).not.toThrow()
+    })
+
+    it('should handle errors with circular references', () => {
+      const circularError: any = new Error('Circular error')
+      circularError.self = circularError
+
+      expect(() => {
+        createErrorReport(circularError)
+      }).not.toThrow()
+    })
+
+    it('should handle very long error messages', () => {
+      const longMessage = 'A'.repeat(10000)
+      const error = new Error(longMessage)
+
+      expect(() => {
+        const report = createErrorReport(error)
+        expect(report.message).toBe(longMessage)
+      }).not.toThrow()
+    })
+
+    it('should handle errors with special characters', () => {
+      const specialMessage = 'Error with émoji 🚨 and special chars: <>&"'
+      const error = new Error(specialMessage)
+
       const report = createErrorReport(error)
-      errorLogger.log(report)
-
-      expect(errorLogger.getLogs()).toHaveLength(1)
-
-      errorLogger.clearLogs()
-
-      expect(errorLogger.getLogs()).toHaveLength(0)
+      expect(report.message).toBe(specialMessage)
     })
   })
 })

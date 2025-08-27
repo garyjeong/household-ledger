@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const parsed = schema.safeParse(body)
     if (!parsed.success) {
-      const errors = parsed.error.issues.map((i) => i.message).join(', ')
+      const errors = parsed.error.issues.map(i => i.message).join(', ')
       return NextResponse.json({ error: errors }, { status: 400 })
     }
 

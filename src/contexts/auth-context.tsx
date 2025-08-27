@@ -8,8 +8,16 @@ interface AuthContextType {
   user: User | null
   isLoading: boolean
   isAuthenticated: boolean
-  login: (email: string, password: string, rememberMe?: boolean) => Promise<{ success: boolean; error?: string }>
-  signup: (email: string, password: string, nickname: string) => Promise<{ success: boolean; error?: string }>
+  login: (
+    email: string,
+    password: string,
+    rememberMe?: boolean
+  ) => Promise<{ success: boolean; error?: string }>
+  signup: (
+    email: string,
+    password: string,
+    nickname: string
+  ) => Promise<{ success: boolean; error?: string }>
   logout: () => void
   rememberedEmail: string | null
   clearRememberedEmail: () => void
@@ -53,9 +61,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         credentials: 'include',
         signal: controller.signal,
       })
-      
+
       clearTimeout(timeoutId)
-      
+
       if (response.ok) {
         const userData = await response.json()
         setUser(userData.user)
@@ -88,7 +96,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (response.ok) {
         setUser(data.user)
-        
+
         // 이메일 저장/삭제
         if (rememberMe) {
           emailStorage.save(email)
@@ -97,7 +105,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           emailStorage.clear()
           setRememberedEmail(null)
         }
-        
+
         return { success: true }
       } else {
         return { success: false, error: data.error || '로그인에 실패했습니다.' }
