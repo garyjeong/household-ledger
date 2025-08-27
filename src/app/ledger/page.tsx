@@ -16,7 +16,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import {
   Select,
@@ -367,7 +366,7 @@ function TransactionDialog({
     e.preventDefault()
 
     if (!formData.amount || !formData.description || !formData.category) {
-      showWarning('모든 필수 항목을 입력해주세요.')
+      alert('모든 필수 항목을 입력해주세요.')
       return
     }
 

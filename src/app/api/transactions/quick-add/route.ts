@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
         ownerId: BigInt(groupId),
       },
       orderBy: {
-        createdAt: 'asc', // 가장 먼저 생성된 계좌 사용
+        id: 'asc', // 가장 먼저 생성된 계좌 사용 (createdAt 대신 id 사용)
       },
     })
 
@@ -186,12 +186,14 @@ export async function POST(request: NextRequest) {
         name: newTransaction.account.name,
         type: newTransaction.account.type,
       },
-      category: {
-        id: newTransaction.category.id.toString(),
-        name: newTransaction.category.name,
-        color: newTransaction.category.color,
-        type: newTransaction.category.type,
-      },
+      category: newTransaction.category
+        ? {
+            id: newTransaction.category.id.toString(),
+            name: newTransaction.category.name,
+            color: newTransaction.category.color,
+            type: newTransaction.category.type,
+          }
+        : null,
       memo: newTransaction.memo,
       createdAt: newTransaction.createdAt.toISOString(),
       updatedAt: newTransaction.updatedAt.toISOString(),

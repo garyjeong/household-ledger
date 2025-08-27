@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { QuickAddModal } from '@/components/couple-ledger/QuickAddModal'
-import { defaultCategories, Category } from '@/components/couple-ledger/CategoryPicker'
+import { defaultCategories } from '@/components/couple-ledger/CategoryPicker'
 
 interface CategoryStats {
   id: string
@@ -82,7 +82,16 @@ const colorPalette = [
  * 카테고리 관리 페이지
  */
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>(defaultCategories)
+  interface Category {
+    id: string
+    name: string
+    icon?: string
+    color: string
+    type: 'income' | 'expense'
+    isDefault?: boolean
+  }
+  
+  const [categories, setCategories] = useState<Category[]>(defaultCategories.filter(cat => cat.type !== 'transfer') as Category[])
   const [categoryStats] = useState<CategoryStats[]>(dummyCategoryStats)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedType, setSelectedType] = useState<'all' | 'income' | 'expense'>('all')
@@ -101,7 +110,7 @@ export default function CategoriesPage() {
   const filteredCategories = categories.filter(category => {
     const matchesSearch = category.name.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesType =
-      selectedType === 'all' || category.type === selectedType || category.type === 'both'
+      selectedType === 'all' || category.type === selectedType
     return matchesSearch && matchesType
   })
 
@@ -141,7 +150,7 @@ export default function CategoriesPage() {
   const startEditing = (category: Category) => {
     setFormData({
       name: category.name,
-      icon: category.icon,
+      icon: category.icon || '',
       color: category.color,
       type: category.type,
       description: '',
@@ -507,7 +516,7 @@ export default function CategoriesPage() {
         isOpen={isQuickAddOpen}
         onClose={() => setIsQuickAddOpen(false)}
         onSave={async () => {}}
-        categories={categories}
+        categories={categories.map(cat => ({ ...cat, icon: cat.icon || '' }))}
         templates={[]}
       />
     </>

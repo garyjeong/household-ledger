@@ -49,7 +49,6 @@ export async function GET(request: NextRequest) {
         name: userInfo.nickname,
         email: userInfo.email,
         createdAt: userInfo.createdAt,
-        updatedAt: userInfo.updatedAt,
       },
     })
   } catch (error) {

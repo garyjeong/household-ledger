@@ -89,14 +89,6 @@ export async function GET(request: NextRequest) {
     const [recurringRules, totalCount] = await Promise.all([
       prisma.recurringRule.findMany({
         where: whereCondition,
-        include: {
-          account: {
-            select: { id: true, name: true, type: true },
-          },
-          category: {
-            select: { id: true, name: true, color: true, type: true },
-          },
-        },
         orderBy: [{ isActive: 'desc' }, { startDate: 'desc' }],
         skip,
         take: limit,
@@ -251,14 +243,6 @@ export async function POST(request: NextRequest) {
         merchant: ruleData.merchant || null,
         memo: ruleData.memo || null,
         isActive: ruleData.isActive,
-      },
-      include: {
-        account: {
-          select: { id: true, name: true, type: true },
-        },
-        category: {
-          select: { id: true, name: true, color: true, type: true },
-        },
       },
     })
 

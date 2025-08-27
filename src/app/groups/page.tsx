@@ -31,7 +31,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import { formatDate } from '@/lib/utils'
 
@@ -209,16 +208,15 @@ export default function GroupsPage() {
             </div>
 
             <div className='flex flex-wrap gap-3'>
+              <Button
+                variant='outline'
+                className='border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400'
+                onClick={() => setIsJoinDialogOpen(true)}
+              >
+                <UserPlus className='h-4 w-4 mr-2' />
+                그룹 참여
+              </Button>
               <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    variant='outline'
-                    className='border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400'
-                  >
-                    <UserPlus className='h-4 w-4 mr-2' />
-                    그룹 참여
-                  </Button>
-                </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>그룹 참여</DialogTitle>
@@ -264,12 +262,13 @@ export default function GroupsPage() {
                 </DialogContent>
               </Dialog>
 
+              <Button 
+                className='bg-slate-900 hover:bg-slate-800 text-white shadow-sm'
+                onClick={() => setIsCreateDialogOpen(true)}
+              >
+                <Plus className='h-4 w-4 mr-2' />새 그룹 만들기
+              </Button>
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className='bg-slate-900 hover:bg-slate-800 text-white shadow-sm'>
-                    <Plus className='h-4 w-4 mr-2' />새 그룹 만들기
-                  </Button>
-                </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>새 그룹 만들기</DialogTitle>

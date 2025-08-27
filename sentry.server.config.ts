@@ -17,8 +17,7 @@ Sentry.init({
   
   // 서버 전용 통합
   integrations: [
-    // Node.js 통합
-    Sentry.nodeIntegration(),
+    // Node.js 기본 통합 제거 (Sentry v8+에서는 자동 포함)
   ],
   
   // 민감한 정보 필터링 (서버 사이드)
@@ -78,12 +77,14 @@ Sentry.init({
       }
     }
     
-    // 쿼리 파라미터에서 민감한 정보 제거
+    // 쿼리 파라미터에서 민감한 정보 제거  
     if (event.request?.query_string) {
-      event.request.query_string = event.request.query_string.replace(
-        /([?&])(token|key|password|secret)=([^&]*)/gi, 
-        '$1$2=[FILTERED]'
-      )
+      if (typeof event.request.query_string === 'string') {
+        event.request.query_string = event.request.query_string.replace(
+          /([?&])(token|key|password|secret)=([^&]*)/gi, 
+          '$1$2=[FILTERED]'
+        )
+      }
     }
     
     return event

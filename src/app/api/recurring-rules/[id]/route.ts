@@ -7,7 +7,7 @@ import {
 } from '@/lib/schemas/recurring-rule'
 
 interface RouteParams {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 /**
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const { id } = params
+    const { id } = await params
 
     // ID 유효성 검사
     if (!id || isNaN(Number(id))) {
@@ -47,22 +47,28 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // 고정 지출 규칙 조회
     const recurringRule = await prisma.recurringRule.findUnique({
       where: { id: BigInt(id) },
-      include: {
-        account: {
-          select: { id: true, name: true, type: true },
-        },
-        category: {
-          select: { id: true, name: true, color: true, type: true },
-        },
-      },
     })
 
     if (!recurringRule) {
       return NextResponse.json(
-        { error: '고정 지출을 찾을 수 없습니다', code: 'NOT_FOUND' },
+        { error: '고정 지출 규칙을 찾을 수 없습니다', code: 'NOT_FOUND' },
         { status: 404 }
       )
     }
+
+    // 계좌 정보 조회
+    const account = await prisma.account.findUnique({
+      where: { id: recurringRule.accountId },
+      select: { id: true, name: true, type: true },
+    })
+
+    // 카테고리 정보 조회 (선택적)
+    const category = recurringRule.categoryId
+      ? await prisma.category.findUnique({
+          where: { id: recurringRule.categoryId },
+          select: { id: true, name: true, color: true, type: true },
+        })
+      : null
 
     // 소유권 검증
     const ownershipResult = await verifyResourceOwnership(
@@ -121,7 +127,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const { id } = params
+    const { id } = await params
 
     // ID 유효성 검사
     if (!id || isNaN(Number(id))) {
@@ -249,15 +255,21 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const updatedRule = await prisma.recurringRule.update({
       where: { id: BigInt(id) },
       data: dataToUpdate,
-      include: {
-        account: {
-          select: { id: true, name: true, type: true },
-        },
-        category: {
-          select: { id: true, name: true, color: true, type: true },
-        },
-      },
     })
+
+    // 업데이트된 규칙과 연관된 계좌 정보 조회
+    const account = await prisma.account.findUnique({
+      where: { id: updatedRule.accountId },
+      select: { id: true, name: true, type: true },
+    })
+
+    // 카테고리 정보 조회 (선택적)
+    const category = updatedRule.categoryId
+      ? await prisma.category.findUnique({
+          where: { id: updatedRule.categoryId },
+          select: { id: true, name: true, color: true, type: true },
+        })
+      : null
 
     // 응답 형태로 변환
     const formattedRule = formatRecurringRuleForResponse(updatedRule)
@@ -300,7 +312,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const { id } = params
+    const { id } = await params
 
     // ID 유효성 검사
     if (!id || isNaN(Number(id))) {

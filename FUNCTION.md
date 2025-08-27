@@ -4,9 +4,25 @@
 
 ---
 
-## 📖 개요
+## 📖 개요 & 프로젝트 목표
 
 Household Ledger는 개인과 그룹이 함께 사용할 수 있는 현대적인 가계부 웹 애플리케이션입니다. 세련된 슬레이트 디자인과 혁신적인 통합 인증 시스템, 강력한 다중 사용자 시스템을 통해 가계 관리를 혁신합니다.
+
+### 🎯 프로젝트 목적
+
+- 개인 및 그룹(기본 2인, 다인 확장 가능) 가계부 웹 애플리케이션 구축
+- KRW 기준 수입/지출/이체 관리
+- 그룹 내 거래 분할 및 정산 기능
+- 예산 관리 및 분석 대시보드
+- CSV 가져오기/내보내기
+
+### 🌟 핵심 특징
+
+- 단일 리포지토리 구조 (프론트엔드 + 백엔드 일체형)
+- MySQL 기반 데이터 저장
+- 슬레이트 색상 팔레트 기반 현대적 디자인
+- 화이트 카드, 12-16px 라운드 모서리
+- 부드러운 애니메이션과 마이크로인터랙션
 
 ---
 
@@ -28,6 +44,56 @@ Household Ledger는 개인과 그룹이 함께 사용할 수 있는 현대적인
 - **터치 친화적**: 큰 버튼, 적절한 터치 영역
 
 **구현 상태**: ✅ **완료** (2025년 5개 핵심 페이지 완성, TailwindCSS v3.4 안정화)
+
+---
+
+## 🛠️ **기술 스택 & 아키텍처**
+
+### 프론트엔드
+
+- **Framework**: Next.js 15+ (App Router) ✅
+- **Language**: TypeScript (strict mode) ✅
+- **Styling**: Tailwind CSS v3.4 + Radix UI ✅
+- **State Management**: React hooks + Context API + Zustand ✅
+- **Charts**: Recharts 또는 Chart.js
+- **Form Handling**: React Hook Form + Zod ✅
+
+### 백엔드
+
+- **Runtime**: Node.js ✅
+- **Framework**: Next.js API Routes + Server Actions ✅
+- **Database**: MySQL 8.4 (Docker) ✅
+- **ORM**: Prisma ✅
+- **Authentication**: JWT (Access + Refresh Token) ✅
+- **Password Hashing**: bcrypt ✅
+- **File Upload**: Multer + 로컬/S3 스토리지
+
+### 개발 도구
+
+- **Package Manager**: pnpm ✅
+- **Linting**: ESLint + Prettier ✅
+- **Testing**: Jest + React Testing Library ✅
+- **Type Checking**: TypeScript strict mode ✅
+- **Database Migration**: Prisma Migrate ✅
+- **Container**: Docker (MySQL) ✅
+
+### 색상 시스템
+
+```typescript
+// Tailwind 확장 색상
+brand: {
+  50: "#F3E9FF",
+  100: "#E9D9FF",
+  400: "#9E60FF",
+  600: "#6F3DF5",
+  700: "#5A2FE0"
+},
+accent: { magenta: "#D957FF" },
+chip: { lavender: "#EDE7FF" },
+text: { 900: "#1D2230", 700: "#373C48" },
+stroke: { 200: "#E8EAF0" },
+surface: { card: "#FFFFFF", page: "#FAFAFB" }
+```
 
 ### 🆕 **완성된 5개 핵심 페이지 (2025.01.08)**
 
@@ -443,6 +509,69 @@ Household Ledger는 개인과 그룹이 함께 사용할 수 있는 현대적인
 3. **고급 분석 대시보드** - 데이터 시각화
 4. **모바일 PWA** - 네이티브 앱 경험
 5. **다국어 지원** - 글로벌 확장 준비
+
+---
+
+## 📅 **개발 마일스톤 & 진행상황**
+
+### ✅ M0. 프로젝트 부트스트랩 (완료)
+
+- ✅ Next.js + TypeScript + Tailwind + Prisma 초기 설정
+- ✅ 색상 토큰 적용, ESLint/Prettier 설정
+- ✅ .env.example 파일 생성
+- ✅ Docker MySQL 환경 구축
+
+### ✅ M1. 인증 및 기본 도메인 (완료)
+
+- ✅ Prisma 스키마 작성 및 마이그레이션
+- ✅ JWT 인증 시스템 구현 (Access + Refresh Token)
+- ✅ 기본 레이아웃 및 네비게이션
+- ✅ 그룹 관리 시스템 (생성, 초대, 멤버 관리)
+- ✅ Jest + Testing Library 테스트 환경 (50+ 테스트)
+
+### ✅ M2. 계좌 및 카테고리 관리 (완료)
+
+- ✅ 계좌 CRUD API 구현 (검색, 필터링, 소유권 검증)
+- ✅ 카테고리 CRUD API 구현 (기본 15개 시드, 커스텀 생성)
+- ✅ 계좌 관리 UI (AccountForm, AccountList, AccountDialog)
+- ✅ 카테고리 관리 UI (CategoryForm, CategoryList, ColorPicker)
+- ✅ 통합 설정 페이지 (/settings/accounts, /settings/categories)
+- ✅ 실시간 금액 포맷팅 및 색상 시스템
+- ✅ 반응형 디자인 및 모바일 최적화
+
+### 🚧 M3. 거래 MVP (다음 목표)
+
+- ⏳ 거래 CRUD API 구현
+- ⏳ 거래 목록 및 필터링 UI
+- ⏳ 거래 작성 폼 (계좌/카테고리 선택 연동)
+- ⏳ 거래 검색 및 날짜/금액 범위 필터
+- ⏳ 파일 첨부 기능
+
+### M4. 그룹 및 정산
+
+- 그룹 거래 분할 로직 구현
+- 정산 계산 로직 구현
+- 정산 미리보기 및 생성 UI
+- 정산 완료 처리
+
+### M5. 예산, 반복, 분석
+
+- 예산 관리 기능
+- 반복 거래 자동 생성
+- 분석 대시보드 (차트 포함)
+
+### M6. 가져오기/내보내기 및 설정
+
+- CSV 가져오기 파이프라인
+- 데이터 내보내기 기능
+- 설정 페이지 구현
+
+### M7. 품질 보증 및 배포
+
+- 단위/통합 테스트 작성
+- 접근성 개선
+- 보안 점검
+- 배포 준비
 
 ---
 

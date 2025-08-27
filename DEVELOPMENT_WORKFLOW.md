@@ -565,4 +565,128 @@ const { data, error } = useSWR('/api/data', fetcher, {
 })
 ```
 
+---
+
+## 🚀 성능 모니터링 및 최적화
+
+### 📊 Web Vitals 실시간 모니터링
+
+#### 🎯 측정 지표
+
+- **LCP (Largest Contentful Paint)**: 목표 ≤2.5초
+- **FID (First Input Delay)**: 목표 ≤100ms
+- **CLS (Cumulative Layout Shift)**: 목표 ≤0.1
+- **FCP (First Contentful Paint)**: 목표 ≤1.8초
+- **TTFB (Time to First Byte)**: 목표 ≤800ms
+- **INP (Interaction to Next Paint)**: 목표 ≤200ms
+
+#### 🔧 구현 세부사항
+
+```typescript
+// Web Vitals 자동 측정 및 보고
+import { WebVitalsReporter } from '@/components/performance/WebVitalsReporter'
+
+// 전역 레이아웃에 통합
+<WebVitalsReporter />
+```
+
+#### 📈 모니터링 대상
+
+- **Sentry 통합**: 성능 메트릭 자동 전송
+- **로컬 스토리지**: 개발 환경 디버깅용 데이터 저장
+- **Google Analytics**: 사용자 성능 데이터 수집 (선택사항)
+
+### ⚡ React 성능 최적화
+
+#### 메모이제이션 적용
+
+```typescript
+// 컴포넌트 레벨 최적화
+const BalanceWidget = memo(function BalanceWidget({ ... }) {
+  // useMemo를 활용한 계산 최적화
+  const formatCurrency = useMemo(() =>
+    (amount: number) => new Intl.NumberFormat('ko-KR', {
+      style: 'currency',
+      currency: safeBalanceData.currency,
+    }).format(amount),
+    [safeBalanceData.currency]
+  )
+
+  // 조건부 렌더링 최적화
+  const isPositive = useMemo(() =>
+    balanceData?.totalBalance >= 0,
+    [balanceData?.totalBalance]
+  )
+})
+```
+
+#### 적용된 컴포넌트
+
+- ✅ `Button` - UI 컴포넌트 메모이제이션
+- ✅ `BalanceWidget` - 잔액 위젯 최적화
+- ✅ `OptimizedImage` - 이미지 컴포넌트 최적화
+
+### 🗄️ 데이터 캐싱 전략 (SWR)
+
+#### 캐싱 설정
+
+```typescript
+// SWR 전역 설정
+export const swrConfig: SWRConfiguration = {
+  dedupingInterval: 2000, // 2초 내 중복 요청 방지
+  focusThrottleInterval: 5000, // 5초 내 포커스 재검증 방지
+  revalidateOnFocus: true, // 포커스 시 자동 재검증
+  errorRetryCount: 3, // 최대 3회 재시도
+}
+```
+
+#### 구현된 훅
+
+- ✅ `useBalance` - 잔액 데이터 캐싱
+- ✅ `useTransactions` - 거래 내역 캐싱
+- ✅ `useRecentTransactions` - 최근 거래 캐싱
+
+#### 캐시 무효화 패턴
+
+```typescript
+// 거래 추가 시 관련 캐시 자동 무효화
+const CACHE_INVALIDATION_PATTERNS = {
+  TRANSACTION_CHANGE: (ownerType, ownerId) => [
+    CACHE_KEYS.BALANCE(ownerType, ownerId),
+    CACHE_KEYS.TRANSACTIONS(ownerType, ownerId),
+  ],
+}
+```
+
+### 📱 최적화 체크리스트
+
+#### 개발 시 확인사항
+
+- [ ] 컴포넌트 메모이제이션 적용 여부
+- [ ] 불필요한 리렌더링 방지
+- [ ] 데이터 캐싱 전략 적용
+- [ ] 이미지 최적화 (next/image 사용)
+- [ ] 번들 크기 확인 (`pnpm run analyze`)
+
+#### 배포 전 성능 검증
+
+- [ ] Lighthouse 성능 점수 90+ 확인
+- [ ] Web Vitals 지표 목표치 달성
+- [ ] 모바일 성능 테스트 완료
+- [ ] 큰 번들 크기 컴포넌트 최적화
+
+### 🔧 성능 도구 및 명령어
+
+```bash
+# 성능 분석
+pnpm run build:analyze    # 번들 분석
+pnpm run lighthouse      # Lighthouse 성능 테스트
+
+# 성능 모니터링
+pnpm run perf:monitor    # 로컬 성능 모니터링
+pnpm run perf:report     # 성능 리포트 생성
+```
+
+---
+
 이 문서는 팀의 성장과 프로젝트 진화에 따라 지속적으로 업데이트됩니다.

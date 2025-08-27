@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
       where: accountWhereCondition,
       orderBy: [
         { isActive: 'desc' }, // 활성 계좌 우선
-        { createdAt: 'asc' },
+        { id: 'asc' }, // ID 순서로 정렬 (createdAt 대신)
       ],
     })
 
