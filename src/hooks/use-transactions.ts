@@ -1,148 +1,352 @@
-import useSWR, { mutate } from 'swr'
-import { CACHE_KEYS, CACHE_INVALIDATION_PATTERNS } from '@/lib/swr-config'
+/**
+ * Transaction Management Hooks
+ * React Query를 사용한 거래 데이터 관리
+ */
 
-interface Transaction {
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { queryKeys } from '@/lib/query-client'
+import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api-client'
+import { useGroup } from '@/contexts/group-context'
+import { useAlert } from '@/contexts/alert-context'
+
+export interface Transaction {
   id: string
-  amount: number
-  description: string
-  category: string
-  date: string
   type: 'INCOME' | 'EXPENSE'
-  currency: string
-  ownerType: 'USER' | 'GROUP'
-  ownerId: string
+  amount: number
+  currency?: string
+  convertedAmount?: number
+  categoryId: string
+  category?: {
+    id: string
+    name: string
+    color?: string
+    type: string
+  }
+  description: string
+  memo?: string
+  date: string
+  tags?: string[]
+  accountId?: string
+  account?: {
+    id: string
+    name: string
+    type: string
+  }
+  createdAt: string
+  updatedAt: string
 }
 
-interface TransactionListResponse {
-  transactions: Transaction[]
-  total: number
-  page: number
-  limit: number
-  hasMore: boolean
-}
-
-interface UseTransactionsOptions {
+export interface TransactionFilters {
+  type?: 'INCOME' | 'EXPENSE'
+  startDate?: string
+  endDate?: string
+  categoryId?: string
+  search?: string
   page?: number
   limit?: number
-  refreshInterval?: number
-  revalidateOnFocus?: boolean
 }
 
-export function useTransactions(
-  ownerType: 'USER' | 'GROUP',
-  ownerId: string,
-  options: UseTransactionsOptions = {}
-) {
-  const { page = 1, limit = 20, ...swrOptions } = options
-  const cacheKey = CACHE_KEYS.TRANSACTIONS(ownerType, ownerId, page, limit)
+export interface CreateTransactionData {
+  type: 'INCOME' | 'EXPENSE'
+  amount: number
+  currency?: string
+  convertedAmount?: number
+  categoryId: string
+  description: string
+  memo?: string
+  date: string
+  tags?: string[]
+}
 
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: mutateSingle,
-  } = useSWR<TransactionListResponse>(ownerId ? cacheKey : null, {
-    // 거래 내역은 실시간성이 중요하므로 포커스 시 재검증
-    revalidateOnFocus: true,
+/**
+ * 거래 목록 조회
+ */
+export function useTransactions(filters: TransactionFilters = {}) {
+  const { currentGroup } = useGroup()
 
-    // 거래 데이터는 빈번히 변경되므로 오래된 데이터 즉시 재검증
-    revalidateIfStale: true,
+  return useQuery({
+    queryKey: queryKeys.transactions(filters),
+    queryFn: async () => {
+      const params = new URLSearchParams()
 
-    // 페이지네이션된 데이터는 에러 시 재시도
-    shouldRetryOnError: true,
-    errorRetryCount: 2,
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          params.append(key, value.toString())
+        }
+      })
 
-    ...swrOptions,
+      if (currentGroup) {
+        params.append('groupId', currentGroup.id)
+      }
+
+      const response = await apiGet(`/api/transactions?${params.toString()}`)
+
+      if (!response.ok) {
+        throw new Error(response.error || '거래 목록을 불러올 수 없습니다')
+      }
+
+      return response.data
+    },
+    enabled: !!currentGroup,
+    staleTime: 1 * 60 * 1000, // 1분
+    gcTime: 5 * 60 * 1000, // 5분
   })
-
-  // 새 거래 추가 후 캐시 무효화
-  const invalidateAfterTransaction = async () => {
-    const keys = CACHE_INVALIDATION_PATTERNS.TRANSACTION_CHANGE(ownerType, ownerId)
-    await Promise.all(keys.map(key => mutate(key)))
-  }
-
-  // 낙관적 업데이트 - 새 거래 추가
-  const optimisticAddTransaction = async (newTransaction: Omit<Transaction, 'id'>) => {
-    if (!data) return
-
-    const optimisticTransaction: Transaction = {
-      ...newTransaction,
-      id: `temp-${Date.now()}`, // 임시 ID
-    }
-
-    const optimisticData: TransactionListResponse = {
-      ...data,
-      transactions: [optimisticTransaction, ...data.transactions],
-      total: data.total + 1,
-    }
-
-    // 즉시 UI 업데이트
-    await mutateSingle(optimisticData, false)
-
-    // 서버 동기화 (1초 후)
-    setTimeout(() => {
-      invalidateAfterTransaction()
-    }, 1000)
-  }
-
-  // 낙관적 업데이트 - 거래 삭제
-  const optimisticDeleteTransaction = async (transactionId: string) => {
-    if (!data) return
-
-    const optimisticData: TransactionListResponse = {
-      ...data,
-      transactions: data.transactions.filter(t => t.id !== transactionId),
-      total: data.total - 1,
-    }
-
-    // 즉시 UI 업데이트
-    await mutateSingle(optimisticData, false)
-
-    // 서버 동기화
-    setTimeout(() => {
-      invalidateAfterTransaction()
-    }, 1000)
-  }
-
-  return {
-    // 데이터
-    transactions: data?.transactions || [],
-    total: data?.total || 0,
-    hasMore: data?.hasMore || false,
-    currentPage: page,
-
-    // 상태
-    isLoading,
-    isValidating,
-    error,
-
-    // 액션
-    refresh: mutateSingle,
-    invalidateAfterTransaction,
-    optimisticAddTransaction,
-    optimisticDeleteTransaction,
-
-    // 유틸리티
-    isEmpty: data ? data.transactions.length === 0 : null,
-    totalIncome: data
-      ? data.transactions.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0)
-      : 0,
-    totalExpense: data
-      ? data.transactions.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0)
-      : 0,
-  }
 }
 
-// 최근 거래 조회용 훅 (대시보드용)
-export function useRecentTransactions(
-  ownerType: 'USER' | 'GROUP',
-  ownerId: string,
-  limit: number = 5
-) {
-  return useTransactions(ownerType, ownerId, {
-    page: 1,
-    limit,
-    refreshInterval: 30000, // 30초마다 자동 새로고침
+/**
+ * 단일 거래 조회
+ */
+export function useTransaction(id: string) {
+  return useQuery({
+    queryKey: queryKeys.transaction(id),
+    queryFn: async () => {
+      const response = await apiGet(`/api/transactions/${id}`)
+
+      if (!response.ok) {
+        throw new Error(response.error || '거래 정보를 불러올 수 없습니다')
+      }
+
+      return response.data
+    },
+    enabled: !!id,
+    staleTime: 2 * 60 * 1000, // 2분
+  })
+}
+
+/**
+ * 거래 생성
+ */
+export function useCreateTransaction() {
+  const queryClient = useQueryClient()
+  const { currentGroup } = useGroup()
+  const { showSuccess, showError } = useAlert()
+
+  return useMutation({
+    mutationFn: async (data: CreateTransactionData) => {
+      if (!currentGroup) {
+        throw new Error('그룹을 선택해주세요')
+      }
+
+      const response = await apiPost('/api/transactions', {
+        ...data,
+        groupId: currentGroup.id,
+      })
+
+      if (!response.ok) {
+        throw new Error(response.error || '거래 추가에 실패했습니다')
+      }
+
+      return response.data
+    },
+    onSuccess: data => {
+      // 거래 목록 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['transactions'],
+      })
+
+      // 잔액 관련 쿼리도 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['balance'],
+      })
+
+      showSuccess('거래가 추가되었습니다')
+    },
+    onError: (error: Error) => {
+      showError(error.message || '거래 추가에 실패했습니다')
+    },
+  })
+}
+
+/**
+ * 거래 수정
+ */
+export function useUpdateTransaction() {
+  const queryClient = useQueryClient()
+  const { showSuccess, showError } = useAlert()
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<CreateTransactionData> }) => {
+      const response = await apiPut(`/api/transactions/${id}`, data)
+
+      if (!response.ok) {
+        throw new Error(response.error || '거래 수정에 실패했습니다')
+      }
+
+      return response.data
+    },
+    onSuccess: (data, variables) => {
+      // 해당 거래 캐시 업데이트
+      queryClient.setQueryData(queryKeys.transaction(variables.id), data)
+
+      // 거래 목록 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['transactions'],
+      })
+
+      // 잔액 관련 쿼리도 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['balance'],
+      })
+
+      showSuccess('거래가 수정되었습니다')
+    },
+    onError: (error: Error) => {
+      showError(error.message || '거래 수정에 실패했습니다')
+    },
+  })
+}
+
+/**
+ * 거래 삭제
+ */
+export function useDeleteTransaction() {
+  const queryClient = useQueryClient()
+  const { showSuccess, showError } = useAlert()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiDelete(`/api/transactions/${id}`)
+
+      if (!response.ok) {
+        throw new Error(response.error || '거래 삭제에 실패했습니다')
+      }
+
+      return { id }
+    },
+    onSuccess: data => {
+      // 해당 거래 캐시에서 제거
+      queryClient.removeQueries({
+        queryKey: queryKeys.transaction(data.id),
+      })
+
+      // 거래 목록 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['transactions'],
+      })
+
+      // 잔액 관련 쿼리도 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['balance'],
+      })
+
+      showSuccess('거래가 삭제되었습니다')
+    },
+    onError: (error: Error) => {
+      showError(error.message || '거래 삭제에 실패했습니다')
+    },
+  })
+}
+
+/**
+ * 빠른 거래 추가 (기존 API 사용)
+ */
+export function useQuickAddTransaction() {
+  const queryClient = useQueryClient()
+  const { currentGroup } = useGroup()
+  const { showSuccess, showError } = useAlert()
+
+  return useMutation({
+    mutationFn: async (data: {
+      type: 'EXPENSE' | 'INCOME'
+      amount: number
+      categoryName: string
+      memo?: string
+      date: string
+    }) => {
+      if (!currentGroup) {
+        throw new Error('그룹을 선택해주세요')
+      }
+
+      const response = await apiPost('/api/transactions/quick-add', {
+        ...data,
+        groupId: currentGroup.id,
+      })
+
+      if (!response.ok) {
+        throw new Error(response.error || '거래 추가에 실패했습니다')
+      }
+
+      return response.data
+    },
+    onSuccess: () => {
+      // 모든 거래 관련 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['transactions'],
+      })
+
+      queryClient.invalidateQueries({
+        queryKey: ['categories'],
+      })
+
+      queryClient.invalidateQueries({
+        queryKey: ['balance'],
+      })
+
+      showSuccess('거래가 추가되었습니다')
+    },
+    onError: (error: Error) => {
+      showError(error.message || '거래 추가에 실패했습니다')
+    },
+  })
+}
+
+/**
+ * 거래 통계 조회
+ */
+export function useTransactionStats(filters: { startDate?: string; endDate?: string } = {}) {
+  const { currentGroup } = useGroup()
+
+  return useQuery({
+    queryKey: ['transaction-stats', currentGroup?.id, filters],
+    queryFn: async () => {
+      const params = new URLSearchParams()
+
+      if (filters.startDate) params.append('startDate', filters.startDate)
+      if (filters.endDate) params.append('endDate', filters.endDate)
+      if (currentGroup) params.append('groupId', currentGroup.id)
+
+      const response = await apiGet(`/api/transactions/stats?${params.toString()}`)
+
+      if (!response.ok) {
+        throw new Error(response.error || '통계 정보를 불러올 수 없습니다')
+      }
+
+      return response.data
+    },
+    enabled: !!currentGroup,
+    staleTime: 2 * 60 * 1000, // 2분
+  })
+}
+
+/**
+ * 거래 검색
+ */
+export function useSearchTransactions(query: string, enabled = true) {
+  const { currentGroup } = useGroup()
+
+  return useQuery({
+    queryKey: ['transaction-search', currentGroup?.id, query],
+    queryFn: async () => {
+      if (!query.trim()) return { transactions: [], total: 0 }
+
+      const params = new URLSearchParams({
+        search: query.trim(),
+        limit: '20',
+      })
+
+      if (currentGroup) {
+        params.append('groupId', currentGroup.id)
+      }
+
+      const response = await apiGet(`/api/transactions?${params.toString()}`)
+
+      if (!response.ok) {
+        throw new Error(response.error || '검색에 실패했습니다')
+      }
+
+      return response.data
+    },
+    enabled: enabled && !!currentGroup && query.trim().length >= 2,
+    staleTime: 30 * 1000, // 30초
   })
 }

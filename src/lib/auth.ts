@@ -366,101 +366,159 @@ export async function generateInviteCode(
   groupId: string,
   createdBy: string
 ): Promise<InviteResponse> {
-  const inviteCode = generateId(8) // 8자리 랜덤 코드
+  const { prisma } = await import('@/lib/prisma')
+
+  // 10자리 영문+숫자 코드 생성
+  const inviteCode = generateId(10)
   const expiresAt = new Date()
-  expiresAt.setDate(expiresAt.getDate() + 7) // 7일 후 만료
+  expiresAt.setTime(expiresAt.getTime() + 24 * 60 * 60 * 1000) // 24시간 후 만료
 
-  // Mock 저장소에 저장
-  mockInviteCodes[inviteCode] = {
-    groupId,
-    expiresAt,
-    createdBy,
-  }
+  try {
+    // 기존 그룹의 만료되지 않은 초대 코드 삭제
+    await prisma.groupInvite.deleteMany({
+      where: {
+        groupId: BigInt(groupId),
+        expiresAt: {
+          gte: new Date(),
+        },
+      },
+    })
 
-  const inviteUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/groups/join?code=${inviteCode}`
+    // 새 초대 코드 저장
+    await prisma.groupInvite.create({
+      data: {
+        groupId: BigInt(groupId),
+        code: inviteCode,
+        createdBy: BigInt(createdBy),
+        expiresAt,
+      },
+    })
 
-  return {
-    inviteCode,
-    inviteUrl,
-    expiresAt,
+    const inviteUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/groups/join?code=${inviteCode}`
+
+    return {
+      inviteCode,
+      inviteUrl,
+      expiresAt,
+    }
+  } catch (error) {
+    console.error('Error generating invite code:', error)
+    throw new Error('초대 코드 생성에 실패했습니다.')
   }
 }
 
 export async function validateInviteCode(
   inviteCode: string
 ): Promise<{ groupId: string; isValid: boolean }> {
-  const invite = mockInviteCodes[inviteCode]
+  const { prisma } = await import('@/lib/prisma')
 
-  if (!invite) {
+  try {
+    const invite = await prisma.groupInvite.findUnique({
+      where: { code: inviteCode },
+      include: { group: true },
+    })
+
+    if (!invite) {
+      return { groupId: '', isValid: false }
+    }
+
+    const isExpired = new Date() > invite.expiresAt
+    if (isExpired) {
+      // 만료된 코드 삭제
+      await prisma.groupInvite.delete({
+        where: { id: invite.id },
+      })
+      return { groupId: invite.groupId.toString(), isValid: false }
+    }
+
+    return { groupId: invite.groupId.toString(), isValid: true }
+  } catch (error) {
+    console.error('Error validating invite code:', error)
     return { groupId: '', isValid: false }
   }
-
-  const isExpired = new Date() > invite.expiresAt
-  if (isExpired) {
-    delete mockInviteCodes[inviteCode] // 만료된 코드 삭제
-    return { groupId: invite.groupId, isValid: false }
-  }
-
-  return { groupId: invite.groupId, isValid: true }
 }
 
 export async function joinGroup(groupId: string, userId: string): Promise<boolean> {
-  // 이미 멤버인지 확인
-  const existingMember = mockGroupMembers.find(
-    member => member.groupId === groupId && member.userId === userId
-  )
+  const { prisma } = await import('@/lib/prisma')
 
-  if (existingMember) {
-    return false // 이미 멤버임
-  }
+  try {
+    // 이미 멤버인지 확인
+    const existingMember = await prisma.groupMember.findUnique({
+      where: {
+        groupId_userId: {
+          groupId: BigInt(groupId),
+          userId: BigInt(userId),
+        },
+      },
+    })
 
-  // 그룹이 존재하는지 확인
-  const group = mockGroups.find(g => g.id === groupId)
-  if (!group) {
+    if (existingMember) {
+      return false // 이미 멤버임
+    }
+
+    // 그룹이 존재하는지 확인
+    const group = await prisma.group.findUnique({
+      where: { id: BigInt(groupId) },
+    })
+
+    if (!group) {
+      return false
+    }
+
+    // 새 멤버 추가
+    await prisma.groupMember.create({
+      data: {
+        groupId: BigInt(groupId),
+        userId: BigInt(userId),
+        role: 'MEMBER',
+      },
+    })
+
+    return true
+  } catch (error) {
+    console.error('Error joining group:', error)
     return false
   }
-
-  // 새 멤버 추가
-  const newMember: GroupMember = {
-    groupId,
-    userId,
-    role: 'MEMBER',
-    joinedAt: new Date(),
-  }
-  mockGroupMembers.push(newMember)
-
-  // 그룹 멤버 수 업데이트
-  group.memberCount = (group.memberCount || 0) + 1
-
-  return true
 }
 
 export async function leaveGroup(groupId: string, userId: string): Promise<boolean> {
-  const memberIndex = mockGroupMembers.findIndex(
-    member => member.groupId === groupId && member.userId === userId
-  )
+  const { prisma } = await import('@/lib/prisma')
 
-  if (memberIndex === -1) {
-    return false // 멤버가 아님
-  }
+  try {
+    // 멤버 정보 확인
+    const member = await prisma.groupMember.findUnique({
+      where: {
+        groupId_userId: {
+          groupId: BigInt(groupId),
+          userId: BigInt(userId),
+        },
+      },
+    })
 
-  const member = mockGroupMembers[memberIndex]
+    if (!member) {
+      return false // 멤버가 아님
+    }
 
-  // 소유자는 탈퇴할 수 없음
-  if (member.role === 'OWNER') {
+    // 소유자는 탈퇴할 수 없음
+    if (member.role === 'OWNER') {
+      return false
+    }
+
+    // 멤버 제거
+    await prisma.groupMember.delete({
+      where: {
+        groupId_userId: {
+          groupId: BigInt(groupId),
+          userId: BigInt(userId),
+        },
+      },
+    })
+
+    return true
+  } catch (error) {
+    console.error('Error leaving group:', error)
     return false
   }
-
-  // 멤버 제거
-  mockGroupMembers.splice(memberIndex, 1)
-
-  // 그룹 멤버 수 업데이트
-  const group = mockGroups.find(g => g.id === groupId)
-  if (group) {
-    group.memberCount = (group.memberCount || 1) - 1
-  }
-
-  return true
 }
 
 export async function updateGroupMemberRole(
@@ -468,16 +526,41 @@ export async function updateGroupMemberRole(
   userId: string,
   newRole: 'ADMIN' | 'MEMBER'
 ): Promise<boolean> {
-  const member = mockGroupMembers.find(
-    member => member.groupId === groupId && member.userId === userId
-  )
+  const { prisma } = await import('@/lib/prisma')
 
-  if (!member || member.role === 'OWNER') {
-    return false // 멤버가 없거나 소유자 역할은 변경 불가
+  try {
+    // 멤버 정보 확인
+    const member = await prisma.groupMember.findUnique({
+      where: {
+        groupId_userId: {
+          groupId: BigInt(groupId),
+          userId: BigInt(userId),
+        },
+      },
+    })
+
+    if (!member || member.role === 'OWNER') {
+      return false // 멤버가 없거나 소유자 역할은 변경 불가
+    }
+
+    // 역할 업데이트
+    await prisma.groupMember.update({
+      where: {
+        groupId_userId: {
+          groupId: BigInt(groupId),
+          userId: BigInt(userId),
+        },
+      },
+      data: {
+        role: newRole,
+      },
+    })
+
+    return true
+  } catch (error) {
+    console.error('Error updating group member role:', error)
+    return false
   }
-
-  member.role = newRole
-  return true
 }
 
 // 헤더에서 토큰 추출 및 검증 (통합 함수)
@@ -558,9 +641,16 @@ export async function verifyResourceOwnership(
 
     if (ownerType === 'GROUP') {
       // 그룹 소유 리소스: 현재 사용자가 해당 그룹의 멤버여야 함
-      const membership = mockGroupMembers.find(
-        member => member.groupId === ownerId && member.userId === userId
-      )
+      const { prisma } = await import('@/lib/prisma')
+
+      const membership = await prisma.groupMember.findUnique({
+        where: {
+          groupId_userId: {
+            groupId: BigInt(ownerId),
+            userId: BigInt(userId),
+          },
+        },
+      })
 
       if (membership) {
         return { isValid: true }
@@ -600,20 +690,59 @@ export async function verifyCategoryOwnership(
 /**
  * 그룹 멤버의 역할 확인
  */
-export function getGroupMemberRole(
+export async function getGroupMemberRole(
   userId: string,
   groupId: string
-): 'OWNER' | 'ADMIN' | 'MEMBER' | null {
-  const membership = mockGroupMembers.find(
-    member => member.groupId === groupId && member.userId === userId
-  )
-  return membership?.role || null
+): Promise<'OWNER' | 'ADMIN' | 'MEMBER' | null> {
+  try {
+    const { prisma } = await import('@/lib/prisma')
+
+    const membership = await prisma.groupMember.findUnique({
+      where: {
+        groupId_userId: {
+          groupId: BigInt(groupId),
+          userId: BigInt(userId),
+        },
+      },
+    })
+
+    return membership?.role || null
+  } catch (error) {
+    console.error('Error getting group member role:', error)
+    return null
+  }
 }
 
 /**
  * 그룹 관리 권한 확인 (OWNER 또는 ADMIN)
  */
-export function hasGroupManagementPermission(userId: string, groupId: string): boolean {
-  const role = getGroupMemberRole(userId, groupId)
+export async function hasGroupManagementPermission(
+  userId: string,
+  groupId: string
+): Promise<boolean> {
+  const role = await getGroupMemberRole(userId, groupId)
   return role === 'OWNER' || role === 'ADMIN'
+}
+
+/**
+ * 만료된 초대 코드 정리
+ */
+export async function cleanupExpiredInviteCodes(): Promise<number> {
+  try {
+    const { prisma } = await import('@/lib/prisma')
+
+    const result = await prisma.groupInvite.deleteMany({
+      where: {
+        expiresAt: {
+          lt: new Date(),
+        },
+      },
+    })
+
+    console.log(`Cleaned up ${result.count} expired invite codes`)
+    return result.count
+  } catch (error) {
+    console.error('Error cleaning up expired invite codes:', error)
+    return 0
+  }
 }

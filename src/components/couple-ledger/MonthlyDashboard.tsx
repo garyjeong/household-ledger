@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { MonthlyStats, Person } from '@/types/couple-ledger'
 import { formatKRW } from './AmountInput'
+import { MonthlyTrendChart } from './MonthlyTrendChart'
 
 interface MonthlyDashboardProps {
   stats: MonthlyStats
@@ -417,6 +418,12 @@ export function MonthlyDashboard({
           </div>
         </CardContent>
       </Card>
+
+      {/* 월별 트렌드 차트 */}
+      <MonthlyTrendChart
+        dailyTrend={stats.dailyTrend}
+        categoryBreakdown={stats.categoryBreakdown}
+      />
     </div>
   )
 }

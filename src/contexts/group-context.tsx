@@ -54,6 +54,39 @@ export function GroupProvider({ children }: GroupProviderProps) {
     }
   }, [isAuthenticated, user])
 
+  // 실시간 동기화를 위한 폴링 설정
+  useEffect(() => {
+    if (!isAuthenticated || !user) return
+
+    // 30초마다 그룹 목록을 새로고침하여 실시간 업데이트 효과 제공
+    const intervalId = setInterval(() => {
+      refreshGroups()
+    }, 30000) // 30초
+
+    return () => clearInterval(intervalId)
+  }, [isAuthenticated, user])
+
+  // 브라우저 포커스 시 그룹 목록 새로고침
+  useEffect(() => {
+    if (!isAuthenticated || !user) return
+
+    const handleFocus = () => {
+      refreshGroups()
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        refreshGroups()
+      }
+    })
+
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleFocus)
+    }
+  }, [isAuthenticated, user])
+
   // 그룹 목록이 변경될 때 현재 그룹 설정
   useEffect(() => {
     if (groups.length > 0) {

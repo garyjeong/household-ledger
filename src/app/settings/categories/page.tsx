@@ -1,172 +1,311 @@
+/**
+ * 카테고리 설정 페이지
+ * T-025: 설정 하위 메뉴 - 카테고리 관리
+ */
+
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Plus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import React, { useState } from 'react'
+import { Settings, Eye, SortAsc, RotateCcw, Bell } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CategoryList, type Category } from '@/components/categories/CategoryList'
-import { CategoryDialog } from '@/components/categories/CategoryDialog'
-import { type CreateCategoryData, type UpdateCategoryData } from '@/lib/schemas/category'
-import { useGroup } from '@/contexts/group-context'
-import { useAuth } from '@/contexts/auth-context'
-import { useAlert } from '@/contexts/alert-context'
-import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api-client'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { CategoryManagement } from '@/components/categories/CategoryManagement'
+import { NotificationSettings } from '@/components/settings/NotificationSettings'
+import {
+  useCategoryDisplaySettings,
+  useUpdateCategoryDisplay,
+  useSettingsQuery,
+} from '@/hooks/use-settings'
+import { useToast } from '@/hooks/use-toast'
+import { Switch } from '@/components/ui/switch'
 
-export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+export default function CategorySettingsPage() {
+  const { toast } = useToast()
+  const { isLoading: settingsLoading } = useSettingsQuery()
+  const categoryDisplay = useCategoryDisplaySettings()
+  const updateCategoryDisplay = useUpdateCategoryDisplay()
 
-  // Dialog 상태
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
-  const [selectedCategory, setSelectedCategory] = useState<Category | undefined>()
+  const [activeTab, setActiveTab] = useState('display')
 
-  const { currentGroup } = useGroup()
-  const { user } = useAuth()
-  const { showSuccess, showError } = useAlert()
+  // 카테고리 표시 설정 업데이트
+  const handleDisplaySettingChange = async (
+    key: keyof typeof categoryDisplay,
+    value: boolean | string
+  ) => {
+    try {
+      await updateCategoryDisplay.mutateAsync({
+        [key]: value,
+      })
 
-  // 카테고리 데이터 로드
-  useEffect(() => {
-    const loadCategories = async () => {
-      if (!currentGroup) return
+      toast({
+        title: '설정 저장됨',
+        description: '카테고리 표시 설정이 업데이트되었습니다.',
+      })
+    } catch (error) {
+      toast({
+        title: '설정 저장 실패',
+        description: error instanceof Error ? error.message : '설정 저장에 실패했습니다.',
+        variant: 'destructive',
+      })
+    }
+  }
 
-      setIsLoading(true)
+  // 설정 초기화
+  const handleResetSettings = async () => {
+    const confirmed = window.confirm(
+      '카테고리 표시 설정을 초기화하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.'
+    )
+
+    if (confirmed) {
       try {
-        const response = await apiGet(`/api/categories?ownerType=GROUP&ownerId=${currentGroup.id}`)
+        await updateCategoryDisplay.mutateAsync({
+          showIcons: true,
+          iconStyle: 'default',
+          colorStyle: 'vibrant',
+          groupByType: true,
+          sortBy: 'name',
+        })
 
-        if (response.ok) {
-          setCategories(response.data?.categories || [])
-        } else {
-          throw new Error(response.error || '카테고리 목록을 가져오는데 실패했습니다')
-        }
+        toast({
+          title: '설정 초기화 완료',
+          description: '카테고리 표시 설정이 기본값으로 초기화되었습니다.',
+        })
       } catch (error) {
-        console.error('카테고리 목록 로드 중 오류:', error)
-        showError('카테고리 목록을 가져오는데 실패했습니다.')
-      } finally {
-        setIsLoading(false)
+        toast({
+          title: '초기화 실패',
+          description: error instanceof Error ? error.message : '설정 초기화에 실패했습니다.',
+          variant: 'destructive',
+        })
       }
-    }
-
-    loadCategories()
-  }, [currentGroup])
-
-  // 카테고리 추가
-  const handleCreate = () => {
-    setDialogMode('create')
-    setSelectedCategory(undefined)
-    setIsDialogOpen(true)
-  }
-
-  // 카테고리 편집
-  const handleEdit = (category: Category) => {
-    setDialogMode('edit')
-    setSelectedCategory(category)
-    setIsDialogOpen(true)
-  }
-
-  // 카테고리 삭제
-  const handleDelete = async (category: Category) => {
-    try {
-      const response = await apiDelete(`/api/categories/${category.id}`)
-
-      if (response.ok) {
-        setCategories(prev => prev.filter(c => c.id !== category.id))
-        showSuccess('카테고리가 삭제되었습니다.')
-      } else {
-        throw new Error(response.error || '카테고리 삭제에 실패했습니다')
-      }
-    } catch (error) {
-      console.error('카테고리 삭제 중 오류:', error)
-      showError(error instanceof Error ? error.message : '카테고리 삭제 중 오류가 발생했습니다.')
     }
   }
 
-  // 카테고리 저장 (생성/수정)
-  const handleSave = async (data: CreateCategoryData | UpdateCategoryData) => {
-    if (!currentGroup) {
-      throw new Error('그룹을 선택해주세요')
-    }
-
-    try {
-      if (dialogMode === 'create') {
-        // 카테고리 생성
-        const createData = {
-          ...data,
-          ownerType: 'GROUP' as const,
-          ownerId: parseInt(currentGroup.id),
-        }
-
-        const response = await apiPost('/api/categories', createData)
-
-        if (response.ok) {
-          setCategories(prev => [...prev, response.data?.category])
-          showSuccess('카테고리가 추가되었습니다.')
-        } else {
-          throw new Error(response.error || '카테고리 생성에 실패했습니다')
-        }
-      } else {
-        // 카테고리 수정
-        if (!selectedCategory) {
-          throw new Error('수정할 카테고리가 선택되지 않았습니다')
-        }
-
-        const response = await apiPut(`/api/categories/${selectedCategory.id}`, data)
-
-        if (response.ok) {
-          setCategories(prev =>
-            prev.map(c => (c.id === selectedCategory.id ? response.data?.category : c))
-          )
-          showSuccess('카테고리가 수정되었습니다.')
-        } else {
-          throw new Error(response.error || '카테고리 수정에 실패했습니다')
-        }
-      }
-    } catch (error) {
-      console.error('카테고리 저장 중 오류:', error)
-      throw error
-    }
+  if (settingsLoading) {
+    return (
+      <div className='flex items-center justify-center min-h-[400px]'>
+        <div className='text-center'>
+          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4'></div>
+          <p className='text-gray-500'>설정을 불러오는 중...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className='space-y-6'>
-      {/* 페이지 헤더 */}
-      <div>
-        <h2 className='text-2xl font-bold text-text-900'>카테고리 관리</h2>
-        <p className='text-text-600 mt-1'>
-          거래 유형별 카테고리를 관리하고 커스텀 카테고리를 추가할 수 있습니다.
-        </p>
+      {/* 헤더 */}
+      <div className='flex items-center justify-between'>
+        <div>
+          <h1 className='text-2xl font-bold text-gray-900'>설정</h1>
+          <p className='text-gray-500'>카테고리 표시, 알림, 관리 옵션을 설정합니다</p>
+        </div>
+
+        <div className='flex items-center gap-2'>
+          <Button
+            variant='outline'
+            onClick={handleResetSettings}
+            disabled={updateCategoryDisplay.isPending}
+            className='gap-2'
+          >
+            <RotateCcw className='h-4 w-4' />
+            초기화
+          </Button>
+        </div>
       </div>
 
-      {/* 카테고리 목록 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className='flex items-center justify-between'>
-            <span>카테고리 목록</span>
-            <Button onClick={handleCreate}>
-              <Plus className='h-4 w-4 mr-2' />
-              카테고리 추가
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* 카테고리 목록 */}
-          <CategoryList
-            categories={categories}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            isLoading={isLoading}
-          />
-        </CardContent>
-      </Card>
+      {/* 탭 메뉴 */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value='display' className='gap-2'>
+            <Eye className='h-4 w-4' />
+            표시 설정
+          </TabsTrigger>
+          <TabsTrigger value='notifications' className='gap-2'>
+            <Bell className='h-4 w-4' />
+            알림 설정
+          </TabsTrigger>
+          <TabsTrigger value='management' className='gap-2'>
+            <Settings className='h-4 w-4' />
+            카테고리 관리
+          </TabsTrigger>
+        </TabsList>
 
-      {/* 카테고리 추가/편집 Dialog */}
-      <CategoryDialog
-        mode={dialogMode}
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        category={selectedCategory}
-        onSubmit={handleSave}
-      />
+        {/* 표시 설정 탭 */}
+        <TabsContent value='display' className='space-y-6'>
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+            {/* 기본 표시 옵션 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className='flex items-center gap-2'>
+                  <Eye className='h-5 w-5' />
+                  기본 표시 옵션
+                </CardTitle>
+              </CardHeader>
+              <CardContent className='space-y-6'>
+                {/* 아이콘 표시 */}
+                <div className='flex items-center justify-between'>
+                  <div className='space-y-1'>
+                    <Label className='text-sm font-medium'>아이콘 표시</Label>
+                    <p className='text-xs text-gray-500'>카테고리에 아이콘을 표시합니다</p>
+                  </div>
+                  <Switch
+                    checked={categoryDisplay.showIcons}
+                    onCheckedChange={checked => handleDisplaySettingChange('showIcons', checked)}
+                    disabled={updateCategoryDisplay.isPending}
+                  />
+                </div>
+
+                {/* 아이콘 스타일 */}
+                <div className='space-y-2'>
+                  <Label className='text-sm font-medium'>아이콘 스타일</Label>
+                  <Select
+                    value={categoryDisplay.iconStyle}
+                    onValueChange={value => handleDisplaySettingChange('iconStyle', value)}
+                    disabled={!categoryDisplay.showIcons || updateCategoryDisplay.isPending}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='default'>기본</SelectItem>
+                      <SelectItem value='modern'>모던</SelectItem>
+                      <SelectItem value='minimal'>미니멀</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* 색상 스타일 */}
+                <div className='space-y-2'>
+                  <Label className='text-sm font-medium'>색상 스타일</Label>
+                  <Select
+                    value={categoryDisplay.colorStyle}
+                    onValueChange={value => handleDisplaySettingChange('colorStyle', value)}
+                    disabled={updateCategoryDisplay.isPending}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='vibrant'>선명한 색상</SelectItem>
+                      <SelectItem value='pastel'>파스텔 색상</SelectItem>
+                      <SelectItem value='monochrome'>단색</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 정렬 및 그룹화 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className='flex items-center gap-2'>
+                  <SortAsc className='h-5 w-5' />
+                  정렬 및 그룹화
+                </CardTitle>
+              </CardHeader>
+              <CardContent className='space-y-6'>
+                {/* 타입별 그룹화 */}
+                <div className='flex items-center justify-between'>
+                  <div className='space-y-1'>
+                    <Label className='text-sm font-medium'>타입별 그룹화</Label>
+                    <p className='text-xs text-gray-500'>수입/지출 카테고리를 분리하여 표시</p>
+                  </div>
+                  <Switch
+                    checked={categoryDisplay.groupByType}
+                    onCheckedChange={checked => handleDisplaySettingChange('groupByType', checked)}
+                    disabled={updateCategoryDisplay.isPending}
+                  />
+                </div>
+
+                {/* 정렬 방식 */}
+                <div className='space-y-2'>
+                  <Label className='text-sm font-medium'>정렬 방식</Label>
+                  <Select
+                    value={categoryDisplay.sortBy}
+                    onValueChange={value => handleDisplaySettingChange('sortBy', value)}
+                    disabled={updateCategoryDisplay.isPending}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='name'>이름순</SelectItem>
+                      <SelectItem value='usage'>사용빈도순</SelectItem>
+                      <SelectItem value='amount'>금액순</SelectItem>
+                      <SelectItem value='recent'>최근 사용순</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 미리보기 */}
+          <Card>
+            <CardHeader>
+              <CardTitle className='flex items-center gap-2'>
+                <Eye className='h-5 w-5' />
+                미리보기
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className='space-y-4'>
+                <div className='flex items-center gap-2 text-sm text-gray-600'>
+                  <Badge variant='outline'>현재 설정 적용됨</Badge>
+                  <span>•</span>
+                  <span>아이콘: {categoryDisplay.showIcons ? '표시' : '숨김'}</span>
+                  <span>•</span>
+                  <span>
+                    색상:{' '}
+                    {categoryDisplay.colorStyle === 'vibrant'
+                      ? '선명한'
+                      : categoryDisplay.colorStyle === 'pastel'
+                        ? '파스텔'
+                        : '단색'}
+                  </span>
+                  <span>•</span>
+                  <span>
+                    정렬:{' '}
+                    {categoryDisplay.sortBy === 'name'
+                      ? '이름순'
+                      : categoryDisplay.sortBy === 'usage'
+                        ? '사용빈도순'
+                        : categoryDisplay.sortBy === 'amount'
+                          ? '금액순'
+                          : '최근 사용순'}
+                  </span>
+                </div>
+
+                <div className='p-4 bg-gray-50 rounded-lg'>
+                  <p className='text-sm text-gray-600 text-center'>
+                    카테고리 목록에서 변경된 설정을 확인할 수 있습니다
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* 알림 설정 탭 */}
+        <TabsContent value='notifications'>
+          <NotificationSettings />
+        </TabsContent>
+
+        {/* 카테고리 관리 탭 */}
+        <TabsContent value='management'>
+          <CategoryManagement />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

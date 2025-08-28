@@ -25,13 +25,48 @@ model User {
   // Relations
   ownedGroups     Group[]         @relation("GroupOwner")
   groupMembers    GroupMember[]
+  groupInvites    GroupInvite[]   @relation("GroupInviteCreator")
   transactions    Transaction[]   @relation("TransactionOwner")
   participants    TransactionParticipant[]
   createdSettlements Settlement[] @relation("SettlementCreator")
   settlementItems SettlementItem[]
   auditLogs       AuditLog[]
+  settings        UserSettings?
+  pushTokens      PushToken[]     @relation("UserPushTokens")
 
   @@map("users")
+}
+
+model UserSettings {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @unique @map("user_id")
+  settings  Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+model PushToken {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @map("user_id")
+  token     String   @db.VarChar(500)
+  endpoint  String?  @db.VarChar(500)
+  keys      Json?    // p256dh, auth keys for VAPID
+  userAgent String?  @map("user_agent") @db.VarChar(500)
+  isActive  Boolean  @default(true) @map("is_active")
+  lastUsed  DateTime @default(now()) @map("last_used")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation("UserPushTokens", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, token], map: "ux_user_token")
+  @@index([userId, isActive], map: "idx_push_tokens_user_active")
+  @@map("push_tokens")
 }
 
 model Group {
@@ -43,6 +78,7 @@ model Group {
   // Relations
   owner        User          @relation("GroupOwner", fields: [ownerId], references: [id])
   members      GroupMember[]
+  invites      GroupInvite[]
   transactions Transaction[]
   settlements  Settlement[]
 
@@ -61,6 +97,23 @@ model GroupMember {
 
   @@id([groupId, userId])
   @@map("group_members")
+}
+
+model GroupInvite {
+  id        BigInt   @id @default(autoincrement())
+  groupId   BigInt   @map("group_id")
+  code      String   @unique @db.VarChar(10)
+  createdBy BigInt   @map("created_by")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  creator User  @relation("GroupInviteCreator", fields: [createdBy], references: [id])
+
+  @@index([groupId], map: "idx_group_invites_group")
+  @@index([expiresAt], map: "idx_group_invites_expires")
+  @@map("group_invites")
 }
 
 enum GroupMemberRole {

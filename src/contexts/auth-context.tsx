@@ -67,6 +67,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (response.ok) {
         const userData = await response.json()
         setUser(userData.user)
+      } else if (response.status === 401) {
+        // JWT 토큰이 만료되었거나 유효하지 않은 경우 자동 로그아웃
+        console.log('Token expired or invalid, logging out...')
+        setUser(null)
       }
     } catch (error) {
       console.error('Auth check failed:', error)

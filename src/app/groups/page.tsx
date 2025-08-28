@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -74,8 +74,15 @@ export default function GroupsPage() {
     defaultValues: { inviteCode: '' },
   })
 
+  // 인증 체크를 useEffect에서 처리하여 클라이언트 사이드에서만 실행
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login')
+    }
+  }, [isAuthenticated, router])
+
+  // 인증되지 않은 경우 빈 화면 반환
   if (!isAuthenticated) {
-    router.push('/login')
     return null
   }
 
@@ -262,7 +269,7 @@ export default function GroupsPage() {
                 </DialogContent>
               </Dialog>
 
-              <Button 
+              <Button
                 className='bg-slate-900 hover:bg-slate-800 text-white shadow-sm'
                 onClick={() => setIsCreateDialogOpen(true)}
               >
@@ -496,7 +503,7 @@ export default function GroupsPage() {
                 </div>
 
                 <div className='p-3 bg-slate-50 border border-slate-200 rounded-lg'>
-                  <p className='text-sm text-slate-700'>💡 초대 코드는 7일 후에 만료됩니다.</p>
+                  <p className='text-sm text-slate-700'>💡 초대 코드는 24시간 후에 만료됩니다.</p>
                 </div>
               </div>
             )}

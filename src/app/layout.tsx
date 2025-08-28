@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
 import { JetBrains_Mono } from 'next/font/google'
 import './globals.css'
-import { SWRConfig } from 'swr'
 import { AuthProvider } from '@/contexts/auth-context'
 import { GroupProvider } from '@/contexts/group-context'
 import { AlertProvider } from '@/contexts/alert-context'
+import { SettingsProvider } from '@/contexts/settings-context'
+import { QueryProvider } from '@/components/providers/QueryProvider'
 import { SentryTestComponent } from '@/components/error/SentryTestComponent'
 import { WebVitalsReporter } from '@/components/performance/WebVitalsReporter'
-import { swrConfig } from '@/lib/swr-config'
 
 const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
@@ -28,13 +28,15 @@ export default function RootLayout({
   return (
     <html lang='ko'>
       <body className={`${jetbrainsMono.variable} antialiased font-sans`}>
-        <SWRConfig value={swrConfig}>
+        <QueryProvider>
           <AlertProvider>
             <AuthProvider>
-              <GroupProvider>{children}</GroupProvider>
+              <SettingsProvider>
+                <GroupProvider>{children}</GroupProvider>
+              </SettingsProvider>
             </AuthProvider>
           </AlertProvider>
-        </SWRConfig>
+        </QueryProvider>
         <WebVitalsReporter />
         {process.env.NODE_ENV === 'development' && <SentryTestComponent />}
       </body>
