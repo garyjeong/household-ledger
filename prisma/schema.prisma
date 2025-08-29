@@ -27,9 +27,6 @@ model User {
   groupMembers    GroupMember[]
   groupInvites    GroupInvite[]   @relation("GroupInviteCreator")
   transactions    Transaction[]   @relation("TransactionOwner")
-  participants    TransactionParticipant[]
-  createdSettlements Settlement[] @relation("SettlementCreator")
-  settlementItems SettlementItem[]
   auditLogs       AuditLog[]
   settings        UserSettings?
   pushTokens      PushToken[]     @relation("UserPushTokens")
@@ -80,7 +77,6 @@ model Group {
   members      GroupMember[]
   invites      GroupInvite[]
   transactions Transaction[]
-  settlements  Settlement[]
 
   @@map("groups")
 }
@@ -161,7 +157,6 @@ model Category {
 
   // Relations
   transactions     Transaction[]
-  budgetCategories BudgetCategory[]
 
   @@unique([ownerType, ownerId, name, type], map: "ux_category_name")
   @@index([ownerType, ownerId], map: "idx_categories_owner")
@@ -210,7 +205,6 @@ model Transaction {
   owner        User                         @relation("TransactionOwner", fields: [ownerUserId], references: [id])
   account      Account                      @relation(fields: [accountId], references: [id])
   category     Category?                    @relation(fields: [categoryId], references: [id])
-  participants TransactionParticipant[]
   tags         TransactionTag[]
   attachments  Attachment[]
 
@@ -219,19 +213,7 @@ model Transaction {
   @@map("transactions")
 }
 
-model TransactionParticipant {
-  transactionId BigInt   @map("transaction_id")
-  userId        BigInt   @map("user_id")
-  shareRatio    Decimal? @map("share_ratio") @db.Decimal(8, 6)
-  shareAmount   BigInt?  @map("share_amount")
 
-  // Relations
-  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id])
-
-  @@id([transactionId, userId])
-  @@map("transaction_participants")
-}
 
 model TransactionTag {
   transactionId BigInt @map("transaction_id")
@@ -264,106 +246,11 @@ enum TransactionType {
   TRANSFER
 }
 
-// =============================================
-// Budget Models
-// =============================================
 
-model Budget {
-  id          BigInt    @id @default(autoincrement())
-  ownerType   OwnerType @map("owner_type")
-  ownerId     BigInt    @map("owner_id")
-  periodYm    String    @map("period_ym") @db.Char(7) // 'YYYY-MM'
-  amountTotal BigInt    @default(0) @map("amount_total")
-  createdAt   DateTime  @default(now()) @map("created_at")
 
-  // Relations
-  categories BudgetCategory[]
 
-  @@unique([ownerType, ownerId, periodYm], map: "ux_budget")
-  @@map("budgets")
-}
 
-model BudgetCategory {
-  id         BigInt @id @default(autoincrement())
-  budgetId   BigInt @map("budget_id")
-  categoryId BigInt @map("category_id")
-  amount     BigInt
 
-  // Relations
-  budget   Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id])
-
-  @@unique([budgetId, categoryId], map: "ux_budget_cat")
-  @@map("budget_categories")
-}
-
-// =============================================
-// Recurring Transaction Models
-// =============================================
-
-model RecurringRule {
-  id         BigInt              @id @default(autoincrement())
-  ownerType  OwnerType           @map("owner_type")
-  ownerId    BigInt              @map("owner_id")
-  startDate  DateTime            @map("start_date") @db.Date
-  frequency  RecurringFrequency
-  dayRule    String              @map("day_rule") @db.VarChar(20) // 'D25', 'MON', etc.
-  amount     BigInt
-  accountId  BigInt              @map("account_id")
-  categoryId BigInt?             @map("category_id")
-  merchant   String?             @db.VarChar(160)
-  memo       String?             @db.VarChar(1000)
-  isActive   Boolean             @default(true) @map("is_active")
-
-  @@map("recurring_rules")
-}
-
-enum RecurringFrequency {
-  MONTHLY
-  WEEKLY
-}
-
-// =============================================
-// Settlement Models
-// =============================================
-
-model Settlement {
-  id         BigInt           @id @default(autoincrement())
-  groupId    BigInt           @map("group_id")
-  title      String           @db.VarChar(160)
-  periodFrom DateTime         @map("period_from") @db.Date
-  periodTo   DateTime         @map("period_to") @db.Date
-  createdBy  BigInt           @map("created_by")
-  status     SettlementStatus @default(OPEN)
-  createdAt  DateTime         @default(now()) @map("created_at")
-  closedAt   DateTime?        @map("closed_at")
-
-  // Relations
-  group Group             @relation(fields: [groupId], references: [id])
-  creator User            @relation("SettlementCreator", fields: [createdBy], references: [id])
-  items SettlementItem[]
-
-  @@index([groupId, status], map: "idx_set_group_status")
-  @@map("settlements")
-}
-
-model SettlementItem {
-  id           BigInt @id @default(autoincrement())
-  settlementId BigInt @map("settlement_id")
-  userId       BigInt @map("user_id")
-  amount       BigInt // Positive = receives money, Negative = pays money
-
-  // Relations
-  settlement Settlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
-  user       User       @relation(fields: [userId], references: [id])
-
-  @@map("settlement_items")
-}
-
-enum SettlementStatus {
-  OPEN
-  CLOSED
-}
 
 // =============================================
 // Audit Log Model

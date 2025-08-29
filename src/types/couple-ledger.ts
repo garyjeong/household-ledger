@@ -18,16 +18,11 @@ export interface Category {
   icon: string
   type: TransactionType
   favorite?: boolean
-  budget?: number
   isDefault?: boolean
   order?: number
 }
 
-// 분할 설정
-export interface SplitRule {
-  me: number // 0-100 퍼센트
-  partner: number // 0-100 퍼센트
-}
+
 
 // 거래 데이터
 export interface Transaction {
@@ -40,7 +35,7 @@ export interface Transaction {
   memo?: string
   tags?: string[]
   isShared?: boolean
-  split?: SplitRule
+
   type: TransactionType
   accountId?: string
   createdAt: string
@@ -59,45 +54,18 @@ export interface QuickTemplate {
   person: Person
   memo?: string
   tags?: string[]
-  split?: SplitRule
+
   useCount: number
   lastUsed: string
 }
 
-// 예산 관리
-export interface Budget {
-  id: string
-  categoryId: string
-  amount: number
-  period: 'monthly' | 'weekly' | 'daily'
-  startDate: string
-  endDate?: string
-  spent: number
-  remaining: number
-  percentage: number
-}
 
-// 정산 관리
-export interface Settlement {
-  id: string
-  period: string // YYYY-MM
-  myTotal: number
-  partnerTotal: number
-  sharedTotal: number
-  myShare: number // 공동지출에서 내가 부담할 금액
-  partnerShare: number // 공동지출에서 배우자가 부담할 금액
-  balanceDue: number // 정산 차액 (양수: 내가 받을 금액, 음수: 내가 줄 금액)
-  status: 'pending' | 'confirmed' | 'settled'
-  confirmedAt?: string
-  settledAt?: string
-}
 
 // 사용자 설정
 export interface CoupleSettings {
   currency: Currency
   showWonSuffix: boolean
   defaultLanding: LandingPage
-  splitDefault: number // 0-100, 기본 분할 비율 (나의 비율)
   partnerName?: string
   quickInputShortcuts: boolean
   enableNotifications: boolean
@@ -126,13 +94,7 @@ export interface MonthlyStats {
     amount: number
     type: TransactionType
   }>
-  budgetComparison: Array<{
-    categoryId: string
-    budgeted: number
-    spent: number
-    remaining: number
-    percentage: number
-  }>
+
 }
 
 // 필터 및 검색
@@ -199,7 +161,7 @@ export interface QuickAddForm {
   person: Person
   memo: string
   tags: string[]
-  split?: SplitRule
+
   saveAsTemplate: boolean
   templateName?: string
 }
@@ -255,10 +217,7 @@ export interface KeyboardShortcut {
 
 // 알림 시스템
 export interface NotificationConfig {
-  budgetWarning: boolean // 예산 90% 도달 시
-  budgetExceeded: boolean // 예산 초과 시
   dailyReminder: boolean // 일일 입력 리마인더
-  settlementReminder: boolean // 정산 리마인더
   partnerActivity: boolean // 배우자 거래 활동
 }
 
