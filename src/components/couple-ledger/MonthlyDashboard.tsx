@@ -313,7 +313,7 @@ export function MonthlyDashboard({
         </CardHeader>
         <CardContent>
           <div className='space-y-4'>
-            {stats.categoryBreakdown.map((category, index) => (
+            {(stats.categoryBreakdown || stats.categories || []).map((category, index) => (
               <div key={category.categoryId} className='flex items-center gap-3'>
                 {/* 순위 */}
                 <div className='flex items-center justify-center w-6 h-6 rounded-full bg-surface-tertiary text-xs font-bold text-text-secondary'>
@@ -363,8 +363,10 @@ export function MonthlyDashboard({
         </CardHeader>
         <CardContent>
           <div className='space-y-4'>
-            {stats.budgetComparison.map(budget => {
-              const category = stats.categoryBreakdown.find(c => c.categoryId === budget.categoryId)
+            {(stats.budgetComparison || []).map(budget => {
+              const category = (stats.categoryBreakdown || stats.categories || []).find(
+                c => c.categoryId === budget.categoryId
+              )
               const isOverBudget = budget.percentage > 100
               const isNearLimit = budget.percentage > 90 && budget.percentage <= 100
 
@@ -421,8 +423,8 @@ export function MonthlyDashboard({
 
       {/* 월별 트렌드 차트 */}
       <MonthlyTrendChart
-        dailyTrend={stats.dailyTrend}
-        categoryBreakdown={stats.categoryBreakdown}
+        dailyTrend={stats.dailyTrend || []}
+        categoryBreakdown={stats.categoryBreakdown || stats.categories || []}
       />
     </div>
   )

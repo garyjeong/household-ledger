@@ -5,10 +5,13 @@ import { verifyCookieToken } from '@/lib/auth'
 
 // 통계 쿼리 스키마
 const statisticsQuerySchema = z.object({
-  period: z.string().default('current-month'), // current-month, last-month, last-3-months, last-6-months, year
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  groupId: z.string().optional(),
+  period: z
+    .string()
+    .nullable()
+    .transform(val => val || 'current-month'), // current-month, last-month, last-3-months, last-6-months, year
+  startDate: z.string().nullable().optional(),
+  endDate: z.string().nullable().optional(),
+  groupId: z.string().nullable().optional(),
 })
 
 interface CategoryStatistics {
@@ -103,15 +106,15 @@ export async function GET(request: NextRequest) {
 
     // 거래 데이터 조회 (기본 필터)
     const baseTransactionQuery = {
-      createdAt: {
+      date: {
         gte: dateRange.startDate,
         lte: dateRange.endDate,
       },
       ...(groupId && {
-        OR: [{ groupId: BigInt(groupId) }, { userId: BigInt(user.userId) }],
+        OR: [{ groupId: BigInt(groupId) }, { ownerUserId: BigInt(user.userId) }],
       }),
       ...(!groupId && {
-        userId: BigInt(user.userId),
+        ownerUserId: BigInt(user.userId),
       }),
     }
 
@@ -230,14 +233,14 @@ export async function GET(request: NextRequest) {
       }[]
     >`
       SELECT 
-        DATE(created_at) as date,
+        DATE(date) as date,
         COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END), 0) as income,
         COALESCE(SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END), 0) as expense
       FROM transactions 
-      WHERE created_at >= ${dateRange.startDate}
-        AND created_at <= ${dateRange.endDate}
-        ${groupId ? prisma.$queryRaw`AND (group_id = ${BigInt(groupId)} OR user_id = ${BigInt(user.userId)})` : prisma.$queryRaw`AND user_id = ${BigInt(user.userId)}`}
-      GROUP BY DATE(created_at)
+      WHERE date >= ${dateRange.startDate}
+        AND date <= ${dateRange.endDate}
+        AND ${groupId ? `(group_id = ${BigInt(groupId)} OR owner_user_id = ${BigInt(user.userId)})` : `owner_user_id = ${BigInt(user.userId)}`}
+      GROUP BY DATE(date)
       ORDER BY date ASC
     `
 
@@ -354,17 +357,17 @@ async function getMonthlyComparison(
     const [incomeSum, expenseSum] = await Promise.all([
       prisma.transaction.aggregate({
         where: {
-          createdAt: {
+          date: {
             gte: startOfMonth,
             lte: endOfMonth,
           },
           type: 'INCOME',
           ...(groupId
             ? {
-                OR: [{ groupId: BigInt(groupId) }, { userId: BigInt(userId) }],
+                OR: [{ groupId: BigInt(groupId) }, { ownerUserId: BigInt(userId) }],
               }
             : {
-                userId: BigInt(userId),
+                ownerUserId: BigInt(userId),
               }),
         },
         _sum: {
@@ -373,17 +376,17 @@ async function getMonthlyComparison(
       }),
       prisma.transaction.aggregate({
         where: {
-          createdAt: {
+          date: {
             gte: startOfMonth,
             lte: endOfMonth,
           },
           type: 'EXPENSE',
           ...(groupId
             ? {
-                OR: [{ groupId: BigInt(groupId) }, { userId: BigInt(userId) }],
+                OR: [{ groupId: BigInt(groupId) }, { ownerUserId: BigInt(userId) }],
               }
             : {
-                userId: BigInt(userId),
+                ownerUserId: BigInt(userId),
               }),
         },
         _sum: {

@@ -51,15 +51,15 @@ export const categoryQuerySchema = z.object({
   ownerType: z.enum(['USER', 'GROUP']).optional(),
   ownerId: z
     .string()
-    .transform(val => parseInt(val, 10))
-    .pipe(z.number().int().positive())
-    .optional(),
+    .optional()
+    .transform(val => (val ? parseInt(val, 10) : undefined))
+    .pipe(z.number().int().positive().optional()),
   type: z.enum(['EXPENSE', 'INCOME', 'TRANSFER']).optional(),
   isDefault: z
     .string()
-    .transform(val => val === 'true')
-    .pipe(z.boolean())
-    .optional(),
+    .optional()
+    .transform(val => (val ? val === 'true' : undefined))
+    .pipe(z.boolean().optional()),
 })
 
 // 타입 추출

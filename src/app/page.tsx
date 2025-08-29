@@ -7,7 +7,7 @@ import { QuickAddModal } from '@/components/couple-ledger/QuickAddModal'
 import { defaultCategories } from '@/components/couple-ledger/CategoryPicker'
 import { Transaction, MonthlyStats } from '@/types/couple-ledger'
 import { fetchMonthlyStats } from '@/lib/api/dashboard'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 
 /**
  * 신혼부부 가계부 메인 페이지

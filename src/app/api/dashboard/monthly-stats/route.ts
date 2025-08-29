@@ -1,14 +1,19 @@
+/**
+ * 월별 통계 API
+ * 대시보드에 표시할 월별 수입/지출 통계를 제공
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 import { verifyAccessToken } from '@/lib/auth'
-import { MonthlyStats } from '@/types/couple-ledger'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   try {
-    // 인증 확인
+    // 인증 확인 - Auth API와 동일한 방식 사용
     const accessToken = request.cookies.get('accessToken')?.value
+
     if (!accessToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'No token provided' }, { status: 401 })
     }
 
     const user = verifyAccessToken(accessToken)
@@ -16,145 +21,174 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    // 쿼리 파라미터에서 년월 가져오기
-    const { searchParams } = new URL(request.url)
-    const period = searchParams.get('period') // YYYY-MM 형식
-    const groupId = searchParams.get('groupId')
+    // URL에서 기간 파라미터 추출
+    const url = new URL(request.url)
+    const period = url.searchParams.get('period') || new Date().toISOString().slice(0, 7) // YYYY-MM 형식
+    const groupId = url.searchParams.get('groupId')
 
-    if (!period) {
-      return NextResponse.json({ error: 'Period is required' }, { status: 400 })
-    }
+    // 기간 파싱
+    const [year, month] = period.split('-').map(Number)
+    const startDate = new Date(year, month - 1, 1)
+    const endDate = new Date(year, month, 0)
 
-    // 해당 월의 시작일과 종료일 계산
-    const [year, month] = period.split('-')
-    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
-    const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999)
-
-    // 현재 사용자의 그룹 확인
+    // 그룹 필터 설정
     let groupFilter = {}
     if (groupId) {
-      groupFilter = { groupId }
-    } else {
-      // 그룹이 지정되지 않은 경우, 사용자의 기본 그룹이나 개인 거래만 조회
       groupFilter = {
-        OR: [{ groupId: null }, { userId: user.id }],
+        OR: [{ groupId: BigInt(groupId) }, { ownerUserId: parseInt(user.userId) }],
+      }
+    } else {
+      groupFilter = {
+        OR: [{ groupId: null }, { ownerUserId: parseInt(user.userId) }],
       }
     }
 
-    // 해당 기간의 거래 데이터 조회
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        ...groupFilter,
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      include: {
-        category: true,
-        user: true,
-      },
-    })
-
-    // 카테고리별 지출 집계
-    const categoryBreakdown = new Map()
-    let totalExpense = 0
-    let totalIncome = 0
-    let myExpense = 0
-    let partnerExpense = 0
-    let sharedExpense = 0
-
-    // 거래 데이터 집계
-    transactions.forEach(transaction => {
-      const amount = transaction.amount
-
-      if (transaction.type === 'EXPENSE') {
-        totalExpense += amount
-
-        // 개인별 지출 분류
-        if (transaction.userId === user.id) {
-          myExpense += amount
-        } else if (transaction.isShared) {
-          sharedExpense += amount
-        } else {
-          partnerExpense += amount
-        }
-
-        // 카테고리별 집계
-        const categoryId = transaction.categoryId
-        const categoryName = transaction.category?.name || '기타'
-        const categoryColor = transaction.category?.color || '#8B5CF6'
-        const categoryIcon = transaction.category?.icon || 'other'
-
-        if (categoryBreakdown.has(categoryId)) {
-          categoryBreakdown.get(categoryId).amount += amount
-        } else {
-          categoryBreakdown.set(categoryId, {
-            categoryId,
-            categoryName,
-            amount,
-            percentage: 0,
-            color: categoryColor,
-            icon: categoryIcon,
-          })
-        }
-      } else if (transaction.type === 'INCOME') {
-        totalIncome += amount
-      }
-    })
-
-    // 카테고리별 퍼센트 계산 및 TOP 5 선택
-    const categoryArray = Array.from(categoryBreakdown.values())
-      .map(category => ({
-        ...category,
-        percentage: totalExpense > 0 ? (category.amount / totalExpense) * 100 : 0,
-      }))
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, 5)
-
-    // 일별 트렌드 데이터 생성 (간단한 버전)
-    const dailyTrend = transactions
-      .filter(t => t.type === 'EXPENSE')
-      .reduce(
-        (acc, transaction) => {
-          const date = transaction.date.toISOString().split('T')[0]
-          const existing = acc.find(item => item.date === date)
-
-          if (existing) {
-            existing.amount += transaction.amount
-          } else {
-            acc.push({
-              date,
-              amount: transaction.amount,
-              type: 'expense' as const,
-            })
-          }
-
-          return acc
-        },
-        [] as Array<{ date: string; amount: number; type: 'expense' }>
-      )
-      .sort((a, b) => a.date.localeCompare(b.date))
-
-    // 예산 비교 데이터 (임시로 빈 배열, 실제로는 예산 테이블과 조인 필요)
-    const budgetComparison: Array<{
-      categoryId: string
-      budgeted: number
-      spent: number
-      remaining: number
-      percentage: number
-    }> = []
-
-    const monthlyStats: MonthlyStats = {
-      period,
-      totalExpense,
-      totalIncome,
-      myExpense,
-      partnerExpense,
-      sharedExpense,
-      categoryBreakdown: categoryArray,
+    // 성능 최적화: 병렬로 모든 통계 데이터 조회
+    const [
+      totalIncomeResult,
+      totalExpenseResult,
+      transactionCount,
+      myExpenseResult,
+      sharedExpenseResult,
+      partnerExpenseResult,
+      categoryStats,
       dailyTrend,
-      budgetComparison,
+    ] = await Promise.all([
+      // 총 수입 집계
+      prisma.transaction.aggregate({
+        where: {
+          ...groupFilter,
+          date: { gte: startDate, lte: endDate },
+          type: 'INCOME',
+        },
+        _sum: { amount: true },
+      }),
+      // 총 지출 집계
+      prisma.transaction.aggregate({
+        where: {
+          ...groupFilter,
+          date: { gte: startDate, lte: endDate },
+          type: 'EXPENSE',
+        },
+        _sum: { amount: true },
+      }),
+      // 거래 건수
+      prisma.transaction.count({
+        where: {
+          ...groupFilter,
+          date: { gte: startDate, lte: endDate },
+        },
+      }),
+      // 내 지출
+      prisma.transaction.aggregate({
+        where: {
+          ...groupFilter,
+          date: { gte: startDate, lte: endDate },
+          type: 'EXPENSE',
+          ownerUserId: parseInt(user.userId),
+        },
+        _sum: { amount: true },
+      }),
+      // 공유 지출 (그룹 거래)
+      prisma.transaction.aggregate({
+        where: {
+          ...groupFilter,
+          date: { gte: startDate, lte: endDate },
+          type: 'EXPENSE',
+          groupId: { not: null },
+        },
+        _sum: { amount: true },
+      }),
+      // 배우자 지출 (그룹 내 다른 사용자)
+      prisma.transaction.aggregate({
+        where: {
+          ...groupFilter,
+          date: { gte: startDate, lte: endDate },
+          type: 'EXPENSE',
+          ownerUserId: { not: parseInt(user.userId) },
+          groupId: null,
+        },
+        _sum: { amount: true },
+      }),
+      // 카테고리별 지출 통계 (상위 5개만)
+      prisma.transaction.groupBy({
+        by: ['categoryId'],
+        where: {
+          ...groupFilter,
+          date: { gte: startDate, lte: endDate },
+          type: 'EXPENSE',
+        },
+        _sum: { amount: true },
+        orderBy: { _sum: { amount: 'desc' } },
+        take: 5,
+      }),
+      // 일별 트렌드 데이터
+      prisma.transaction.groupBy({
+        by: ['date'],
+        where: {
+          ...groupFilter,
+          date: { gte: startDate, lte: endDate },
+          type: 'EXPENSE',
+        },
+        _sum: { amount: true },
+        orderBy: { date: 'asc' },
+      }),
+    ])
+
+    // 데이터 변환
+    const totalIncome = Number(totalIncomeResult._sum.amount || 0)
+    const totalExpense = Number(totalExpenseResult._sum.amount || 0)
+    const myExpense = Number(myExpenseResult._sum.amount || 0)
+    const sharedExpense = Number(sharedExpenseResult._sum.amount || 0)
+    const partnerExpense = Number(partnerExpenseResult._sum.amount || 0)
+
+    // 카테고리 정보 조회
+    const categoryIds = categoryStats.map(stat => stat.categoryId).filter(Boolean)
+    const categories = await prisma.category.findMany({
+      where: { id: { in: categoryIds } },
+      select: { id: true, name: true, color: true },
+    })
+
+    const categoryMap = new Map(categories.map(cat => [cat.id, cat]))
+    const topCategories = categoryStats.map(stat => ({
+      categoryId: stat.categoryId?.toString() || 'unknown',
+      categoryName: stat.categoryId ? categoryMap.get(stat.categoryId)?.name || '기타' : '기타',
+      categoryColor: stat.categoryId
+        ? categoryMap.get(stat.categoryId)?.color || '#8B5CF6'
+        : '#8B5CF6',
+      totalAmount: Number(stat._sum.amount || 0),
+      percentage:
+        totalExpense > 0
+          ? Number(((Number(stat._sum.amount || 0) / totalExpense) * 100).toFixed(1))
+          : 0,
+    }))
+
+    // 일별 트렌드 데이터 포맷
+    const dailyTrendFormatted = dailyTrend.map(day => ({
+      date: day.date.toISOString().split('T')[0],
+      amount: Number(day._sum.amount || 0),
+    }))
+
+    // 최종 응답 데이터
+    const monthlyStats = {
+      summary: {
+        totalIncome,
+        totalExpense,
+        netAmount: totalIncome - totalExpense,
+        transactionCount,
+        period: {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0],
+        },
+      },
+      breakdown: {
+        myExpense,
+        partnerExpense,
+        sharedExpense,
+      },
+      categories: topCategories,
+      dailyTrend: dailyTrendFormatted,
+      budgetComparison: [], // 실제로는 예산 테이블과 조인 필요
     }
 
     return NextResponse.json({

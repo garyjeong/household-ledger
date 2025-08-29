@@ -60,8 +60,20 @@ export async function GET(request: NextRequest) {
 
     const query = queryResult.data
 
-    // 기본값 설정: ownerType과 ownerId가 없으면 현재 사용자 기준으로 조회
+    // 기본값 설정 및 검증
     const ownerType = query.ownerType || 'USER'
+
+    // 그룹 타입인 경우 ownerId가 반드시 필요
+    if (ownerType === 'GROUP' && !query.ownerId) {
+      return NextResponse.json(
+        {
+          error: '그룹 카테고리 조회 시 groupId(ownerId)가 필요합니다',
+          code: 'MISSING_GROUP_ID',
+        },
+        { status: 400 }
+      )
+    }
+
     const ownerId = query.ownerId || parseInt(user.userId, 10)
 
     // 소유권 검증 (그룹인 경우)
