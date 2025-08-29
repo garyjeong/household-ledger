@@ -36,7 +36,7 @@ pnpm dev
 cp .env.example .env.local
 
 # 필수 환경변수
-DATABASE_URL="mysql://user:password@localhost:3306/household_ledger"
+DATABASE_URL="mysql://user:wjdwhdans@localhost:3307/household_ledger"
 JWT_SECRET="household-ledger-develop-jwt-secret-key-2025"
 JWT_REFRESH_SECRET="household-ledger-develop-refresh-token-secret-2025"
 NEXTAUTH_SECRET="household-ledger-develop-nextauth-secret-2025"
@@ -408,11 +408,26 @@ pnpm dev              # 개발 서버 시작 (포트 3001)
 pnpm build            # 프로덕션 빌드
 pnpm start            # 프로덕션 서버 시작
 
+# Docker MySQL 데이터베이스 관리
+docker build -f docker/database.Dockerfile -t household-ledger .
+docker run --name household-ledger \
+  -e MYSQL_ROOT_PASSWORD=wjdwhdans \
+  -e MYSQL_DATABASE=household_ledger \
+  -e MYSQL_USER=user \
+  -e MYSQL_PASSWORD=wjdwhdans \
+  -e TZ=Asia/Seoul \
+  -p 3307:3306 \
+  -d household-ledger
+
+docker ps             # 컨테이너 상태 확인
+docker stop household-ledger    # 컨테이너 중지
+docker start household-ledger   # 컨테이너 시작
+docker logs household-ledger    # 로그 확인
+
 # 데이터베이스
 pnpm db:generate      # Prisma 클라이언트 생성
-pnpm db:push          # 스키마를 DB에 푸시
-pnpm db:migrate       # 마이그레이션 실행
-pnpm db:seed          # 시드 데이터 삽입
+pnpm db:push          # 스키마를 DB에 푸시 (포트 3307)
+pnpm db:studio        # Prisma Studio (데이터베이스 GUI)
 
 # 코드 품질
 pnpm lint             # ESLint 검사
@@ -421,7 +436,7 @@ pnpm type-check       # TypeScript 타입 체크
 
 # 테스트
 pnpm test             # 단위 테스트
-pnpm e2e              # E2E 테스트
+pnpm test:e2e         # E2E 테스트
 pnpm test:coverage    # 테스트 커버리지
 ```
 
@@ -461,11 +476,11 @@ pnpm test:coverage    # 테스트 커버리지
 ```bash
 # 개발 환경
 NEXT_PUBLIC_APP_ENV=development
-DATABASE_URL=mysql://localhost:3306/household_ledger_dev
+DATABASE_URL=mysql://user:wjdwhdans@localhost:3307/household_ledger
 
 # 프로덕션 환경
 NEXT_PUBLIC_APP_ENV=production
-DATABASE_URL=mysql://production-host:3306/household_ledger
+DATABASE_URL=mysql://user:password@production-host:3306/household_ledger
 ```
 
 ### 성능 최적화

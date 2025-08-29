@@ -30,13 +30,25 @@ pnpm install
 
 # 3. 환경변수 설정
 cp .env.example .env.local
-# .env.local 파일을 편집하여 데이터베이스 URL 등 설정
+# .env.local 파일에서 DATABASE_URL을 다음과 같이 수정:
+# DATABASE_URL="mysql://user:wjdwhdans@localhost:3307/household_ledger"
 
-# 4. 데이터베이스 설정
+# 4. Docker MySQL 데이터베이스 실행
+docker build -f docker/database.Dockerfile -t household-ledger .
+docker run --name household-ledger \
+  -e MYSQL_ROOT_PASSWORD=wjdwhdans \
+  -e MYSQL_DATABASE=household_ledger \
+  -e MYSQL_USER=user \
+  -e MYSQL_PASSWORD=wjdwhdans \
+  -e TZ=Asia/Seoul \
+  -p 3307:3306 \
+  -d household-ledger
+
+# 5. 데이터베이스 스키마 설정
 pnpm db:generate
 pnpm db:push
 
-# 5. 개발 서버 시작
+# 6. 개발 서버 시작
 pnpm dev
 ```
 
@@ -119,8 +131,14 @@ pnpm start            # 프로덕션 서버
 
 # 데이터베이스
 pnpm db:generate      # Prisma 클라이언트 생성
-pnpm db:push          # 스키마 푸시
-pnpm db:seed          # 시드 데이터
+pnpm db:push          # 스키마 푸시 (포트 3307)
+pnpm db:studio        # Prisma Studio (데이터베이스 GUI)
+
+# Docker 관리
+docker ps             # 실행 중인 컨테이너 확인
+docker stop household-ledger    # 컨테이너 중지
+docker start household-ledger   # 컨테이너 시작
+docker logs household-ledger    # 컨테이너 로그 확인
 
 # 코드 품질
 pnpm lint             # ESLint 검사
@@ -129,7 +147,8 @@ pnpm type-check       # TypeScript 타입 체크
 
 # 테스트
 pnpm test             # 단위 테스트
-pnpm e2e              # E2E 테스트
+pnpm test:e2e         # E2E 테스트
+pnpm test:coverage    # 테스트 커버리지
 ```
 
 ---

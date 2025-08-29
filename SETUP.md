@@ -23,7 +23,7 @@
 cp .env.example .env.local
 
 # 데이터베이스
-DATABASE_URL="mysql://user:password@localhost:3306/household_ledger"
+DATABASE_URL="mysql://user:wjdwhdans@localhost:3307/household_ledger"
 
 # JWT 인증 (프로젝트명 + 환경)
 JWT_SECRET="household-ledger-develop-jwt-secret-key-2025"
@@ -41,19 +41,22 @@ SENTRY_AUTH_TOKEN="your-token"
 ### Docker 데이터베이스 설정
 
 ```bash
-# MySQL 8.4 컨테이너 실행
-docker run --name household-ledger-db \
-  -e MYSQL_ROOT_PASSWORD=rootpassword \
+# Docker 이미지 빌드
+docker build -f docker/database.Dockerfile -t household-ledger .
+
+# MySQL 컨테이너 실행 (포트 3307)
+docker run --name household-ledger \
+  -e MYSQL_ROOT_PASSWORD=wjdwhdans \
   -e MYSQL_DATABASE=household_ledger \
-  -e MYSQL_USER=ledger_user \
-  -e MYSQL_PASSWORD=ledger_password \
-  -p 3306:3306 \
-  -d mysql:8.4
+  -e MYSQL_USER=user \
+  -e MYSQL_PASSWORD=wjdwhdans \
+  -e TZ=Asia/Seoul \
+  -p 3307:3306 \
+  -d household-ledger
 
 # 데이터베이스 초기화
 pnpm db:generate
 pnpm db:push
-pnpm db:seed
 ```
 
 ---
