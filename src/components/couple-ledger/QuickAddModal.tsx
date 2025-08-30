@@ -195,9 +195,9 @@ export function QuickAddModal({
 
       await onSave(transactionData)
 
-      // 템플릿 저장 (별도 구현 필요)
+      // 템플릿 저장 기능 (향후 구현 예정)
       if (formData.saveAsTemplate && formData.templateName) {
-        // TODO: 템플릿 저장 로직
+        console.log('템플릿 저장 기능은 향후 구현 예정입니다:', formData.templateName)
       }
 
       resetForm()
@@ -317,7 +317,7 @@ export function QuickAddModal({
                 onSelect={categoryId => setFormData(prev => ({ ...prev, categoryId }))}
                 type='expense'
                 showFavorites
-                recentCategories={['1', '2', '3']} // TODO: 실제 최근 사용 카테고리
+                recentCategories={[]} // 실제 최근 사용 카테고리 데이터 연동 필요
               />
             </div>
           )}

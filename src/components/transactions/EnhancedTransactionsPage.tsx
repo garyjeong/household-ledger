@@ -332,7 +332,7 @@ export function EnhancedTransactionsPage() {
         }}
         onSubmit={editingTransaction ? handleUpdateTransaction : handleCreateTransaction}
         initialData={editingTransaction}
-        categories={[]} // TODO: 실제 카테고리 데이터 전달
+        categories={[]} // 실제 카테고리 데이터 연동 필요
         isEdit={!!editingTransaction}
       />
     </>

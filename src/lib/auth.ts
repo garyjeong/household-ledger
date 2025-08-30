@@ -84,13 +84,27 @@ export function generateRefreshToken(payload: JWTPayload): string {
   })
 }
 
+// JWT 토큰 검증 결과 타입
+export interface TokenVerificationResult {
+  isValid: boolean
+  payload?: JWTPayload
+  error?: 'EXPIRED' | 'INVALID' | 'MALFORMED' | 'UNKNOWN'
+  message?: string
+}
+
 // JWT 토큰 검증
 export function verifyAccessToken(token: string): JWTPayload | null {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload
     return decoded
-  } catch (error) {
-    console.error('Access token verification failed:', error)
+  } catch (error: any) {
+    if (error.name === 'TokenExpiredError') {
+      console.warn('Access token expired:', error.expiredAt)
+    } else if (error.name === 'JsonWebTokenError') {
+      console.error('Access token malformed:', error.message)
+    } else {
+      console.error('Access token verification failed:', error)
+    }
     return null
   }
 }
@@ -99,9 +113,52 @@ export function verifyRefreshToken(token: string): JWTPayload | null {
   try {
     const decoded = jwt.verify(token, JWT_REFRESH_SECRET) as JWTPayload
     return decoded
-  } catch (error) {
-    console.error('Refresh token verification failed:', error)
+  } catch (error: any) {
+    if (error.name === 'TokenExpiredError') {
+      console.warn('Refresh token expired:', error.expiredAt)
+    } else if (error.name === 'JsonWebTokenError') {
+      console.error('Refresh token malformed:', error.message)
+    } else {
+      console.error('Refresh token verification failed:', error)
+    }
     return null
+  }
+}
+
+// 상세한 토큰 검증 함수 (에러 정보 포함)
+export function verifyAccessTokenDetailed(token: string): TokenVerificationResult {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload
+    return {
+      isValid: true,
+      payload: decoded,
+    }
+  } catch (error: any) {
+    if (error.name === 'TokenExpiredError') {
+      return {
+        isValid: false,
+        error: 'EXPIRED',
+        message: `토큰이 만료되었습니다. 만료 시간: ${error.expiredAt}`,
+      }
+    } else if (error.name === 'JsonWebTokenError') {
+      return {
+        isValid: false,
+        error: 'MALFORMED',
+        message: '유효하지 않은 토큰 형식입니다.',
+      }
+    } else if (error.name === 'NotBeforeError') {
+      return {
+        isValid: false,
+        error: 'INVALID',
+        message: '토큰이 아직 활성화되지 않았습니다.',
+      }
+    } else {
+      return {
+        isValid: false,
+        error: 'UNKNOWN',
+        message: '알 수 없는 토큰 검증 오류가 발생했습니다.',
+      }
+    }
   }
 }
 

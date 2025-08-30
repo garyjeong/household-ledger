@@ -90,90 +90,89 @@ export function MonthlyTrendChart({
   }))
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* 일별 지출 트렌드 (Line Chart) */}
-      <Card className='card-hover'>
-        <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-4'>
-          <CardTitle className='text-lg font-semibold flex items-center gap-2'>
-            <TrendingUp className='h-5 w-5 text-blue-600' />
-            일별 지출 트렌드
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {chartData.length > 0 ? (
-            <ResponsiveContainer width='100%' height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray='3 3' stroke='#e2e8f0' />
-                <XAxis
-                  dataKey='date'
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: '#64748b' }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: '#64748b' }}
-                  tickFormatter={value => `${Math.round(value / 1000)}K`}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Line
-                  type='monotone'
-                  dataKey='지출'
-                  stroke='#ef4444'
-                  strokeWidth={2}
-                  dot={{ fill: '#ef4444', strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, stroke: '#ef4444', strokeWidth: 2 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className='flex items-center justify-center h-[300px] text-slate-500'>
-              <p>이번 달 거래 데이터가 없습니다.</p>
+    <div className={`space-y-2 ${className}`}>
+      {/* 차트 섹션 - 가로 배치 */}
+      <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
+        {/* 일별 지출 트렌드 (Line Chart) */}
+        <Card className='card-hover'>
+          <CardContent className='p-2'>
+            <div className='flex items-center gap-1 mb-2'>
+              <TrendingUp className='h-3 w-3 text-blue-600' />
+              <h3 className='text-xs font-semibold'>일별 트렌드</h3>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width='100%' height={180}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray='3 3' stroke='#e2e8f0' />
+                  <XAxis
+                    dataKey='date'
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 9, fill: '#64748b' }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 9, fill: '#64748b' }}
+                    tickFormatter={value => `${Math.round(value / 1000)}K`}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line
+                    type='monotone'
+                    dataKey='지출'
+                    stroke='#ef4444'
+                    strokeWidth={1.5}
+                    dot={false}
+                    activeDot={{ r: 3, stroke: '#ef4444', strokeWidth: 1.5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className='flex items-center justify-center h-[180px] text-slate-500'>
+                <p className='text-xs'>데이터가 없습니다</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* 카테고리별 지출 (Bar Chart) */}
-      <Card className='card-hover'>
-        <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-4'>
-          <CardTitle className='text-lg font-semibold flex items-center gap-2'>
-            <BarChart3 className='h-5 w-5 text-green-600' />
-            카테고리별 지출 TOP 5
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {categoryChartData.length > 0 ? (
-            <ResponsiveContainer width='100%' height={300}>
-              <BarChart
-                data={categoryChartData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray='3 3' stroke='#e2e8f0' />
-                <XAxis
-                  dataKey='name'
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: '#64748b' }}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: '#64748b' }}
-                  tickFormatter={value => `${Math.round(value / 1000)}K`}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey='amount' radius={[4, 4, 0, 0]} name='지출' />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className='flex items-center justify-center h-[300px] text-slate-500'>
-              <p>카테고리별 지출 데이터가 없습니다.</p>
+        {/* 카테고리별 지출 (Bar Chart) */}
+        <Card className='card-hover'>
+          <CardContent className='p-2'>
+            <div className='flex items-center gap-1 mb-2'>
+              <BarChart3 className='h-3 w-3 text-green-600' />
+              <h3 className='text-xs font-semibold'>카테고리별 차트</h3>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            {categoryChartData.length > 0 ? (
+              <ResponsiveContainer width='100%' height={180}>
+                <BarChart
+                  data={categoryChartData}
+                  margin={{ top: 10, right: 15, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray='3 3' stroke='#e2e8f0' />
+                  <XAxis
+                    dataKey='name'
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 9, fill: '#64748b' }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 9, fill: '#64748b' }}
+                    tickFormatter={value => `${Math.round(value / 1000)}K`}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey='amount' radius={[2, 2, 0, 0]} name='지출' />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className='flex items-center justify-center h-[180px] text-slate-500'>
+                <p className='text-xs'>데이터가 없습니다</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

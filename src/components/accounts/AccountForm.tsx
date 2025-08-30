@@ -76,7 +76,7 @@ export function AccountForm({
       currency: initialData?.currency || 'KRW',
       balance: parseInt(initialData?.balance || '0'),
       ownerType: initialData?.ownerType || 'USER',
-      ownerId: initialData?.ownerId ? parseInt(initialData.ownerId) : 1, // TODO: 실제 사용자 ID
+      ownerId: initialData?.ownerId ? parseInt(initialData.ownerId) : 1, // 실제 사용자 ID 연동 필요
     },
   })
 

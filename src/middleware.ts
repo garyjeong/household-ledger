@@ -23,7 +23,6 @@ const PROTECTED_PATHS = [
 const PUBLIC_API_PATHS = [
   '/api/auth/login',
   '/api/auth/signup',
-  '/api/auth/refresh',
   '/api/auth/forgot-password',
   '/api/auth/check-email',
 ]

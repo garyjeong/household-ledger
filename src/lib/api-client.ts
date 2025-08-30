@@ -15,24 +15,7 @@ interface ApiResponse<T = any> {
 }
 
 /**
- * 토큰 갱신 함수
- */
-async function refreshAccessToken(): Promise<boolean> {
-  try {
-    const response = await fetch('/api/auth/refresh', {
-      method: 'POST',
-      credentials: 'include',
-    })
-
-    return response.ok
-  } catch (error) {
-    console.error('토큰 갱신 실패:', error)
-    return false
-  }
-}
-
-/**
- * API 호출 함수 (토큰 자동 갱신 및 에러 처리 포함)
+ * API 호출 함수 (인증 에러 처리 포함)
  */
 export async function apiCall<T = any>(
   url: string,
@@ -52,37 +35,27 @@ export async function apiCall<T = any>(
   let errorReport: ErrorReport | undefined
 
   try {
-    // 첫 번째 API 호출 시도
-    let response = await fetch(url, defaultOptions)
+    // API 호출 시도
+    const response = await fetch(url, defaultOptions)
 
-    // 401 에러 (토큰 만료)인 경우 토큰 갱신 후 재시도
+    // 401 에러 (인증 실패)인 경우 즉시 로그인 페이지로 리다이렉트
     if (response.status === 401) {
-      console.log('토큰 만료됨. 토큰 갱신 시도...')
+      console.log('인증 실패. 로그인 페이지로 리다이렉트')
 
-      const refreshSuccess = await refreshAccessToken()
+      // 인증 에러 처리
+      const authError = new Error('인증이 필요합니다. 다시 로그인해주세요.')
+      errorReport = handleApiError(authError, url)
 
-      if (refreshSuccess) {
-        console.log('토큰 갱신 성공. API 재시도...')
-        // 토큰 갱신 성공 시 원래 요청 재시도
-        response = await fetch(url, defaultOptions)
-      } else {
-        console.log('토큰 갱신 실패. 로그인 페이지로 리다이렉트 필요')
+      // 로그인 페이지로 리다이렉트 (브라우저 환경에서만)
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login'
+      }
 
-        // 인증 에러 처리
-        const authError = new Error('인증이 필요합니다. 다시 로그인해주세요.')
-        errorReport = handleApiError(authError, url)
-
-        // 로그인 페이지로 리다이렉트 (브라우저 환경에서만)
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login'
-        }
-
-        return {
-          ok: false,
-          status: 401,
-          error: authError.message,
-          errorReport,
-        }
+      return {
+        ok: false,
+        status: 401,
+        error: authError.message,
+        errorReport,
       }
     }
 

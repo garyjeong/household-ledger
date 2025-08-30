@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation'
  * 신혼부부 가계부 메인 페이지
  *
  * 기능:
- * - 월요약 대시보드
+ * - 월별 대시보드
  * - 반응형 네비게이션 (모바일 하단탭 + 데스크탑 사이드바)
  * - 빠른입력 모달
  * - 실시간 통계 업데이트
@@ -89,8 +89,8 @@ export default function HomePage() {
     transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>
   ) => {
     try {
-      // TODO: 실제 거래 저장 API 호출
-      // 새 거래 저장
+      // 실제 거래 저장 API 호출 구현 필요
+      console.log('거래 저장 API 구현 필요:', transaction)
 
       // 거래 저장 후 월별 통계 다시 로드 (실시간 업데이트)
       await loadMonthlyStats(selectedMonth)
@@ -192,7 +192,7 @@ export default function HomePage() {
         onClose={handleQuickAddClose}
         onSave={handleSaveTransaction}
         categories={defaultCategories}
-        templates={[]} // TODO: 템플릿 데이터
+        templates={[]} // 템플릿 기능 향후 구현 예정
       />
     </>
   )

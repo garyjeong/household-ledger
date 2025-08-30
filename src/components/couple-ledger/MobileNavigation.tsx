@@ -19,7 +19,7 @@ const navigationItems = [
     label: '홈',
     href: '/',
     icon: Home,
-    description: '월요약 대시보드',
+    description: '월별 대시보드',
   },
   {
     id: 'transactions',

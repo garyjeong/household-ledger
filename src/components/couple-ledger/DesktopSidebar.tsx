@@ -32,7 +32,7 @@ const sidebarMenu = [
     items: [
       {
         id: 'dashboard',
-        label: '월요약 대시보드',
+        label: '월별 대시보드',
         href: '/',
         icon: Home,
         description: '이번 달 수입/지출 요약',

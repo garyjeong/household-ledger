@@ -67,14 +67,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (response.ok) {
         const userData = await response.json()
         setUser(userData.user)
-      } else if (response.status === 401) {
-        // JWT 토큰이 만료되었거나 유효하지 않은 경우 자동 로그아웃
-        console.log('Token expired or invalid, logging out...')
+      } else {
+        // 토큰이 유효하지 않은 모든 경우에 로그아웃 처리
+        console.log('Token invalid or expired, logging out...')
         setUser(null)
+        
+        // 로그인 페이지가 아닌 경우에만 리다이렉트
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          router.push('/login')
+        }
       }
     } catch (error) {
       console.error('Auth check failed:', error)
-      // 타임아웃이나 네트워크 에러 시에도 로딩 완료
+      // 네트워크 에러 시에도 로그아웃 처리
+      setUser(null)
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+        router.push('/login')
+      }
     } finally {
       setIsLoading(false)
     }
