@@ -335,9 +335,9 @@ export default function LoginPage() {
                     <button
                       type='button'
                       onClick={() => setShowPassword(!showPassword)}
-                      className='absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 hover:text-slate-900 cursor-pointer transition-all duration-200 hover:scale-110'
+                      className='absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-slate-400 hover:text-slate-900 cursor-pointer transition-all duration-200 hover:scale-110 flex items-center justify-center'
                     >
-                      {showPassword ? <EyeOff /> : <Eye />}
+                      {showPassword ? <EyeOff className='h-4 w-4' /> : <Eye className='h-4 w-4' />}
                     </button>
                   </div>
                   {errors.password && (

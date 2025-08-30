@@ -82,7 +82,7 @@ function TempPasswordModal({ isOpen, tempPassword, onClose }: TempPasswordModalP
                 <button
                   type='button'
                   onClick={() => setShowPassword(!showPassword)}
-                  className='p-1 text-slate-500 hover:text-slate-700 cursor-pointer'
+                  className='p-1 text-slate-500 hover:text-slate-700 cursor-pointer flex items-center justify-center transition-all duration-200 hover:scale-110'
                 >
                   {showPassword ? <EyeOff className='h-4 w-4' /> : <Eye className='h-4 w-4' />}
                 </button>
