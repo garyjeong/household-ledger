@@ -39,19 +39,6 @@ export const swrConfig: SWRConfiguration = {
   // 오류 처리 함수
   onError: (error, key) => {
     console.error(`SWR Error for key "${key}":`, error)
-
-    // Sentry에 오류 전송 (개발 환경에서는 제외)
-    if (process.env.NODE_ENV === 'production') {
-      // 동적 import로 Sentry 로드 (성능 최적화)
-      import('@sentry/nextjs').then(Sentry => {
-        Sentry.captureException(error, {
-          tags: {
-            swrKey: key,
-            source: 'swr-error',
-          },
-        })
-      })
-    }
   },
 
   // 성공 처리 함수

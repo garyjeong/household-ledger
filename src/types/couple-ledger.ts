@@ -10,6 +10,12 @@ export type TransactionType = 'expense' | 'income' | 'transfer'
 export type Currency = 'KRW'
 export type LandingPage = 'quick' | 'list' | 'dashboard'
 
+// 커플 분할 규칙
+export interface SplitRule {
+  me: number
+  partner: number
+}
+
 // 카테고리 관리
 export interface Category {
   id: string
@@ -21,8 +27,6 @@ export interface Category {
   isDefault?: boolean
   order?: number
 }
-
-
 
 // 거래 데이터
 export interface Transaction {
@@ -59,8 +63,6 @@ export interface QuickTemplate {
   lastUsed: string
 }
 
-
-
 // 사용자 설정
 export interface CoupleSettings {
   currency: Currency
@@ -94,7 +96,6 @@ export interface MonthlyStats {
     amount: number
     type: TransactionType
   }>
-
 }
 
 // 필터 및 검색

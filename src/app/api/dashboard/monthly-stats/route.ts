@@ -13,12 +13,26 @@ export async function GET(request: NextRequest) {
     const accessToken = request.cookies.get('accessToken')?.value
 
     if (!accessToken) {
-      return NextResponse.json({ error: 'No token provided' }, { status: 401 })
+      return NextResponse.json(
+        {
+          error: '로그인이 필요합니다',
+          code: 'AUTH_REQUIRED',
+          message: 'Authentication token is required',
+        },
+        { status: 401 }
+      )
     }
 
     const user = verifyAccessToken(accessToken)
     if (!user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+      return NextResponse.json(
+        {
+          error: '유효하지 않은 토큰입니다',
+          code: 'INVALID_TOKEN',
+          message: 'Invalid or expired token',
+        },
+        { status: 401 }
+      )
     }
 
     // URL에서 기간 파라미터 추출

@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 // 보호된 경로 설정
 const PROTECTED_PATHS = [
+  '/', // 메인 페이지도 인증 필요
+  '/dashboard',
   '/ledger',
   '/settings',
   '/api/accounts',
@@ -14,6 +16,7 @@ const PROTECTED_PATHS = [
   '/api/recurring-rules',
   '/api/balance',
   '/api/groups',
+  '/api/dashboard', // 대시보드 API도 보호
 ]
 
 // 인증이 필요하지 않은 API 경로

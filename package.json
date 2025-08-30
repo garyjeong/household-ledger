@@ -31,6 +31,10 @@
     "test:integration": "jest tests/integration",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:e2e:comprehensive": "playwright test tests/e2e/comprehensive-qa.test.ts",
+    "test:e2e:mobile": "playwright test tests/e2e/comprehensive-qa.test.ts --project='Mobile Chrome'",
+    "test:e2e:headed": "playwright test tests/e2e/comprehensive-qa.test.ts --headed",
+    "test:qa:full": "pnpm run test:coverage && pnpm run test:e2e:comprehensive",
     "test:e2e:debug": "playwright test --debug",
     "test:responsive": "playwright test tests/responsive-ui.test.ts",
     "prepare": "husky"
@@ -44,7 +48,7 @@
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.13",
-    "@sentry/nextjs": "^10.6.0",
+
     "@tanstack/react-query": "^5.85.5",
     "@tanstack/react-query-devtools": "^5.85.5",
     "@tanstack/react-table": "^8.21.3",

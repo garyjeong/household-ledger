@@ -6,7 +6,7 @@ import { GroupProvider } from '@/contexts/group-context'
 import { AlertProvider } from '@/contexts/alert-context'
 import { SettingsProvider } from '@/contexts/settings-context'
 import { QueryProvider } from '@/components/providers/QueryProvider'
-import { SentryTestComponent } from '@/components/error/SentryTestComponent'
+
 import { WebVitalsReporter } from '@/components/performance/WebVitalsReporter'
 
 const jetbrainsMono = JetBrains_Mono({
@@ -38,7 +38,6 @@ export default function RootLayout({
           </AlertProvider>
         </QueryProvider>
         <WebVitalsReporter />
-        {process.env.NODE_ENV === 'development' && <SentryTestComponent />}
       </body>
     </html>
   )

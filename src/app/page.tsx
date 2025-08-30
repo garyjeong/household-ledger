@@ -8,6 +8,8 @@ import { defaultCategories } from '@/components/couple-ledger/CategoryPicker'
 import { Transaction, MonthlyStats } from '@/types/couple-ledger'
 import { fetchMonthlyStats } from '@/lib/api/dashboard'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/contexts/auth-context'
+import { useRouter } from 'next/navigation'
 
 /**
  * 신혼부부 가계부 메인 페이지
@@ -20,6 +22,8 @@ import { useToast } from '@/hooks/use-toast'
  */
 export default function HomePage() {
   const { toast } = useToast()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const router = useRouter()
 
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date()
@@ -57,10 +61,18 @@ export default function HomePage() {
     loadMonthlyStats(month)
   }
 
-  // 컴포넌트 마운트시 현재 월 데이터 로드
+  // 인증 상태 확인 및 데이터 로드
   useEffect(() => {
-    loadMonthlyStats(selectedMonth)
-  }, [])
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        // 인증되지 않은 사용자는 로그인 페이지로 리다이렉트
+        router.push('/login')
+        return
+      }
+      // 인증된 사용자만 데이터 로드
+      loadMonthlyStats(selectedMonth)
+    }
+  }, [authLoading, isAuthenticated, selectedMonth, router])
 
   // 빠른입력 모달 열기
   const handleQuickAddClick = () => {
@@ -100,7 +112,31 @@ export default function HomePage() {
     }
   }
 
-  // 로딩 중이거나 에러가 있을 때의 렌더링
+  // 인증 로딩 중일 때 렌더링
+  if (authLoading) {
+    return (
+      <div className='flex items-center justify-center min-h-screen'>
+        <div className='text-center'>
+          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mx-auto mb-4'></div>
+          <p className='text-slate-600'>인증 상태를 확인하는 중...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 인증되지 않은 사용자 (리다이렉트 중)
+  if (!isAuthenticated) {
+    return (
+      <div className='flex items-center justify-center min-h-screen'>
+        <div className='text-center'>
+          <p className='text-slate-600 mb-4'>로그인이 필요합니다.</p>
+          <p className='text-slate-500'>로그인 페이지로 이동중...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 월별 통계 로딩 중일 때의 렌더링
   if (isLoading) {
     return (
       <ResponsiveLayout onQuickAddClick={handleQuickAddClick}>

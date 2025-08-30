@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { onCLS, onFCP, onLCP, onTTFB, onINP, type Metric } from 'web-vitals'
-import * as Sentry from '@sentry/nextjs'
+
 
 interface WebVitalsData {
   name: string
@@ -33,8 +33,8 @@ function calculateRating(name: string, value: number): 'good' | 'needs-improveme
   return 'poor'
 }
 
-// 성능 데이터를 Sentry로 전송
-function sendToSentry(metric: Metric) {
+// 성능 데이터를 콘솔에 로그
+function logPerformanceData(metric: Metric) {
   const webVitalsData: WebVitalsData = {
     name: metric.name,
     value: metric.value,
@@ -44,27 +44,12 @@ function sendToSentry(metric: Metric) {
     delta: metric.delta,
   }
 
-  // Sentry에 성능 메트릭 전송
-  Sentry.setMeasurement(metric.name, metric.value, 'millisecond')
+  // 콘솔에 성능 메트릭 로그
+  console.info(`📊 Performance [${metric.name}]:`, webVitalsData)
 
-  // 성능 이벤트로 전송 (분석용)
-  Sentry.addBreadcrumb({
-    category: 'web-vitals',
-    message: `${metric.name}: ${metric.value}`,
-    level: webVitalsData.rating === 'poor' ? 'warning' : 'info',
-    data: webVitalsData,
-  })
-
-  // 성능 임계값 초과시 이벤트 전송
+  // 성능 임계값 초과시 경고 로그
   if (webVitalsData.rating === 'poor') {
-    Sentry.captureMessage(`Poor Web Vital: ${metric.name}`, {
-      level: 'warning',
-      tags: {
-        webVital: metric.name,
-        rating: webVitalsData.rating,
-      },
-      extra: webVitalsData,
-    })
+    console.warn(`⚠️ Poor Web Vital: ${metric.name}`, webVitalsData)
   }
 }
 
@@ -121,7 +106,7 @@ function reportWebVital(metric: Metric) {
   })
 
   // 다양한 목적지로 데이터 전송
-  sendToSentry(metric)
+  logPerformanceData(metric)
   saveToLocalStorage(metric)
   sendToAnalytics(metric)
 }
