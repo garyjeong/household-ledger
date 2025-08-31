@@ -53,13 +53,15 @@ export function useRefreshExchangeRates() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (baseCurrency = 'KRW') => {
-      const data = await fetchExchangeRates(baseCurrency)
+    mutationFn: async (baseCurrency?: string) => {
+      const currency = baseCurrency || 'KRW'
+      const data = await fetchExchangeRates(currency)
       return data
     },
     onSuccess: (data, baseCurrency) => {
       // 캐시 업데이트
-      queryClient.setQueryData(queryKeys.exchangeRates(baseCurrency), data)
+      const currency = baseCurrency || 'KRW'
+      queryClient.setQueryData(queryKeys.exchangeRates(currency), data)
 
       // 관련 쿼리들도 invalidate
       queryClient.invalidateQueries({

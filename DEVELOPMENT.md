@@ -512,6 +512,14 @@ import Image from 'next/image'
 
 ## 📚 참고 자료
 
+### **프로젝트 문서**
+
+- **[데이터베이스 설계 문서](./DATABASE.md)** - 19개 테이블 완전 가이드
+- **[프로젝트 현황](./STATUS.md)** - 개발 진행 상황 및 완료 기능
+- **[프로젝트 개요](./README.md)** - 전체 서비스 소개 및 사용법
+
+### **기술 문서**
+
 - [Next.js 공식 문서](https://nextjs.org/docs)
 - [React 공식 문서](https://react.dev)
 - [TypeScript 핸드북](https://www.typescriptlang.org/docs)

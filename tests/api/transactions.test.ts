@@ -92,7 +92,6 @@ describe('Transactions API Routes', () => {
   describe('POST /api/transactions', () => {
     const validTransactionData = {
       groupId: '1',
-      accountId: '1',
       categoryId: '1',
       amount: 10000,
       description: '테스트 거래',

@@ -131,7 +131,7 @@ export function EnhancedTransactionsPage() {
 
   if (!currentGroup) {
     return (
-      <ResponsiveLayout>
+      <ResponsiveLayout onQuickAddClick={() => {}}>
         <div className='flex items-center justify-center h-64'>
           <div className='text-center'>
             <p className='text-gray-500'>그룹을 선택해주세요</p>
@@ -195,8 +195,8 @@ export function EnhancedTransactionsPage() {
                 <div className='text-2xl font-bold text-green-600'>
                   {formatCurrency(
                     transactions
-                      .filter(t => t.type === 'INCOME')
-                      .reduce((sum, t) => sum + (t.convertedAmount || t.amount), 0),
+                      .filter((t: any) => t.type === 'INCOME')
+                      .reduce((sum: number, t: any) => sum + (t.convertedAmount || t.amount), 0),
                     'KRW'
                   )}
                 </div>
@@ -212,8 +212,8 @@ export function EnhancedTransactionsPage() {
                 <div className='text-2xl font-bold text-red-600'>
                   {formatCurrency(
                     transactions
-                      .filter(t => t.type === 'EXPENSE')
-                      .reduce((sum, t) => sum + (t.convertedAmount || t.amount), 0),
+                      .filter((t: any) => t.type === 'EXPENSE')
+                      .reduce((sum: number, t: any) => sum + (t.convertedAmount || t.amount), 0),
                     'KRW'
                   )}
                 </div>
@@ -228,7 +228,7 @@ export function EnhancedTransactionsPage() {
               <CardContent>
                 <div className='text-2xl font-bold text-blue-600'>
                   {formatCurrency(
-                    transactions.reduce((sum, t) => {
+                    transactions.reduce((sum: number, t: any) => {
                       const amount = t.convertedAmount || t.amount
                       return sum + (t.type === 'INCOME' ? amount : -amount)
                     }, 0),

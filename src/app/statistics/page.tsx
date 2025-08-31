@@ -57,6 +57,7 @@ export default function StatisticsPage() {
   const [filters, setFilters] = useState<StatisticsFilters>({
     period: 'current-month',
   })
+  const [activeTab, setActiveTab] = useState('overview')
 
   // 통계 데이터 조회
   const { data: statistics, isLoading, isError, refetch } = useStatistics(filters)
@@ -89,7 +90,7 @@ export default function StatisticsPage() {
   // 로딩 상태
   if (isLoading) {
     return (
-      <ResponsiveLayout>
+      <ResponsiveLayout onQuickAddClick={() => {}}>
         <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
           <div className='flex items-center justify-center min-h-[400px]'>
             <div className='text-center'>
@@ -105,7 +106,7 @@ export default function StatisticsPage() {
   // 에러 상태
   if (isError || !statistics) {
     return (
-      <ResponsiveLayout>
+      <ResponsiveLayout onQuickAddClick={() => {}}>
         <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
           <div className='flex items-center justify-center min-h-[400px]'>
             <div className='text-center'>
@@ -126,7 +127,7 @@ export default function StatisticsPage() {
   }
 
   return (
-    <ResponsiveLayout>
+    <ResponsiveLayout onQuickAddClick={() => {}}>
       <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
         {/* 헤더 */}
         <div className='flex items-center justify-between mb-6'>
@@ -242,7 +243,7 @@ export default function StatisticsPage() {
         </div>
 
         {/* 차트 탭 */}
-        <Tabs defaultValue='overview' className='space-y-6'>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className='space-y-6'>
           <TabsList>
             <TabsTrigger value='overview' className='gap-2'>
               <BarChart3 className='h-4 w-4' />
@@ -326,6 +327,7 @@ export default function StatisticsPage() {
                   amount: item.totalAmount,
                   percentage: item.percentage,
                   color: item.color,
+                  icon: '',
                 }))}
               />
             )}

@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
     const { period, startDate, endDate, groupId } = queryResult.data
 
     // 기간 계산
-    const dateRange = calculateDateRange(period, startDate, endDate)
+    const dateRange = calculateDateRange(period, startDate || undefined, endDate || undefined)
 
     // 거래 데이터 조회 (기본 필터)
     const baseTransactionQuery = {
@@ -252,7 +252,7 @@ export async function GET(request: NextRequest) {
     }))
 
     // 4. 월별 비교 (최근 6개월)
-    const monthlyComparison = await getMonthlyComparison(user.userId, groupId)
+    const monthlyComparison = await getMonthlyComparison(user.userId, groupId || undefined)
 
     const response: StatisticsResponse = {
       period,

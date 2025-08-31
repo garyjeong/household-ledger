@@ -17,17 +17,17 @@ interface MonthlyStatsResponse {
 
 // 월별 통계 데이터 조회
 export function useMonthlyStats({ period, refetchInterval = 30000 }: UseMonthlyStatsOptions) {
-  const { selectedGroup } = useGroup()
+  const { currentGroup } = useGroup()
 
   return useQuery({
-    queryKey: ['monthly-stats', period, selectedGroup?.id],
+    queryKey: ['monthly-stats', period, currentGroup?.id],
     queryFn: async (): Promise<MonthlyStats> => {
       const params = new URLSearchParams({
         period,
       })
 
-      if (selectedGroup?.id) {
-        params.append('groupId', selectedGroup.id)
+      if (currentGroup?.id) {
+        params.append('groupId', currentGroup.id)
       }
 
       const response = await fetch(`/api/dashboard/monthly-stats?${params}`, {
@@ -80,7 +80,7 @@ export function useRefreshMonthlyStats() {
 // 통계 데이터 미리 로드 (이전/다음 달)
 export function usePrefetchMonthlyStats() {
   const queryClient = useQueryClient()
-  const { selectedGroup } = useGroup()
+  const { currentGroup } = useGroup()
 
   return (currentPeriod: string) => {
     const [year, month] = currentPeriod.split('-').map(Number)
@@ -95,11 +95,11 @@ export function usePrefetchMonthlyStats() {
 
     // 이전 달 데이터 미리 로드
     queryClient.prefetchQuery({
-      queryKey: ['monthly-stats', prevPeriod, selectedGroup?.id],
+      queryKey: ['monthly-stats', prevPeriod, currentGroup?.id],
       queryFn: async (): Promise<MonthlyStats> => {
         const params = new URLSearchParams({ period: prevPeriod })
-        if (selectedGroup?.id) {
-          params.append('groupId', selectedGroup.id)
+        if (currentGroup?.id) {
+          params.append('groupId', currentGroup.id)
         }
 
         const response = await fetch(`/api/dashboard/monthly-stats?${params}`, {
@@ -127,11 +127,11 @@ export function usePrefetchMonthlyStats() {
 
     if (nextDateTime <= now) {
       queryClient.prefetchQuery({
-        queryKey: ['monthly-stats', nextPeriod, selectedGroup?.id],
+        queryKey: ['monthly-stats', nextPeriod, currentGroup?.id],
         queryFn: async (): Promise<MonthlyStats> => {
           const params = new URLSearchParams({ period: nextPeriod })
-          if (selectedGroup?.id) {
-            params.append('groupId', selectedGroup.id)
+          if (currentGroup?.id) {
+            params.append('groupId', currentGroup.id)
           }
 
           const response = await fetch(`/api/dashboard/monthly-stats?${params}`, {

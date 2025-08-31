@@ -112,10 +112,13 @@ export function createMockRequest(options: {
 }) {
   const { method = 'GET', body, cookies, headers = {}, url = 'http://localhost:3000' } = options
 
+  // URL이 상대 경로인 경우 baseURL을 앞에 붙임
+  const fullUrl = url.startsWith('/') ? `http://localhost:3000${url}` : url
+
   const mockRequest = {
     method,
-    url,
-    nextUrl: new URL(url),
+    url: fullUrl,
+    nextUrl: new URL(fullUrl),
     json: () => Promise.resolve(body),
     text: () => Promise.resolve(JSON.stringify(body)),
     cookies: createMockCookies(cookies),

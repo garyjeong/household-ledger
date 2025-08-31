@@ -29,7 +29,7 @@ const BalanceWidget = memo(function BalanceWidget({
   className = '',
 }: BalanceWidgetProps) {
   const {
-    balance: safeBalanceData,
+    balance: balanceData,
     isLoading,
     error: _error,
     isPositive: isBalancePositive,
@@ -41,7 +41,7 @@ const BalanceWidget = memo(function BalanceWidget({
   })
 
   // 기본값 설정 (SWR에서 데이터가 아직 로드되지 않은 경우)
-  const safeBalanceData = safeBalanceData || {
+  const safeBalanceData = balanceData || {
     totalBalance: 0,
     monthlyIncome: 0,
     monthlyExpense: 0,

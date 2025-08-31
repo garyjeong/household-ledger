@@ -48,8 +48,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { type, startDate, endDate, accountId, categoryId, search, page, limit } =
-      validationResult.data
+    const { type, startDate, endDate, categoryId, search, page, limit } = validationResult.data
 
     // 기본 where 조건 (사용자 소유 거래만)
     const whereCondition: any = {
@@ -72,10 +71,6 @@ export async function GET(request: NextRequest) {
       whereCondition.date = { lte: new Date(endDate) }
     }
 
-    if (accountId) {
-      whereCondition.accountId = BigInt(accountId)
-    }
-
     if (categoryId) {
       whereCondition.categoryId = BigInt(categoryId)
     }
@@ -93,11 +88,11 @@ export async function GET(request: NextRequest) {
     const transactions = await prisma.transaction.findMany({
       where: whereCondition,
       include: {
-        account: {
-          select: { id: true, name: true, type: true },
-        },
         category: {
           select: { id: true, name: true, color: true, type: true },
+        },
+        tag: {
+          select: { id: true, name: true },
         },
       },
       orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
@@ -173,88 +168,53 @@ export async function POST(request: NextRequest) {
 
     const transactionData = validationResult.data
 
-    // 계좌 소유권 검증
-    const account = await prisma.account.findUnique({
-      where: { id: BigInt(transactionData.accountId) },
-    })
+    // 카테고리 소유권 검증 (선택사항)
+    if (transactionData.categoryId) {
+      const category = await prisma.category.findUnique({
+        where: { id: BigInt(transactionData.categoryId) },
+      })
 
-    if (!account) {
-      return NextResponse.json(
-        { error: '계좌를 찾을 수 없습니다', code: 'ACCOUNT_NOT_FOUND' },
-        { status: 404 }
-      )
+      if (!category) {
+        return NextResponse.json(
+          { error: '카테고리를 찾을 수 없습니다', code: 'CATEGORY_NOT_FOUND' },
+          { status: 404 }
+        )
+      }
+
+      // 카테고리 타입과 거래 타입 일치 확인
+      if (category.type !== transactionData.type) {
+        return NextResponse.json(
+          { error: '카테고리 타입과 거래 타입이 일치하지 않습니다', code: 'TYPE_MISMATCH' },
+          { status: 400 }
+        )
+      }
     }
 
-    const accountOwnershipResult = await verifyAccountOwnership(
-      user.userId,
-      account.ownerType,
-      account.ownerId.toString()
-    )
+    // 거래 생성 (단순화)
+    // EXPENSE는 음수, INCOME은 양수로 저장
+    const signedAmount =
+      transactionData.type === 'EXPENSE'
+        ? -BigInt(Math.abs(transactionData.amount))
+        : BigInt(Math.abs(transactionData.amount))
 
-    if (!accountOwnershipResult.isValid) {
-      return NextResponse.json(
-        {
-          error: accountOwnershipResult.error || '계좌 접근 권한이 없습니다',
-          code: 'ACCESS_DENIED',
-        },
-        { status: 403 }
-      )
-    }
-
-    // 카테고리 소유권 검증
-    const category = await prisma.category.findUnique({
-      where: { id: BigInt(transactionData.categoryId) },
-    })
-
-    if (!category) {
-      return NextResponse.json(
-        { error: '카테고리를 찾을 수 없습니다', code: 'CATEGORY_NOT_FOUND' },
-        { status: 404 }
-      )
-    }
-
-    // 카테고리 타입과 거래 타입 일치 확인
-    if (category.type !== transactionData.type) {
-      return NextResponse.json(
-        { error: '카테고리 타입과 거래 타입이 일치하지 않습니다', code: 'TYPE_MISMATCH' },
-        { status: 400 }
-      )
-    }
-
-    // 거래 생성
     const newTransaction = await prisma.transaction.create({
       data: {
         type: transactionData.type,
         date: transactionData.date,
-        amount: BigInt(transactionData.amount),
-        accountId: BigInt(transactionData.accountId),
-        categoryId: BigInt(transactionData.categoryId),
+        amount: signedAmount,
+        categoryId: transactionData.categoryId ? BigInt(transactionData.categoryId) : null,
+        tagId: transactionData.tagId ? BigInt(transactionData.tagId) : null,
         merchant: transactionData.merchant || null,
         memo: transactionData.memo || null,
         ownerUserId: BigInt(user.userId),
-        groupId: account.ownerType === 'GROUP' ? account.ownerId : null,
+        groupId: transactionData.groupId ? BigInt(transactionData.groupId) : null,
       },
       include: {
-        account: {
-          select: { id: true, name: true, type: true },
-        },
         category: {
           select: { id: true, name: true, color: true, type: true },
         },
-      },
-    })
-
-    // 계좌 잔액 업데이트
-    const balanceChange =
-      transactionData.type === 'EXPENSE'
-        ? -BigInt(transactionData.amount)
-        : BigInt(transactionData.amount)
-
-    await prisma.account.update({
-      where: { id: BigInt(transactionData.accountId) },
-      data: {
-        balance: {
-          increment: balanceChange,
+        tag: {
+          select: { id: true, name: true },
         },
       },
     })

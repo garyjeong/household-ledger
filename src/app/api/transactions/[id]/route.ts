@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyToken, extractTokenFromHeader, verifyAccountOwnership } from '@/lib/auth'
+import { verifyToken, extractTokenFromHeader } from '@/lib/auth'
 import { updateTransactionSchema, formatTransactionForResponse } from '@/lib/schemas/transaction'
 
 /**
@@ -34,8 +34,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const existingTransaction = await prisma.transaction.findUnique({
       where: { id: BigInt(transactionId) },
       include: {
-        account: true,
         category: true,
+        tag: true,
       },
     })
 
@@ -73,35 +73,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const updateData = validationResult.data
 
-    // 계좌가 변경되는 경우 새 계좌 소유권 검증
-    if (updateData.accountId && updateData.accountId !== existingTransaction.accountId.toString()) {
-      const newAccount = await prisma.account.findUnique({
-        where: { id: BigInt(updateData.accountId) },
-      })
-
-      if (!newAccount) {
-        return NextResponse.json(
-          { error: '새 계좌를 찾을 수 없습니다', code: 'ACCOUNT_NOT_FOUND' },
-          { status: 404 }
-        )
-      }
-
-      const accountOwnershipResult = await verifyAccountOwnership(
-        user.userId,
-        newAccount.ownerType,
-        newAccount.ownerId.toString()
-      )
-
-      if (!accountOwnershipResult.isValid) {
-        return NextResponse.json(
-          {
-            error: accountOwnershipResult.error || '새 계좌 접근 권한이 없습니다',
-            code: 'ACCESS_DENIED',
-          },
-          { status: 403 }
-        )
-      }
-    }
+    // 계좌 관련 검증 제거됨 - 단순화된 스키마
 
     // 카테고리가 변경되는 경우 검증
     if (
@@ -130,79 +102,30 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // 계좌 잔액 조정 계산
-    const oldAmount = existingTransaction.amount
-    const newAmount = updateData.amount ? BigInt(updateData.amount) : oldAmount
-    const oldAccountId = existingTransaction.accountId
-    const newAccountId = updateData.accountId ? BigInt(updateData.accountId) : oldAccountId
-    const oldType = existingTransaction.type
-    const newType = updateData.type || oldType
-
-    // 이전 거래의 잔액 변화를 되돌림
-    const oldBalanceChange = oldType === 'EXPENSE' ? oldAmount : -oldAmount
-
-    // 새 거래의 잔액 변화 계산
-    const newBalanceChange = newType === 'EXPENSE' ? -newAmount : newAmount
+    // 간소화된 스키마에서는 계좌 잔액 계산이 비즈니스 로직에서 처리됨
 
     // 거래 정보 업데이트
     const prismaUpdateData: Record<string, unknown> = { ...updateData }
     if (updateData.amount !== undefined) {
       prismaUpdateData.amount = BigInt(updateData.amount)
     }
-    if (updateData.accountId !== undefined) {
-      prismaUpdateData.accountId = BigInt(updateData.accountId)
-    }
+    // accountId 제거됨
     if (updateData.categoryId !== undefined) {
       prismaUpdateData.categoryId = BigInt(updateData.categoryId)
     }
 
-    const updatedTransaction = await prisma.$transaction(async tx => {
-      // 거래 정보 업데이트
-      const transaction = await tx.transaction.update({
-        where: { id: BigInt(transactionId) },
-        data: prismaUpdateData,
-        include: {
-          account: {
-            select: { id: true, name: true, type: true },
-          },
-          category: {
-            select: { id: true, name: true, color: true, type: true },
-          },
+    // 거래 정보 업데이트 (계좌 잔액은 비즈니스 로직에서 계산)
+    const updatedTransaction = await prisma.transaction.update({
+      where: { id: BigInt(transactionId) },
+      data: prismaUpdateData,
+      include: {
+        category: {
+          select: { id: true, name: true, color: true, type: true },
         },
-      })
-
-      // 계좌 잔액 조정
-      if (oldAccountId === newAccountId) {
-        // 같은 계좌인 경우: 기존 영향을 취소하고 새 영향 적용
-        await tx.account.update({
-          where: { id: oldAccountId },
-          data: {
-            balance: {
-              increment: oldBalanceChange + newBalanceChange,
-            },
-          },
-        })
-      } else {
-        // 다른 계좌인 경우: 기존 계좌에서 취소, 새 계좌에 적용
-        await tx.account.update({
-          where: { id: oldAccountId },
-          data: {
-            balance: {
-              increment: oldBalanceChange,
-            },
-          },
-        })
-
-        await tx.account.update({
-          where: { id: newAccountId },
-          data: {
-            balance: {
-              increment: newBalanceChange,
-            },
-          },
-        })
-      }
-
-      return transaction
+        tag: {
+          select: { id: true, name: true },
+        },
+      },
     })
 
     // 응답 형태로 변환
@@ -255,9 +178,6 @@ export async function DELETE(
     // 거래 존재 확인 및 소유권 검증
     const existingTransaction = await prisma.transaction.findUnique({
       where: { id: BigInt(transactionId) },
-      include: {
-        account: true,
-      },
     })
 
     if (!existingTransaction) {
@@ -274,28 +194,9 @@ export async function DELETE(
       )
     }
 
-    // 계좌 잔액 복구를 위한 계산
-    const balanceChange =
-      existingTransaction.type === 'EXPENSE'
-        ? existingTransaction.amount // 지출 취소 → 잔액 증가
-        : -existingTransaction.amount // 수입 취소 → 잔액 감소
-
-    // 거래 삭제 및 계좌 잔액 복구
-    await prisma.$transaction(async tx => {
-      // 거래 삭제
-      await tx.transaction.delete({
-        where: { id: BigInt(transactionId) },
-      })
-
-      // 계좌 잔액 복구
-      await tx.account.update({
-        where: { id: existingTransaction.accountId },
-        data: {
-          balance: {
-            increment: balanceChange,
-          },
-        },
-      })
+    // 거래 삭제 (잔액은 비즈니스 로직에서 계산됨)
+    await prisma.transaction.delete({
+      where: { id: BigInt(transactionId) },
     })
 
     return NextResponse.json({
@@ -345,11 +246,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         ownerUserId: BigInt(user.userId), // 소유권 확인
       },
       include: {
-        account: {
-          select: { id: true, name: true, type: true },
-        },
         category: {
           select: { id: true, name: true, color: true, type: true },
+        },
+        tag: {
+          select: { id: true, name: true },
         },
       },
     })

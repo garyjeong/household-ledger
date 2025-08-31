@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -29,7 +29,7 @@ const emailStageSchema = z
     domain: z.string().min(1, '도메인을 선택해주세요.'),
     customDomain: z.string().optional(),
     password: z.string().optional(),
-    rememberMe: z.boolean().optional().default(false),
+    rememberMe: z.boolean(),
   })
   .refine(
     data => {
@@ -51,7 +51,7 @@ const passwordStageSchema = z
     domain: z.string().min(1, '도메인을 선택해주세요.'),
     customDomain: z.string().optional(),
     password: z.string().min(1, '비밀번호를 입력해주세요.'),
-    rememberMe: z.boolean().optional().default(false),
+    rememberMe: z.boolean(),
   })
   .refine(
     data => {
@@ -66,11 +66,16 @@ const passwordStageSchema = z
     }
   )
 
-const loginSchema = emailStageSchema
+// Union type for both stages with explicit rememberMe type
+type LoginFormData = {
+  username: string
+  domain: string
+  customDomain?: string
+  password?: string
+  rememberMe: boolean
+}
 
-type LoginFormData = z.infer<typeof loginSchema>
-
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { login, isAuthenticated, rememberedEmail, clearRememberedEmail } = useAuth()
@@ -181,7 +186,7 @@ export default function LoginPage() {
         return
       }
 
-      const result = await login(fullEmail, data.password, data.rememberMe)
+      const result = await login(fullEmail, data.password!, data.rememberMe)
 
       if (result.success) {
         router.push('/')
@@ -405,5 +410,13 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginPageContent />
+    </Suspense>
   )
 }

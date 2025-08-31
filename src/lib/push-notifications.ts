@@ -3,7 +3,14 @@
  * T-026: 설정 하위 메뉴 - 프로필 관리 (알림 설정)
  */
 
-import { PushSubscription as CustomPushSubscription } from '@/hooks/use-push-notifications'
+// PushSubscription type is available globally in Service Worker context
+interface CustomPushSubscription {
+  endpoint: string
+  keys: {
+    p256dh: string
+    auth: string
+  }
+}
 
 // VAPID Public Key (환경 변수로 설정 권장)
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'YOUR_VAPID_PUBLIC_KEY'
@@ -71,7 +78,7 @@ export async function createPushSubscription(
 
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: applicationServerKey,
+      applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
     })
 
     console.log('푸시 구독 생성 성공:', subscription)
@@ -204,8 +211,8 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
 
-  const rawData = window.atob(base64)
-  const outputArray = new Uint8Array(rawData.length)
+  const rawData = (typeof window !== 'undefined' ? window.atob : global.atob || atob)(base64)
+  const outputArray = new Uint8Array(new ArrayBuffer(rawData.length))
 
   for (let i = 0; i < rawData.length; ++i) {
     outputArray[i] = rawData.charCodeAt(i)

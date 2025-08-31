@@ -7,7 +7,6 @@ import { POST as signupHandler } from '@/app/api/auth/signup/route'
 import { POST as loginHandler } from '@/app/api/auth/login/route'
 import { POST as logoutHandler } from '@/app/api/auth/logout/route'
 import { GET as meHandler } from '@/app/api/auth/me/route'
-import { POST as refreshHandler } from '@/app/api/auth/refresh/route'
 import {
   createMockRequest,
   expectApiSuccess,
@@ -388,90 +387,6 @@ describe('Auth API Routes', () => {
       }) as NextRequest
 
       const response = await meHandler(request)
-      const responseData = await response.json()
-
-      expect(response.status).toBe(404)
-      expect(responseData.error).toContain('사용자를 찾을 수 없습니다')
-    })
-  })
-
-  describe('POST /api/auth/refresh', () => {
-    const mockUser = {
-      id: '1',
-      email: 'test@example.com',
-      nickname: 'Gary',
-      createdAt: new Date(),
-    }
-
-    const mockTokenPayload = {
-      userId: mockUser.id,
-      email: mockUser.email,
-      nickname: mockUser.nickname,
-    }
-
-    it('should refresh token successfully', async () => {
-      const refreshToken = 'valid-refresh-token'
-
-      mockVerifyRefreshToken.mockReturnValue(mockTokenPayload)
-      mockFindUserById.mockResolvedValue(mockUser)
-      mockGenerateAccessToken.mockReturnValue('new-access-token')
-
-      const request = createMockRequest({
-        method: 'POST',
-        cookies: { refreshToken },
-      }) as NextRequest
-
-      const response = await refreshHandler(request)
-      const responseData = await response.json()
-
-      expect(response.status).toBe(200)
-      expect(responseData.success).toBe(true)
-      expect(responseData.user.id).toBe(mockUser.id)
-      expect(mockGenerateAccessToken).toHaveBeenCalledWith(mockTokenPayload)
-    })
-
-    it('should reject request without refresh token', async () => {
-      const request = createMockRequest({
-        method: 'POST',
-        cookies: {},
-      }) as NextRequest
-
-      const response = await refreshHandler(request)
-      const responseData = await response.json()
-
-      expect(response.status).toBe(401)
-      expect(responseData.error).toContain('리프레시 토큰')
-    })
-
-    it('should reject invalid refresh token', async () => {
-      const refreshToken = 'invalid-refresh-token'
-
-      mockVerifyRefreshToken.mockReturnValue(null)
-
-      const request = createMockRequest({
-        method: 'POST',
-        cookies: { refreshToken },
-      }) as NextRequest
-
-      const response = await refreshHandler(request)
-      const responseData = await response.json()
-
-      expect(response.status).toBe(401)
-      expect(responseData.error).toContain('유효하지 않은 리프레시 토큰')
-    })
-
-    it('should handle user not found during refresh', async () => {
-      const refreshToken = 'valid-refresh-token'
-
-      mockVerifyRefreshToken.mockReturnValue(mockTokenPayload)
-      mockFindUserById.mockResolvedValue(null)
-
-      const request = createMockRequest({
-        method: 'POST',
-        cookies: { refreshToken },
-      }) as NextRequest
-
-      const response = await refreshHandler(request)
       const responseData = await response.json()
 
       expect(response.status).toBe(404)

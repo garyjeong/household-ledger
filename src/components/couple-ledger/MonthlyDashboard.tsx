@@ -235,7 +235,7 @@ export function MonthlyDashboard({
               <h3 className='text-xs font-semibold'>카테고리 TOP 5</h3>
             </div>
             <div className='space-y-2'>
-              {(stats.categoryBreakdown || stats.categories || []).slice(0, 5).map((category, index) => (
+              {(stats.categoryBreakdown || []).slice(0, 5).map((category, index) => (
                 <div key={category.categoryId} className='flex items-center gap-1.5'>
                   {/* 순위 */}
                   <div className='flex items-center justify-center w-4 h-4 rounded-full bg-surface-tertiary text-xs font-bold text-text-secondary'>
@@ -283,8 +283,8 @@ export function MonthlyDashboard({
               <h3 className='text-xs font-semibold'>예산 대비</h3>
             </div>
             <div className='space-y-2'>
-              {(stats.budgetComparison || []).slice(0, 5).map(budget => {
-                const category = (stats.categoryBreakdown || stats.categories || []).find(
+              {(stats.categoryBreakdown || []).slice(0, 5).map(budget => {
+                const category = (stats.categoryBreakdown || []).find(
                   c => c.categoryId === budget.categoryId
                 )
                 const isOverBudget = budget.percentage > 100
@@ -335,8 +335,12 @@ export function MonthlyDashboard({
 
         {/* 월별 트렌드 차트 */}
         <MonthlyTrendChart
-          dailyTrend={stats.dailyTrend || []}
-          categoryBreakdown={stats.categoryBreakdown || stats.categories || []}
+          dailyTrend={(stats.dailyTrend || []).map(item => ({
+            date: item.date,
+            amount: Math.abs(item.amount),
+            type: (item.type === 'income' ? 'income' : 'expense') as 'expense' | 'income'
+          }))}
+          categoryBreakdown={stats.categoryBreakdown || []}
         />
       </div>
     </div>

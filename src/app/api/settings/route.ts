@@ -54,28 +54,25 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 사용자 설정 조회
-    const userSettings = await prisma.userSettings.findUnique({
-      where: {
-        userId: BigInt(user.userId),
-      },
+    // 사용자 설정 조회 (User.settings JSON 필드에서)
+    const userData = await prisma.user.findUnique({
+      where: { id: BigInt(user.userId) },
+      select: { settings: true },
     })
 
-    if (!userSettings) {
-      // 설정이 없는 경우 기본값 반환
-      return NextResponse.json({
-        success: true,
-        settings: DEFAULT_SETTINGS,
-      })
-    }
-
-    // JSON 파싱하여 설정 반환
-    let settings: AppSettings
-    try {
-      settings = JSON.parse(userSettings.settings as string)
-    } catch (error) {
-      console.error('설정 파싱 오류:', error)
-      settings = DEFAULT_SETTINGS
+    // 설정 처리
+    let settings: AppSettings = DEFAULT_SETTINGS
+    if (userData?.settings) {
+      try {
+        // JSON 파싱 (Prisma에서 자동으로 파싱되지만 타입 체크용)
+        settings =
+          typeof userData.settings === 'object'
+            ? (userData.settings as unknown as AppSettings)
+            : (JSON.parse(userData.settings as string) as AppSettings)
+      } catch (error) {
+        console.error('설정 파싱 오류:', error)
+        settings = DEFAULT_SETTINGS
+      }
     }
 
     // 기본값과 병합하여 누락된 설정 보완
@@ -135,23 +132,23 @@ export async function PUT(request: NextRequest) {
 
     const updates = validationResult.data
 
-    // 기존 설정 조회
-    const existingSettings = await prisma.userSettings.findUnique({
-      where: {
-        userId: BigInt(user.userId),
-      },
+    // 기존 설정 조회 (User.settings JSON 필드에서)
+    const userData = await prisma.user.findUnique({
+      where: { id: BigInt(user.userId) },
+      select: { settings: true },
     })
 
-    let currentSettings: AppSettings
-    if (existingSettings) {
+    let currentSettings: AppSettings = DEFAULT_SETTINGS
+    if (userData?.settings) {
       try {
-        currentSettings = JSON.parse(existingSettings.settings as string)
+        currentSettings =
+          typeof userData.settings === 'object'
+            ? (userData.settings as unknown as AppSettings)
+            : (JSON.parse(userData.settings as string) as AppSettings)
       } catch (error) {
         console.error('기존 설정 파싱 오류:', error)
         currentSettings = DEFAULT_SETTINGS
       }
-    } else {
-      currentSettings = DEFAULT_SETTINGS
     }
 
     // 설정 업데이트 (깊은 병합)
@@ -164,20 +161,11 @@ export async function PUT(request: NextRequest) {
       },
     }
 
-    // 데이터베이스에 저장
-    await prisma.userSettings.upsert({
-      where: {
-        userId: BigInt(user.userId),
-      },
-      update: {
-        settings: JSON.stringify(newSettings),
-        updatedAt: new Date(),
-      },
-      create: {
-        userId: BigInt(user.userId),
-        settings: JSON.stringify(newSettings),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+    // User.settings JSON 필드에 저장
+    await prisma.user.update({
+      where: { id: BigInt(user.userId) },
+      data: {
+        settings: newSettings as any,
       },
     })
 
@@ -219,20 +207,11 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // 설정을 기본값으로 초기화
-    await prisma.userSettings.upsert({
-      where: {
-        userId: BigInt(user.userId),
-      },
-      update: {
-        settings: JSON.stringify(DEFAULT_SETTINGS),
-        updatedAt: new Date(),
-      },
-      create: {
-        userId: BigInt(user.userId),
-        settings: JSON.stringify(DEFAULT_SETTINGS),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+    // 설정을 기본값으로 초기화 (User.settings JSON 필드를 null로 설정)
+    await prisma.user.update({
+      where: { id: BigInt(user.userId) },
+      data: {
+        settings: null as any, // null로 설정하면 기본값 사용
       },
     })
 

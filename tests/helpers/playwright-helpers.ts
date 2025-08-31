@@ -63,7 +63,13 @@ export class PlaywrightHelpers {
    * 거래 추가
    */
   async addTransaction(
-    transaction = TEST_TRANSACTIONS.expense,
+    transaction: {
+      amount: string
+      description: string
+      category: string
+      memo: string
+      type: 'EXPENSE' | 'INCOME' | 'TRANSFER'
+    } = TEST_TRANSACTIONS.expense,
     options: {
       useQuickAdd?: boolean
       selectCategory?: boolean
@@ -336,8 +342,8 @@ export class PlaywrightHelpers {
       const paint = performance.getEntriesByType('paint')
 
       return {
-        domContentLoaded: navigation.domContentLoadedEventEnd - navigation.navigationStart,
-        loadComplete: navigation.loadEventEnd - navigation.navigationStart,
+        domContentLoaded: navigation.domContentLoadedEventEnd - navigation.startTime,
+        loadComplete: navigation.loadEventEnd - navigation.startTime,
         firstPaint: paint.find(entry => entry.name === 'first-paint')?.startTime || 0,
         firstContentfulPaint:
           paint.find(entry => entry.name === 'first-contentful-paint')?.startTime || 0,

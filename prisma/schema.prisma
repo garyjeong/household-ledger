@@ -14,58 +14,34 @@ datasource db {
 // User Management Models
 // =============================================
 
+/// 사용자 기본 정보 및 계정 관리
+/// - 이메일/비밀번호 기반 인증
+/// - 사용자 프로필 및 설정 정보 저장 (JSON)
+/// - 그룹 멤버십 직접 연결 (groupId 외래키)
 model User {
   id           BigInt   @id @default(autoincrement())
   email        String   @unique @db.VarChar(255)
   passwordHash String   @map("password_hash") @db.VarChar(255)
   nickname     String   @db.VarChar(60)
   avatarUrl    String?  @map("avatar_url") @db.VarChar(500)
+  groupId      BigInt?  @map("group_id")
+  settings     Json? // 사용자 설정을 JSON으로 저장 (테마, 언어, 통화 등)
   createdAt    DateTime @default(now()) @map("created_at")
 
   // Relations
-  ownedGroups     Group[]         @relation("GroupOwner")
-  groupMembers    GroupMember[]
-  groupInvites    GroupInvite[]   @relation("GroupInviteCreator")
-  transactions    Transaction[]   @relation("TransactionOwner")
-  auditLogs       AuditLog[]
-  settings        UserSettings?
-  pushTokens      PushToken[]     @relation("UserPushTokens")
+  ownedGroups  Group[]       @relation("GroupOwner")
+  group        Group?        @relation("GroupMembers", fields: [groupId], references: [id])
+  groupInvites GroupInvite[] @relation("GroupInviteCreator")
+  transactions Transaction[] @relation("TransactionOwner")
 
+  @@index([groupId], map: "idx_users_group")
   @@map("users")
 }
 
-model UserSettings {
-  id        BigInt   @id @default(autoincrement())
-  userId    BigInt   @unique @map("user_id")
-  settings  Json
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("user_settings")
-}
-
-model PushToken {
-  id        BigInt   @id @default(autoincrement())
-  userId    BigInt   @map("user_id")
-  token     String   @db.VarChar(500)
-  endpoint  String?  @db.VarChar(500)
-  keys      Json?    // p256dh, auth keys for VAPID
-  userAgent String?  @map("user_agent") @db.VarChar(500)
-  isActive  Boolean  @default(true) @map("is_active")
-  lastUsed  DateTime @default(now()) @map("last_used")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  // Relations
-  user User @relation("UserPushTokens", fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, token], map: "ux_user_token")
-  @@index([userId, isActive], map: "idx_push_tokens_user_active")
-  @@map("push_tokens")
-}
-
+/// 가족/커플 그룹 관리
+/// - 공동 가계부를 위한 그룹 생성
+/// - 그룹 소유자와 멤버 관계 관리
+/// - 거래 공유의 기본 단위
 model Group {
   id        BigInt   @id @default(autoincrement())
   name      String   @db.VarChar(120)
@@ -74,27 +50,17 @@ model Group {
 
   // Relations
   owner        User          @relation("GroupOwner", fields: [ownerId], references: [id])
-  members      GroupMember[]
+  members      User[]        @relation("GroupMembers")
   invites      GroupInvite[]
   transactions Transaction[]
 
   @@map("groups")
 }
 
-model GroupMember {
-  groupId  BigInt                @map("group_id")
-  userId   BigInt                @map("user_id")
-  role     GroupMemberRole       @default(MEMBER)
-  joinedAt DateTime              @default(now()) @map("joined_at")
-
-  // Relations
-  group Group @relation(fields: [groupId], references: [id])
-  user  User  @relation(fields: [userId], references: [id])
-
-  @@id([groupId, userId])
-  @@map("group_members")
-}
-
+/// 그룹 초대 코드 관리
+/// - 10자리 영문+숫자 초대 코드 생성
+/// - 24시간 만료 시간 설정
+/// - 안전한 그룹 참여를 위한 일회성 코드
 model GroupInvite {
   id        BigInt   @id @default(autoincrement())
   groupId   BigInt   @map("group_id")
@@ -112,57 +78,37 @@ model GroupInvite {
   @@map("group_invites")
 }
 
-enum GroupMemberRole {
-  OWNER
-  ADMIN
-  MEMBER
-}
-
 // =============================================
 // Financial Models
 // =============================================
 
-model Account {
-  id        BigInt      @id @default(autoincrement())
-  ownerType OwnerType   @map("owner_type")
-  ownerId   BigInt      @map("owner_id")
-  name      String      @db.VarChar(120)
-  type      AccountType
-  currency  String      @default("KRW") @db.Char(3)
-  balance   BigInt      @default(0)
-  isActive  Boolean     @default(true) @map("is_active")
-
-  // Relations
-  transactions Transaction[]
-
-  @@index([ownerType, ownerId], map: "idx_accounts_owner")
-  @@map("accounts")
-}
-
-enum AccountType {
-  CASH
-  CARD
-  BANK
-  OTHER
-}
-
+/// 거래 분류 카테고리 관리
+/// - 수입/지출별 거래 분류 체계
+/// - 기본 카테고리 + 사용자 정의 카테고리
+/// - 통계 분석 및 예산 관리의 기본 단위
+/// - 예산 금액 직접 저장 (budgetAmount)
 model Category {
-  id        BigInt           @id @default(autoincrement())
-  ownerType OwnerType        @map("owner_type")
-  ownerId   BigInt           @map("owner_id")
-  name      String           @db.VarChar(120)
-  type      TransactionType
-  color     String?          @db.VarChar(7)
-  isDefault Boolean          @default(false) @map("is_default")
+  id           BigInt          @id @default(autoincrement())
+  ownerType    OwnerType       @map("owner_type")
+  ownerId      BigInt          @map("owner_id")
+  name         String          @db.VarChar(120)
+  type         TransactionType
+  color        String?         @db.VarChar(7)
+  isDefault    Boolean         @default(false) @map("is_default")
+  budgetAmount BigInt?         @default(0) @map("budget_amount") // 카테고리별 예산 금액
 
   // Relations
-  transactions     Transaction[]
+  transactions   Transaction[]
+  recurringRules RecurringRule[]
 
   @@unique([ownerType, ownerId, name, type], map: "ux_category_name")
   @@index([ownerType, ownerId], map: "idx_categories_owner")
   @@map("categories")
 }
 
+/// 거래 태그 시스템
+/// - 카테고리 외 추가적인 거래 분류
+/// - 자유로운 태그 방식으로 유연한 분류
 model Tag {
   id        BigInt    @id @default(autoincrement())
   ownerType OwnerType @map("owner_type")
@@ -170,7 +116,7 @@ model Tag {
   name      String    @db.VarChar(60)
 
   // Relations
-  transactions TransactionTag[]
+  transactions Transaction[]
 
   @@unique([ownerType, ownerId, name], map: "ux_tag")
   @@map("tags")
@@ -185,52 +131,47 @@ enum OwnerType {
 // Transaction Models
 // =============================================
 
+/// 거래 내역 중심 테이블
+/// - 수입/지출/이체 모든 거래 기록
+/// - 개인/그룹 거래 구분
+/// - 가계부의 핵심 데이터이자 통계 분석의 기본
+/// - 태그 직접 연결 (tagId 외래키)
 model Transaction {
-  id          BigInt           @id @default(autoincrement())
-  groupId     BigInt?          @map("group_id")
-  ownerUserId BigInt           @map("owner_user_id")
+  id          BigInt          @id @default(autoincrement())
+  groupId     BigInt?         @map("group_id")
+  ownerUserId BigInt          @map("owner_user_id")
   type        TransactionType
-  date        DateTime         @db.Date
+  date        DateTime        @db.Date
   amount      BigInt
-  accountId   BigInt           @map("account_id")
-  categoryId  BigInt?          @map("category_id")
-  merchant    String?          @db.VarChar(160)
-  memo        String?          @db.VarChar(1000)
-  isSettled   Boolean          @default(false) @map("is_settled")
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
+  categoryId  BigInt?         @map("category_id")
+  tagId       BigInt?         @map("tag_id") // 태그 직접 연결
+  merchant    String?         @db.VarChar(160)
+  memo        String?         @db.VarChar(1000)
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
 
   // Relations
-  group        Group?                       @relation(fields: [groupId], references: [id])
-  owner        User                         @relation("TransactionOwner", fields: [ownerUserId], references: [id])
-  account      Account                      @relation(fields: [accountId], references: [id])
-  category     Category?                    @relation(fields: [categoryId], references: [id])
-  tags         TransactionTag[]
-  attachments  Attachment[]
+  group       Group?       @relation(fields: [groupId], references: [id])
+  owner       User         @relation("TransactionOwner", fields: [ownerUserId], references: [id])
+  category    Category?    @relation(fields: [categoryId], references: [id])
+  tag         Tag?         @relation(fields: [tagId], references: [id])
+  attachments Attachment[]
 
   @@index([groupId, date], map: "idx_tx_group_date")
   @@index([ownerUserId, date], map: "idx_tx_owner_date")
+  @@index([categoryId], map: "idx_tx_category")
+  @@index([tagId], map: "idx_tx_tag")
   @@map("transactions")
 }
 
-
-
-model TransactionTag {
-  transactionId BigInt @map("transaction_id")
-  tagId         BigInt @map("tag_id")
-
-  // Relations
-  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  tag         Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@id([transactionId, tagId])
-  @@map("transaction_tags")
-}
-
+/// 거래 첨부파일 관리
+/// - 영수증, 사진 등 거래 증빙 자료
+/// - 파일 URL, MIME 타입, 크기 정보 저장
+/// - 거래 검증 및 가계부 투명성 확보
 model Attachment {
-  id            BigInt @id @default(autoincrement())
-  transactionId BigInt @map("transaction_id")
-  fileUrl       String @map("file_url") @db.VarChar(500)
+  id            BigInt  @id @default(autoincrement())
+  transactionId BigInt  @map("transaction_id")
+  fileUrl       String  @map("file_url") @db.VarChar(500)
   mime          String? @db.VarChar(100)
   size          Int?
 
@@ -246,27 +187,67 @@ enum TransactionType {
   TRANSFER
 }
 
-
-
-
-
-
-
 // =============================================
-// Audit Log Model
+// Budget Management Models
 // =============================================
 
-model AuditLog {
-  id          BigInt   @id @default(autoincrement())
-  actorUserId BigInt   @map("actor_user_id")
-  entity      String   @db.VarChar(50)
-  entityId    BigInt   @map("entity_id")
-  action      String   @db.VarChar(50)
-  payloadJson String?  @map("payload_json") @db.Text
-  createdAt   DateTime @default(now()) @map("created_at")
+/// 월별 예산 관리 (단순화)
+/// - 사용자/그룹별 월단위 총 예산 설정
+/// - 세부 예산은 Category 테이블에서 관리
+model Budget {
+  id          BigInt       @id @default(autoincrement())
+  ownerType   OwnerType    @map("owner_type")
+  ownerId     BigInt       @map("owner_id")
+  period      String       @db.VarChar(7) // YYYY-MM format
+  totalAmount BigInt       @map("total_amount")
+  status      BudgetStatus @default(ACTIVE)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  @@unique([ownerType, ownerId, period], map: "ux_budget_owner_period")
+  @@index([ownerType, ownerId], map: "idx_budgets_owner")
+  @@map("budgets")
+}
+
+enum BudgetStatus {
+  ACTIVE
+  CLOSED
+  DRAFT
+}
+
+// =============================================
+// Recurring Rules Model
+// =============================================
+
+/// 반복 거래 규칙 정의
+/// - 월세, 구독료 등 정기 지출 자동화
+/// - 매월/매주 등 반복 주기 및 날짜 규칙 설정
+/// - 예상 잔액 계산 및 자동 거래 생성 기반
+model RecurringRule {
+  id         BigInt             @id @default(autoincrement())
+  ownerType  OwnerType          @map("owner_type")
+  ownerId    BigInt             @map("owner_id")
+  startDate  DateTime           @map("start_date") @db.Date
+  frequency  RecurringFrequency
+  dayRule    String             @map("day_rule") @db.VarChar(20) // D1-D31 or MON,TUE,etc
+  amount     BigInt
+  categoryId BigInt?            @map("category_id")
+  merchant   String?            @db.VarChar(160)
+  memo       String?            @db.VarChar(1000)
+  isActive   Boolean            @default(true) @map("is_active")
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
 
   // Relations
-  actor User @relation(fields: [actorUserId], references: [id])
+  category Category? @relation(fields: [categoryId], references: [id])
 
-  @@map("audit_logs")
+  @@index([ownerType, ownerId, isActive], map: "idx_recurring_rules_owner_active")
+  @@index([frequency, isActive], map: "idx_recurring_rules_frequency_active")
+  @@map("recurring_rules")
+}
+
+enum RecurringFrequency {
+  MONTHLY
+  WEEKLY
+  DAILY
 }

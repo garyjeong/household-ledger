@@ -14,8 +14,9 @@ export const createTransactionSchema = z.object({
     .int('금액은 정수여야 합니다')
     .positive('금액은 양수여야 합니다')
     .max(999999999, '금액이 너무 큽니다'),
-  accountId: z.string().min(1, '계좌를 선택해주세요'),
-  categoryId: z.string().min(1, '카테고리를 선택해주세요'),
+  categoryId: z.string().optional(), // 카테고리는 선택사항
+  tagId: z.string().optional(), // 태그는 선택사항
+  groupId: z.string().optional(), // 그룹은 선택사항
   merchant: z.string().max(160, '가맹점명은 160자 이하로 입력해주세요').optional(),
   memo: z.string().max(1000, '메모는 1000자 이하로 입력해주세요').optional(),
 })
@@ -25,8 +26,9 @@ export const updateTransactionSchema = z.object({
   type: z.enum(['EXPENSE', 'INCOME', 'TRANSFER']).optional(),
   date: z.date().max(new Date()).optional(),
   amount: z.number().int().positive().max(999999999).optional(),
-  accountId: z.string().min(1).optional(),
-  categoryId: z.string().min(1).optional(),
+  categoryId: z.string().optional(),
+  tagId: z.string().optional(),
+  groupId: z.string().optional(),
   merchant: z.string().max(160).optional(),
   memo: z.string().max(1000).optional(),
 })
@@ -36,8 +38,9 @@ export const transactionQuerySchema = z.object({
   type: z.enum(['EXPENSE', 'INCOME', 'TRANSFER']).optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
-  accountId: z.string().optional(),
   categoryId: z.string().optional(),
+  tagId: z.string().optional(),
+  groupId: z.string().optional(),
   search: z.string().max(100).optional(), // 메모, 가맹점 검색
   page: z
     .string()
@@ -68,8 +71,9 @@ export const quickAddSchema = z.object({
     .regex(/^\d+$/, '금액은 숫자만 입력할 수 있습니다')
     .transform(val => parseInt(val, 10))
     .pipe(z.number().int().positive().max(999999999)),
-  categoryId: z.string().min(1, '카테고리를 선택해주세요'),
-  accountId: z.string().min(1, '계좌를 선택해주세요'),
+  categoryId: z.string().optional(),
+  tagId: z.string().optional(),
+  groupId: z.string().optional(),
   memo: z.string().max(1000, '메모는 1000자 이하로 입력해주세요').optional(),
 })
 
@@ -85,17 +89,16 @@ export type TransactionResponse = {
   id: string
   type: 'EXPENSE' | 'INCOME' | 'TRANSFER'
   date: string // ISO string
-  amount: string
-  account: {
-    id: string
-    name: string
-    type: 'CASH' | 'CARD' | 'BANK' | 'OTHER'
-  }
-  category: {
+  amount: string // 표시용으로는 절댓값
+  category?: {
     id: string
     name: string
     color?: string
     type: 'EXPENSE' | 'INCOME' | 'TRANSFER'
+  }
+  tag?: {
+    id: string
+    name: string
   }
   merchant?: string
   memo?: string
@@ -109,16 +112,15 @@ export function formatTransactionForResponse(transaction: {
   type: string
   date: Date
   amount: bigint
-  account: {
-    id: bigint
-    name: string
-    type: string
-  }
-  category: {
+  category?: {
     id: bigint
     name: string
     color?: string | null
     type: string
+  } | null
+  tag?: {
+    id: bigint
+    name: string
   } | null
   merchant?: string | null
   memo?: string | null
@@ -129,12 +131,7 @@ export function formatTransactionForResponse(transaction: {
     id: transaction.id.toString(),
     type: transaction.type as 'EXPENSE' | 'INCOME' | 'TRANSFER',
     date: transaction.date.toISOString(),
-    amount: transaction.amount.toString(),
-    account: {
-      id: transaction.account.id.toString(),
-      name: transaction.account.name,
-      type: transaction.account.type as 'CASH' | 'CARD' | 'BANK' | 'OTHER',
-    },
+    amount: Math.abs(Number(transaction.amount)).toString(), // 절댓값으로 표시
     category: transaction.category
       ? {
           id: transaction.category.id.toString(),
@@ -142,11 +139,13 @@ export function formatTransactionForResponse(transaction: {
           color: transaction.category.color || undefined,
           type: transaction.category.type as 'EXPENSE' | 'INCOME' | 'TRANSFER',
         }
-      : {
-          id: '0',
-          name: 'Unknown Category',
-          type: 'EXPENSE' as const,
-        },
+      : undefined,
+    tag: transaction.tag
+      ? {
+          id: transaction.tag.id.toString(),
+          name: transaction.tag.name,
+        }
+      : undefined,
     merchant: transaction.merchant || undefined,
     memo: transaction.memo || undefined,
     createdAt: transaction.createdAt.toISOString(),

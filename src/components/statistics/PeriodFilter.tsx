@@ -70,7 +70,7 @@ export function PeriodFilter({
 }: PeriodFilterProps) {
   const [isCustomMode, setIsCustomMode] = useState(
     !filters.period ||
-      !PERIOD_OPTIONS.some(opt => opt.value === filters.period && opt.value !== 'custom')
+      !PERIOD_OPTIONS.some(opt => opt.value === filters.period)
   )
   const [tempStartDate, setTempStartDate] = useState(filters.startDate || '')
   const [tempEndDate, setTempEndDate] = useState(filters.endDate || '')

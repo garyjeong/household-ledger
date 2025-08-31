@@ -125,7 +125,7 @@ export default function ProfilePage() {
                       <div>
                         <h3 className='font-medium text-gray-900'>{currentGroup.name}</h3>
                         <p className='text-sm text-gray-500'>
-                          그룹 코드: <span className='font-mono'>{currentGroup.inviteCode}</span>
+                          멤버: {currentGroup.memberCount || 0}명
                         </p>
                       </div>
                       <Badge className='bg-green-100 text-green-700'>연결됨</Badge>
@@ -260,7 +260,7 @@ export default function ProfilePage() {
 
   if (profileLoading) {
     return (
-      <ResponsiveLayout>
+      <ResponsiveLayout onQuickAddClick={() => {}}>
         <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
           <div className='flex items-center justify-center min-h-[400px]'>
             <div className='text-center'>
@@ -274,7 +274,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <ResponsiveLayout>
+    <ResponsiveLayout onQuickAddClick={() => {}}>
       <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
         {/* 헤더 */}
         <div className='flex items-center justify-between mb-6'>

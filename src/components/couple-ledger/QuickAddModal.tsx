@@ -33,7 +33,7 @@ import { CoupleSplitToggle } from './CoupleSplitToggle'
 
 // 결제 수단 옵션
 const paymentMethods: Array<{ value: PayMethod; label: string; icon: string }> = [
-  { value: 'card', label: '카드', icon: '💳' },
+  { value: 'credit', label: '카드', icon: '💳' },
   { value: 'cash', label: '현금', icon: '💵' },
   { value: 'transfer', label: '계좌이체', icon: '🏦' },
   { value: 'debit', label: '체크카드', icon: '💰' },
@@ -82,7 +82,7 @@ export function QuickAddModal({
   const [formData, setFormData] = useState<QuickAddForm>({
     amount: '',
     categoryId: '',
-    payMethod: 'card',
+    payMethod: 'credit',
     date: new Date().toISOString().split('T')[0],
     person: 'me',
     memo: '',
@@ -101,16 +101,14 @@ export function QuickAddModal({
         ...prev,
         amount: initialData.amount?.toString() || '',
         categoryId: initialData.categoryId || '',
-        payMethod: (initialData.payMethod as PayMethod) || 'card',
+        payMethod: (initialData.payMethod as PayMethod) || 'credit',
         date: initialData.date || new Date().toISOString().split('T')[0],
         person: initialData.person || 'me',
         memo: initialData.memo || '',
         tags: initialData.tags || [],
       }))
 
-      if (initialData.split) {
-        setSplitRule(initialData.split)
-      }
+      // Split functionality removed from simplified schema
     }
   }, [initialData])
 
@@ -119,7 +117,7 @@ export function QuickAddModal({
     setFormData({
       amount: '',
       categoryId: '',
-      payMethod: 'card',
+      payMethod: 'credit',
       date: new Date().toISOString().split('T')[0],
       person: 'me',
       memo: '',
@@ -297,6 +295,7 @@ export function QuickAddModal({
                 onChange={value => setFormData(prev => ({ ...prev, amount: value }))}
                 autoFocus
                 showKeypad
+                currency="KRW"
               />
             </div>
           )}

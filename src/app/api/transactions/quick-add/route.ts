@@ -63,48 +63,20 @@ export async function POST(request: NextRequest) {
 
     const { type, amount, categoryName, memo, date, groupId } = validationResult.data
 
-    // 그룹 멤버십 확인
-    const groupMember = await prisma.groupMember.findFirst({
-      where: {
-        groupId: BigInt(groupId),
-        userId: BigInt(user.userId),
-      },
-      include: {
-        group: true,
-      },
+    // 그룹 멤버십 확인 (단순화된 스키마)
+    const userWithGroup = await prisma.user.findUnique({
+      where: { id: BigInt(user.userId) },
+      select: { groupId: true },
     })
 
-    if (!groupMember) {
+    if (!userWithGroup || userWithGroup.groupId?.toString() !== groupId) {
       return NextResponse.json(
         { error: '그룹에 접근 권한이 없습니다', code: 'ACCESS_DENIED' },
         { status: 403 }
       )
     }
 
-    // 그룹의 기본 계좌 찾기 또는 생성
-    let account = await prisma.account.findFirst({
-      where: {
-        ownerType: 'GROUP',
-        ownerId: BigInt(groupId),
-      },
-      orderBy: {
-        id: 'asc', // 가장 먼저 생성된 계좌 사용 (createdAt 대신 id 사용)
-      },
-    })
-
-    if (!account) {
-      // 기본 계좌 생성
-      account = await prisma.account.create({
-        data: {
-          name: '기본 계좌',
-          type: 'CASH',
-          balance: BigInt(0),
-          currency: 'KRW',
-          ownerType: 'GROUP',
-          ownerId: BigInt(groupId),
-        },
-      })
-    }
+    // 단순화된 스키마에서는 별도의 계좌 관리 없음
 
     // 카테고리 찾기 또는 생성
     let category = await prisma.category.findFirst({
@@ -141,51 +113,30 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // 거래 생성
+    // 거래 생성 (단순화된 스키마 - 계좌 없음)
     const newTransaction = await prisma.transaction.create({
       data: {
         type: type,
         date: new Date(date),
-        amount: BigInt(amount),
-        accountId: account.id,
+        amount: type === 'EXPENSE' ? -BigInt(amount) : BigInt(amount), // EXPENSE는 음수, INCOME은 양수
         categoryId: category.id,
         memo: memo || null,
         ownerUserId: BigInt(user.userId),
         groupId: BigInt(groupId),
       },
       include: {
-        account: {
-          select: { id: true, name: true, type: true },
-        },
         category: {
           select: { id: true, name: true, color: true, type: true },
         },
       },
     })
 
-    // 계좌 잔액 업데이트
-    const balanceChange = type === 'EXPENSE' ? -BigInt(amount) : BigInt(amount)
-
-    await prisma.account.update({
-      where: { id: account.id },
-      data: {
-        balance: {
-          increment: balanceChange,
-        },
-      },
-    })
-
-    // 응답 형태로 변환
+    // 응답 형태로 변환 (단순화된 스키마)
     const formattedTransaction = {
       id: newTransaction.id.toString(),
       type: newTransaction.type,
       date: newTransaction.date.toISOString(),
-      amount: newTransaction.amount.toString(),
-      account: {
-        id: newTransaction.account.id.toString(),
-        name: newTransaction.account.name,
-        type: newTransaction.account.type,
-      },
+      amount: Math.abs(Number(newTransaction.amount)).toString(), // 표시용으로는 절댓값
       category: newTransaction.category
         ? {
             id: newTransaction.category.id.toString(),

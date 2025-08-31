@@ -32,9 +32,7 @@ const categoryFormSchema = z.object({
     .min(1, '카테고리 이름을 입력해주세요')
     .max(20, '카테고리 이름은 20자 이하로 입력해주세요')
     .regex(/^[a-zA-Z0-9가-힣\s\-_]+$/, '특수문자는 사용할 수 없습니다 (- _ 제외)'),
-  type: z.enum(['INCOME', 'EXPENSE'], {
-    required_error: '카테고리 유형을 선택해주세요',
-  }),
+  type: z.enum(['INCOME', 'EXPENSE']),
   color: z.string().min(1, '색상을 선택해주세요'),
 })
 

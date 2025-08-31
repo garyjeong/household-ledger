@@ -101,7 +101,6 @@ export async function PUT(request: NextRequest) {
       where: { id: userInfo.id },
       data: {
         passwordHash: newPasswordHash,
-        updatedAt: new Date(),
       },
     })
 

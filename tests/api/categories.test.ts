@@ -17,12 +17,26 @@ import { createMockRequest, expectApiSuccess, expectApiError } from '../utils/te
 jest.mock('@/lib/auth', () => ({
   verifyAccessToken: jest.fn(),
   findUserById: jest.fn(),
+  verifyCookieToken: jest.fn(),
+  extractTokenFromHeader: jest.fn(),
+  verifyToken: jest.fn(),
 }))
 
-import { verifyAccessToken, findUserById } from '@/lib/auth'
+import {
+  verifyAccessToken,
+  findUserById,
+  verifyCookieToken,
+  extractTokenFromHeader,
+  verifyToken,
+} from '@/lib/auth'
 
 const mockVerifyAccessToken = verifyAccessToken as jest.MockedFunction<typeof verifyAccessToken>
 const mockFindUserById = findUserById as jest.MockedFunction<typeof findUserById>
+const mockVerifyCookieToken = verifyCookieToken as jest.MockedFunction<typeof verifyCookieToken>
+const mockExtractTokenFromHeader = extractTokenFromHeader as jest.MockedFunction<
+  typeof extractTokenFromHeader
+>
+const mockVerifyToken = verifyToken as jest.MockedFunction<typeof verifyToken>
 
 const mockUser = {
   id: '1',
@@ -42,6 +56,9 @@ describe('Categories API Routes', () => {
     jest.clearAllMocks()
     mockVerifyAccessToken.mockReturnValue(mockTokenPayload)
     mockFindUserById.mockResolvedValue(mockUser)
+    mockVerifyCookieToken.mockReturnValue(mockTokenPayload)
+    mockExtractTokenFromHeader.mockReturnValue('valid-token')
+    mockVerifyToken.mockResolvedValue(mockTokenPayload)
   })
 
   describe('GET /api/categories', () => {

@@ -241,9 +241,10 @@ async function getBusinessMetrics(): Promise<SystemMetrics['business']> {
       // 그룹 통계
       Promise.all([
         prisma.group.count(),
-        prisma.groupMember.groupBy({
+        prisma.user.groupBy({
           by: ['groupId'],
-          _count: { userId: true },
+          _count: { id: true },
+          where: { groupId: { not: null } },
         }),
       ]),
       // 가장 많이 사용된 카테고리
@@ -266,7 +267,9 @@ async function getBusinessMetrics(): Promise<SystemMetrics['business']> {
     ])
 
     // 카테고리 이름 가져오기
-    const categoryIds = topCategories.map(cat => cat.categoryId).filter(Boolean)
+    const categoryIds = topCategories
+      .map(cat => cat.categoryId)
+      .filter((id): id is bigint => id !== null)
     const categories = await prisma.category.findMany({
       where: { id: { in: categoryIds } },
       select: { id: true, name: true },
@@ -277,7 +280,7 @@ async function getBusinessMetrics(): Promise<SystemMetrics['business']> {
     const [totalGroups, groupMembers] = groupStats
     const avgMembersPerGroup =
       groupMembers.length > 0
-        ? groupMembers.reduce((sum, g) => sum + g._count.userId, 0) / groupMembers.length
+        ? groupMembers.reduce((sum, g) => sum + g._count.id, 0) / groupMembers.length
         : 0
 
     return {

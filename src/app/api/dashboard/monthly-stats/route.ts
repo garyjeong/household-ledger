@@ -157,7 +157,9 @@ export async function GET(request: NextRequest) {
     const partnerExpense = Number(partnerExpenseResult._sum.amount || 0)
 
     // 카테고리 정보 조회
-    const categoryIds = categoryStats.map(stat => stat.categoryId).filter(Boolean)
+    const categoryIds = categoryStats
+      .map(stat => stat.categoryId)
+      .filter((id): id is bigint => id !== null)
     const categories = await prisma.category.findMany({
       where: { id: { in: categoryIds } },
       select: { id: true, name: true, color: true },

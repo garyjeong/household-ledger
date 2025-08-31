@@ -37,36 +37,27 @@ jest.mock('@/hooks/use-toast', () => ({
   }),
 }))
 
-// Mock 데이터
+// Mock 데이터 - 새로운 account-less 구조
 const mockBalanceResponse = {
   totalBalance: 2000000,
-  accountBalances: [
-    {
-      id: '1',
-      name: '신한은행 주계좌',
-      type: 'BANK',
-      currency: 'KRW',
-      balance: 1500000,
-      isActive: true,
-    },
-  ],
+  totalIncome: 3000000,
+  totalExpense: 1000000,
   currency: 'KRW',
   lastUpdated: '2024-01-01T12:00:00Z',
-  recurringExpenses: {
-    monthly: 50000,
-    weekly: 15000,
-    total: 65000,
-    items: [
-      {
-        id: '1',
-        amount: 50000,
-        frequency: 'MONTHLY',
-        dayRule: 'D25',
-        merchant: '넷플릭스',
-        isActive: true,
-      },
-    ],
-  },
+  monthlyTrend: [
+    { month: '2024-01', balance: 1800000, income: 2500000, expense: 700000 },
+    { month: '2024-02', balance: 2000000, income: 3000000, expense: 1000000 }
+  ],
+  budgetStatus: [
+    {
+      categoryId: '1',
+      categoryName: '식비',
+      budgetAmount: 500000,
+      spentAmount: 350000,
+      percentage: 70,
+      color: '#ff6b6b'
+    }
+  ]
 }
 
 describe('BalanceCard', () => {

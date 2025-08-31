@@ -46,14 +46,9 @@ import { useAlert } from '@/contexts/alert-context'
 
 // Zod 스키마 정의
 const transactionSchema = z.object({
-  type: z.enum(['INCOME', 'EXPENSE'], {
-    required_error: '거래 타입을 선택해주세요',
-  }),
+  type: z.enum(['INCOME', 'EXPENSE']),
   amount: z
-    .number({
-      required_error: '금액을 입력해주세요',
-      invalid_type_error: '올바른 금액을 입력해주세요',
-    })
+    .number()
     .positive('금액은 0보다 커야 합니다')
     .max(999999999, '금액이 너무 큽니다'),
   currency: z.string().min(3, '통화를 선택해주세요').max(3),

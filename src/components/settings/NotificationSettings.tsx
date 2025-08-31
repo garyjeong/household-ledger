@@ -1,22 +1,12 @@
-/**
- * 알림 설정 컴포넌트
- * T-026: 설정 하위 메뉴 - 프로필 관리 (알림 설정)
- */
-
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import {
-  Bell,
-  BellOff,
+import { 
+  Bell, 
+  BellOff, 
+  Settings, 
   Smartphone,
-  Monitor,
-  Trash2,
-  RefreshCw,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Info,
+  Info
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -24,20 +14,6 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { useUpdateNotifications, useSettingsQuery } from '@/hooks/use-settings'
-import {
-  usePushTokens,
-  useRegisterPushToken,
-  useDeletePushToken,
-  useDeactivateAllPushTokens,
-  PushToken,
-} from '@/hooks/use-push-notifications'
-import {
-  isNotificationSupported,
-  getNotificationPermission,
-  setupPushNotifications,
-  disablePushNotifications,
-  showTestNotification,
-} from '@/lib/push-notifications'
 import { Switch } from '@/components/ui/switch'
 
 interface NotificationSettingsProps {
@@ -49,27 +25,15 @@ export function NotificationSettings({ className = '' }: NotificationSettingsPro
   const { data: settings } = useSettingsQuery()
   const updateNotifications = useUpdateNotifications()
 
-  // 푸시 토큰 관련 hooks
-  const {
-    data: pushTokens = [],
-    isLoading: tokensLoading,
-    refetch: refetchTokens,
-  } = usePushTokens()
-  const registerPushToken = useRegisterPushToken()
-  const deletePushToken = useDeletePushToken()
-  const deactivateAllTokens = useDeactivateAllPushTokens()
-
   // 로컬 상태
-  const [notificationPermission, setNotificationPermission] =
-    useState<NotificationPermission | null>(null)
-  const [isSupported, setIsSupported] = useState(false)
-  const [isEnabling, setIsEnabling] = useState(false)
-  const [isDisabling, setIsDisabling] = useState(false)
+  const [notificationPermission, setNotificationPermission] = 
+    useState<NotificationPermission>('default')
 
   // 초기화
   useEffect(() => {
-    setIsSupported(isNotificationSupported())
-    setNotificationPermission(getNotificationPermission())
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationPermission(Notification.permission)
+    }
   }, [])
 
   // 기본 알림 설정 변경
@@ -89,347 +53,188 @@ export function NotificationSettings({ className = '' }: NotificationSettingsPro
     }
   }
 
-  // 푸시 알림 활성화
-  const handleEnablePushNotifications = async () => {
-    if (!isSupported) {
-      toast({
-        title: '지원되지 않음',
-        description: '이 브라우저는 푸시 알림을 지원하지 않습니다.',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    setIsEnabling(true)
-    try {
-      // 1. 푸시 알림 설정
-      const { subscription } = await setupPushNotifications()
-
-      // 2. 서버에 토큰 등록
-      await registerPushToken.mutateAsync({
-        token: subscription.endpoint,
-        endpoint: subscription.endpoint,
-        keys: subscription.keys,
-        userAgent: navigator.userAgent,
-      })
-
-      // 3. 기본 알림 설정 활성화
-      await updateNotifications.mutateAsync({
-        enableNotifications: true,
-      })
-
-      // 4. 상태 업데이트
-      setNotificationPermission('granted')
-      await refetchTokens()
-
-      // 5. 테스트 알림 표시
-      showTestNotification('알림 설정 완료', {
-        body: '푸시 알림이 성공적으로 활성화되었습니다.',
-      })
-
-      toast({
-        title: '푸시 알림 활성화 완료',
-        description: '브라우저 푸시 알림이 성공적으로 설정되었습니다.',
-      })
-    } catch (error) {
-      console.error('푸시 알림 활성화 실패:', error)
-      toast({
-        title: '푸시 알림 활성화 실패',
-        description: error instanceof Error ? error.message : '푸시 알림 설정에 실패했습니다.',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsEnabling(false)
-    }
-  }
-
-  // 푸시 알림 비활성화
-  const handleDisablePushNotifications = async () => {
-    const confirmed = window.confirm(
-      '푸시 알림을 비활성화하시겠습니까?\n\n이 기기에서 더 이상 푸시 알림을 받지 않습니다.'
-    )
-
-    if (!confirmed) return
-
-    setIsDisabling(true)
-    try {
-      // 1. 브라우저 푸시 구독 해제
-      await disablePushNotifications()
-
-      // 2. 서버에서 모든 토큰 비활성화
-      await deactivateAllTokens.mutateAsync()
-
-      // 3. 기본 알림 설정 비활성화
-      await updateNotifications.mutateAsync({
-        enableNotifications: false,
-      })
-
-      // 4. 상태 업데이트
-      await refetchTokens()
-
-      toast({
-        title: '푸시 알림 비활성화 완료',
-        description: '푸시 알림이 성공적으로 비활성화되었습니다.',
-      })
-    } catch (error) {
-      console.error('푸시 알림 비활성화 실패:', error)
-      toast({
-        title: '푸시 알림 비활성화 실패',
-        description: error instanceof Error ? error.message : '푸시 알림 해제에 실패했습니다.',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsDisabling(false)
-    }
-  }
-
-  // 개별 토큰 삭제
-  const handleDeleteToken = async (token: PushToken) => {
-    const confirmed = window.confirm(
-      `이 기기의 푸시 알림을 해제하시겠습니까?\n\n기기: ${token.userAgent?.substring(0, 50) || '알 수 없음'}...`
-    )
-
-    if (!confirmed) return
-
-    try {
-      await deletePushToken.mutateAsync({ tokenId: token.id, permanent: true })
-      toast({
-        title: '기기 알림 해제 완료',
-        description: '해당 기기에서 푸시 알림이 해제되었습니다.',
-      })
-    } catch (error) {
-      toast({
-        title: '기기 알림 해제 실패',
-        description: error instanceof Error ? error.message : '기기 알림 해제에 실패했습니다.',
-        variant: 'destructive',
-      })
+  // 브라우저 알림 권한 요청
+  const requestNotificationPermission = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      try {
+        const permission = await Notification.requestPermission()
+        setNotificationPermission(permission)
+        
+        if (permission === 'granted') {
+          toast({
+            title: '알림 권한 허용됨',
+            description: '이제 알림을 받을 수 있습니다.',
+          })
+        } else {
+          toast({
+            title: '알림 권한 거부됨',
+            description: '브라우저 설정에서 알림을 허용해주세요.',
+            variant: 'destructive',
+          })
+        }
+      } catch (error) {
+        toast({
+          title: '오류',
+          description: '알림 권한 요청 중 오류가 발생했습니다.',
+          variant: 'destructive',
+        })
+      }
     }
   }
 
   // 테스트 알림
   const handleTestNotification = () => {
-    try {
-      showTestNotification('테스트 알림', {
-        body: '알림이 정상적으로 작동하고 있습니다.',
-        requireInteraction: false,
-      })
-      toast({
-        title: '테스트 알림 전송',
-        description: '알림이 표시되었습니다.',
-      })
-    } catch (error) {
-      toast({
-        title: '테스트 알림 실패',
-        description: error instanceof Error ? error.message : '테스트 알림 표시에 실패했습니다.',
-        variant: 'destructive',
-      })
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        new Notification('💰 가계부 알림 테스트', {
+          body: '알림이 정상적으로 작동하고 있습니다!',
+          icon: '/favicon.ico'
+        })
+        toast({
+          title: '테스트 알림 발송',
+          description: '알림을 확인해보세요.',
+        })
+      } else {
+        toast({
+          title: '알림 권한 필요',
+          description: '먼저 알림 권한을 허용해주세요.',
+          variant: 'destructive',
+        })
+      }
     }
   }
 
-  // 권한 상태 표시
-  const getPermissionStatus = () => {
+  const getPermissionBadge = () => {
     switch (notificationPermission) {
       case 'granted':
-        return { icon: CheckCircle, color: 'text-green-600', text: '허용됨' }
+        return <Badge className="bg-green-100 text-green-800">허용됨</Badge>
       case 'denied':
-        return { icon: XCircle, color: 'text-red-600', text: '거부됨' }
-      case 'default':
-        return { icon: AlertTriangle, color: 'text-yellow-600', text: '미설정' }
+        return <Badge variant="destructive">차단됨</Badge>
       default:
-        return { icon: Info, color: 'text-gray-600', text: '확인 중' }
+        return <Badge variant="secondary">대기 중</Badge>
     }
   }
 
-  const permissionStatus = getPermissionStatus()
-  const PermissionIcon = permissionStatus.icon
-
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* 브라우저 지원 상태 */}
-      {!isSupported && (
-        <Card className='border-yellow-200 bg-yellow-50'>
-          <CardContent className='pt-6'>
-            <div className='flex items-center gap-3'>
-              <AlertTriangle className='h-5 w-5 text-yellow-600' />
+    <div className={className}>
+      {/* 브라우저 알림 권한 */}
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              브라우저 알림 권한
+            </CardTitle>
+            {getPermissionBadge()}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <Info className="h-5 w-5 text-blue-600" />
               <div>
-                <p className='font-medium text-yellow-800'>브라우저 제한</p>
-                <p className='text-sm text-yellow-700'>
-                  이 브라우저는 푸시 알림을 지원하지 않습니다. 최신 브라우저를 사용해 주세요.
+                <p className="font-medium text-sm">브라우저 알림</p>
+                <p className="text-xs text-gray-500">
+                  예산 초과, 중요한 거래 등에 대한 알림을 받으세요
                 </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <div className="flex items-center gap-2">
+              {notificationPermission !== 'granted' && (
+                <Button onClick={requestNotificationPermission} size="sm">
+                  권한 허용
+                </Button>
+              )}
+              {notificationPermission === 'granted' && (
+                <Button onClick={handleTestNotification} variant="outline" size="sm">
+                  테스트
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 기본 알림 설정 */}
       <Card>
         <CardHeader>
-          <CardTitle className='flex items-center gap-2'>
-            <Bell className='h-5 w-5' />
-            기본 알림 설정
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            알림 설정
           </CardTitle>
         </CardHeader>
-        <CardContent className='space-y-6'>
-          {/* 알림 활성화 */}
-          <div className='flex items-center justify-between'>
-            <div className='space-y-1'>
-              <Label className='text-sm font-medium'>알림 사용</Label>
-              <p className='text-xs text-gray-500'>가계부 관련 알림을 받습니다</p>
+        <CardContent className="space-y-6">
+          {/* 일반 알림 */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label htmlFor="enable-notifications" className="text-base font-medium">
+                일반 알림 활성화
+              </Label>
+              <p className="text-sm text-gray-500">
+                앱 내 알림을 받을지 설정합니다
+              </p>
             </div>
             <Switch
-              checked={settings?.enableNotifications || false}
-              onCheckedChange={checked => handleBasicSettingChange('enableNotifications', checked)}
-              disabled={updateNotifications.isPending}
+              id="enable-notifications"
+              checked={settings?.enableNotifications ?? true}
+              onCheckedChange={(checked) => handleBasicSettingChange('enableNotifications', checked)}
             />
           </div>
 
-          {/* 알림 소리 */}
-          <div className='flex items-center justify-between'>
-            <div className='space-y-1'>
-              <Label className='text-sm font-medium'>알림 소리</Label>
-              <p className='text-xs text-gray-500'>알림 시 소리를 재생합니다</p>
+          {/* 예산 알림 */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label htmlFor="budget-alerts" className="text-base font-medium">
+                예산 초과 알림
+              </Label>
+              <p className="text-sm text-gray-500">
+                예산을 초과했을 때 알림을 받습니다
+              </p>
             </div>
             <Switch
-              checked={settings?.notificationSound || false}
-              onCheckedChange={checked => handleBasicSettingChange('notificationSound', checked)}
-              disabled={updateNotifications.isPending}
+              id="budget-alerts"
+              checked={settings?.budgetAlerts ?? true}
+              onCheckedChange={(checked) => handleBasicSettingChange('budgetAlerts', checked)}
+              disabled={!settings?.enableNotifications}
             />
           </div>
 
-          {/* 예산 초과 알림 */}
-          <div className='flex items-center justify-between'>
-            <div className='space-y-1'>
-              <Label className='text-sm font-medium'>예산 초과 알림</Label>
-              <p className='text-xs text-gray-500'>예산을 초과할 때 알림을 받습니다</p>
+          {/* 알림음 (단순화) */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label htmlFor="notification-sound" className="text-base font-medium">
+                알림음
+              </Label>
+              <p className="text-sm text-gray-500">
+                알림과 함께 소리를 재생합니다
+              </p>
             </div>
             <Switch
-              checked={settings?.budgetAlerts || false}
-              onCheckedChange={checked => handleBasicSettingChange('budgetAlerts', checked)}
-              disabled={updateNotifications.isPending}
+              id="notification-sound"
+              checked={settings?.notificationSound ?? false}
+              onCheckedChange={(checked) => handleBasicSettingChange('notificationSound', checked)}
+              disabled={!settings?.enableNotifications}
             />
           </div>
         </CardContent>
       </Card>
 
-      {/* 푸시 알림 설정 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className='flex items-center gap-2'>
-            <Smartphone className='h-5 w-5' />
-            푸시 알림 설정
-          </CardTitle>
-        </CardHeader>
-        <CardContent className='space-y-6'>
-          {/* 권한 상태 */}
-          <div className='flex items-center justify-between p-4 bg-gray-50 rounded-lg'>
-            <div className='flex items-center gap-3'>
-              <PermissionIcon className={`h-5 w-5 ${permissionStatus.color}`} />
-              <div>
-                <p className='font-medium text-gray-900'>브라우저 권한</p>
-                <p className='text-sm text-gray-500'>{permissionStatus.text}</p>
-              </div>
+      {/* 간단한 도움말 */}
+      <Card className="mt-6 bg-yellow-50 border-yellow-200">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-yellow-600 mt-0.5" />
+            <div className="space-y-2">
+              <h4 className="font-medium text-yellow-900">알림 안내</h4>
+              <ul className="text-sm text-yellow-800 space-y-1">
+                <li>• 브라우저 알림 권한을 허용하면 탭을 닫아도 알림을 받을 수 있습니다</li>
+                <li>• 예산 초과 시 즉시 알림으로 과소비를 방지할 수 있습니다</li>
+                <li>• 모바일에서는 홈 화면에 앱을 추가하면 더 나은 알림 환경을 제공합니다</li>
+              </ul>
             </div>
-            <Badge variant={notificationPermission === 'granted' ? 'default' : 'outline'}>
-              {permissionStatus.text}
-            </Badge>
-          </div>
-
-          {/* 푸시 알림 제어 */}
-          <div className='flex gap-2'>
-            {notificationPermission !== 'granted' ? (
-              <Button
-                onClick={handleEnablePushNotifications}
-                disabled={!isSupported || isEnabling}
-                className='flex-1 gap-2'
-              >
-                {isEnabling ? (
-                  <RefreshCw className='h-4 w-4 animate-spin' />
-                ) : (
-                  <Bell className='h-4 w-4' />
-                )}
-                푸시 알림 활성화
-              </Button>
-            ) : (
-              <>
-                <Button onClick={handleTestNotification} variant='outline' className='gap-2'>
-                  <Bell className='h-4 w-4' />
-                  테스트
-                </Button>
-                <Button
-                  onClick={handleDisablePushNotifications}
-                  variant='destructive'
-                  disabled={isDisabling}
-                  className='gap-2'
-                >
-                  {isDisabling ? (
-                    <RefreshCw className='h-4 w-4 animate-spin' />
-                  ) : (
-                    <BellOff className='h-4 w-4' />
-                  )}
-                  비활성화
-                </Button>
-              </>
-            )}
           </div>
         </CardContent>
       </Card>
-
-      {/* 등록된 기기 목록 */}
-      {pushTokens.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className='flex items-center gap-2'>
-              <Monitor className='h-5 w-5' />
-              등록된 기기 ({pushTokens.length}개)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className='space-y-4'>
-            {tokensLoading ? (
-              <div className='text-center py-4'>
-                <RefreshCw className='h-5 w-5 animate-spin mx-auto mb-2' />
-                <p className='text-sm text-gray-500'>기기 목록을 불러오는 중...</p>
-              </div>
-            ) : (
-              pushTokens.map(token => (
-                <div
-                  key={token.id}
-                  className='flex items-center justify-between p-3 border rounded-lg'
-                >
-                  <div className='flex-1'>
-                    <div className='flex items-center gap-2'>
-                      <Smartphone className='h-4 w-4 text-gray-500' />
-                      <p className='font-medium text-sm'>
-                        {token.userAgent?.includes('Mobile') ? '모바일 기기' : '데스크톱'}
-                      </p>
-                      {token.isActive && (
-                        <Badge variant='outline' className='text-xs'>
-                          활성
-                        </Badge>
-                      )}
-                    </div>
-                    <p className='text-xs text-gray-500 mt-1'>
-                      최종 사용: {new Date(token.lastUsed).toLocaleString('ko-KR')}
-                    </p>
-                    <p className='text-xs text-gray-400 mt-1 font-mono'>
-                      {token.userAgent?.substring(0, 80)}...
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => handleDeleteToken(token)}
-                    variant='ghost'
-                    size='sm'
-                    className='gap-1'
-                  >
-                    <Trash2 className='h-3 w-3' />
-                    해제
-                  </Button>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }

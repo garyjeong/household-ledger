@@ -1,15 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { verifyToken, verifyResourceOwnership } from '@/lib/auth'
-import {
-  balanceQuerySchema,
-  formatBalanceResponse,
-  type BalanceResponse,
-} from '@/lib/schemas/balance'
+import { verifyToken } from '@/lib/auth'
+import { BalanceService } from '@/lib/services/balance-service'
+import { z } from 'zod'
+
+// 잔액 조회 쿼리 스키마
+const balanceQuerySchema = z.object({
+  groupId: z.coerce.number().positive().optional(),
+  includeProjection: z.boolean().default(false),
+  projectionMonths: z.coerce.number().positive().max(12).default(3),
+  period: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/)
+    .optional(), // YYYY-MM format
+})
 
 /**
  * GET /api/balance
- * 잔액 조회 (계좌별, 전체, 고정 지출 예상 포함)
+ * 실시간 잔액 조회 (거래 내역 합계로 계산)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -35,7 +42,13 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url)
     const queryParams = Object.fromEntries(url.searchParams)
 
-    const validationResult = balanceQuerySchema.safeParse(queryParams)
+    // Boolean 값 변환
+    const processedParams = {
+      ...queryParams,
+      includeProjection: queryParams.includeProjection === 'true',
+    }
+
+    const validationResult = balanceQuerySchema.safeParse(processedParams)
     if (!validationResult.success) {
       return NextResponse.json(
         {
@@ -47,89 +60,90 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { ownerType, ownerId, accountId, includeProjection, projectionMonths } =
-      validationResult.data
+    const { groupId, includeProjection, projectionMonths, period } = validationResult.data
 
-    // 기본값 설정 (파라미터가 없으면 현재 사용자의 개인 계좌)
-    const finalOwnerType = ownerType || 'USER'
-    const finalOwnerId = ownerId || user.userId
-
-    // 소유권 확인
-    const ownershipResult = await verifyResourceOwnership(user.userId, finalOwnerType, finalOwnerId)
-    if (!ownershipResult.isValid) {
-      return NextResponse.json(
-        {
-          error: ownershipResult.error || '접근 권한이 없습니다',
-          code: 'ACCESS_DENIED',
-        },
-        { status: 403 }
-      )
-    }
-
-    // 계좌 조회 조건 설정
-    const accountWhereCondition: any = {
-      ownerType: finalOwnerType,
-      ownerId: BigInt(finalOwnerId),
-    }
-
-    // 특정 계좌 조회인 경우
-    if (accountId) {
-      accountWhereCondition.id = BigInt(accountId)
-    }
-
-    // 계좌 정보 조회
-    const accounts = await prisma.account.findMany({
-      where: accountWhereCondition,
-      orderBy: [
-        { isActive: 'desc' }, // 활성 계좌 우선
-        { id: 'asc' }, // ID 순서로 정렬 (createdAt 대신)
-      ],
+    // 현재 잔액 계산
+    const currentBalance = await BalanceService.calculateBalance({
+      userId: user.userId,
+      groupId: groupId?.toString(),
     })
 
-    if (accounts.length === 0) {
-      return NextResponse.json({
-        totalBalance: 0,
-        accountBalances: [],
-        currency: 'KRW',
-        lastUpdated: new Date().toISOString(),
-      } as BalanceResponse)
+    // 해당 기간의 수입/지출 정보
+    let periodData = null
+    if (period) {
+      const [year, month] = period.split('-').map(Number)
+      const startDate = new Date(year, month - 1, 1)
+      const endDate = new Date(year, month, 0)
+
+      const income = await BalanceService.getAmountByType({
+        userId: user.userId,
+        groupId: groupId?.toString(),
+        type: 'INCOME',
+        startDate,
+        endDate,
+      })
+
+      const expense = await BalanceService.getAmountByType({
+        userId: user.userId,
+        groupId: groupId?.toString(),
+        type: 'EXPENSE',
+        startDate,
+        endDate,
+      })
+
+      periodData = {
+        period,
+        income,
+        expense,
+        netAmount: income - expense,
+      }
     }
 
-    // 고정 지출 정보 조회 (예상 잔액 계산 시)
-    let recurringExpenses: any[] = []
+    // 예상 잔액 계산 (반복 거래 포함)
+    let projectedBalance = null
+    let monthlyTrend = null
+
     if (includeProjection) {
-      recurringExpenses = await prisma.recurringRule.findMany({
-        where: {
-          ownerType: finalOwnerType,
-          ownerId: BigInt(finalOwnerId),
-          isActive: true,
-        },
-        orderBy: { startDate: 'desc' },
+      projectedBalance = await BalanceService.calculateProjectedBalance({
+        userId: user.userId,
+        groupId: groupId?.toString(),
+        months: projectionMonths,
+      })
+
+      // 월별 트렌드
+      monthlyTrend = await BalanceService.getMonthlyTrend({
+        userId: user.userId,
+        groupId: groupId?.toString(),
+        months: Math.min(projectionMonths, 6), // 최대 6개월
       })
     }
 
-    // 응답 데이터 포맷팅
-    const balanceResponse = formatBalanceResponse({
-      accounts,
-      recurringExpenses,
-      includeProjection,
-      projectionMonths,
-    })
+    // 응답 데이터 구성
+    const response = {
+      success: true,
+      balance: {
+        current: currentBalance,
+        projected: projectedBalance,
+        currency: 'KRW',
+        lastCalculated: new Date().toISOString(),
+      },
+      periodData,
+      monthlyTrend,
+    }
 
-    return NextResponse.json(balanceResponse)
+    return NextResponse.json(response)
   } catch (error: unknown) {
-    console.error('Balance fetch error:', error)
+    console.error('Balance calculation error:', error)
     return NextResponse.json(
-      { error: '잔액을 조회하는 중 오류가 발생했습니다', code: 'INTERNAL_ERROR' },
+      { error: '잔액 계산 중 오류가 발생했습니다', code: 'INTERNAL_ERROR' },
       { status: 500 }
     )
   }
 }
 
 /**
- * POST /api/balance/recalculate
- * 잔액 재계산 (수동 트리거)
- * 데이터 불일치 발생 시 사용
+ * POST /api/balance/budget
+ * 예산 현황 조회 (카테고리별 예산 대비 지출)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -153,88 +167,29 @@ export async function POST(request: NextRequest) {
 
     // 요청 본문 파싱
     const body = await request.json()
-    const { ownerType = 'USER', ownerId = user.userId, accountId } = body
+    const { groupId, period } = body
 
-    // 소유권 확인
-    const ownershipResult = await verifyResourceOwnership(user.userId, ownerType, ownerId)
-    if (!ownershipResult.isValid) {
-      return NextResponse.json(
-        {
-          error: ownershipResult.error || '접근 권한이 없습니다',
-          code: 'ACCESS_DENIED',
-        },
-        { status: 403 }
-      )
-    }
+    // 기본값: 현재 월
+    const currentDate = new Date()
+    const defaultPeriod = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`
+    const finalPeriod = period || defaultPeriod
 
-    // 계좌 조회 조건 설정
-    const accountWhereCondition: any = {
-      ownerType,
-      ownerId: BigInt(ownerId),
-    }
-
-    if (accountId) {
-      accountWhereCondition.id = BigInt(accountId)
-    }
-
-    // 대상 계좌들 조회
-    const accounts = await prisma.account.findMany({
-      where: accountWhereCondition,
+    // 예산 현황 조회
+    const budgetStatus = await BalanceService.getBudgetStatus({
+      userId: user.userId,
+      groupId: groupId?.toString(),
+      period: finalPeriod,
     })
-
-    // 각 계좌별로 잔액 재계산
-    const recalculationResults = await Promise.all(
-      accounts.map(async account => {
-        // 해당 계좌의 모든 거래 조회
-        const transactions = await prisma.transaction.findMany({
-          where: { accountId: account.id },
-          orderBy: { createdAt: 'asc' },
-        })
-
-        // 잔액 재계산
-        let calculatedBalance = BigInt(0)
-        for (const transaction of transactions) {
-          if (transaction.type === 'INCOME') {
-            calculatedBalance += transaction.amount
-          } else if (transaction.type === 'EXPENSE') {
-            calculatedBalance -= transaction.amount
-          }
-        }
-
-        // 현재 저장된 잔액과 비교
-        const currentBalance = account.balance
-        const balanceDifference = calculatedBalance - currentBalance
-
-        // 잔액이 다르면 업데이트
-        if (balanceDifference !== BigInt(0)) {
-          await prisma.account.update({
-            where: { id: account.id },
-            data: { balance: calculatedBalance },
-          })
-        }
-
-        return {
-          accountId: account.id.toString(),
-          accountName: account.name,
-          previousBalance: Number(currentBalance),
-          calculatedBalance: Number(calculatedBalance),
-          difference: Number(balanceDifference),
-          wasUpdated: balanceDifference !== BigInt(0),
-        }
-      })
-    )
-
-    const updatedCount = recalculationResults.filter(result => result.wasUpdated).length
 
     return NextResponse.json({
       success: true,
-      message: `${accounts.length}개 계좌 중 ${updatedCount}개 계좌의 잔액이 수정되었습니다`,
-      results: recalculationResults,
+      period: finalPeriod,
+      budgetStatus,
     })
   } catch (error: unknown) {
-    console.error('Balance recalculation error:', error)
+    console.error('Budget status error:', error)
     return NextResponse.json(
-      { error: '잔액 재계산 중 오류가 발생했습니다', code: 'INTERNAL_ERROR' },
+      { error: '예산 현황 조회 중 오류가 발생했습니다', code: 'INTERNAL_ERROR' },
       { status: 500 }
     )
   }

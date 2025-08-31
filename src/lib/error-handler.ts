@@ -3,8 +3,6 @@
  * API 에러, 네트워크 에러, 애플리케이션 에러를 체계적으로 처리
  */
 
-
-
 export interface ErrorDetails {
   code: string
   message: string
@@ -60,6 +58,12 @@ const ERROR_CONFIGS = {
     shouldNotifyUser: true,
     retryable: false,
     userMessage: '일시적인 오류가 발생했습니다. 페이지를 새로고침해주세요.',
+  },
+  unknown: {
+    severity: 'medium' as ErrorSeverity,
+    shouldNotifyUser: true,
+    retryable: false,
+    userMessage: '알 수 없는 오류가 발생했습니다.',
   },
 } as const
 
@@ -172,8 +176,6 @@ class ErrorLogger {
         console.warn('Failed to store error log:', e)
       }
     }
-
-
   }
 
   getLogs(): ErrorReport[] {
@@ -197,8 +199,6 @@ class ErrorLogger {
       localStorage.removeItem('error_logs')
     }
   }
-
-
 }
 
 // 전역 에러 로거 인스턴스
