@@ -72,17 +72,19 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        'relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-900 shadow-md',
-        // 부드러운 페이드 + 슬라이드 애니메이션만 적용
-        'data-[state=open]:animate-in data-[state=closed]:animate-out',
-        'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-        'data-[state=closed]:slide-out-to-top-1 data-[state=open]:slide-in-from-top-1',
-        // 애니메이션 지속시간과 이징 통일
-        'data-[state=open]:duration-200 data-[state=closed]:duration-150',
-        'data-[state=open]:ease-out data-[state=closed]:ease-in',
+        'relative z-[60] max-h-96 min-w-[8rem] overflow-hidden rounded-lg border border-slate-200 bg-white text-slate-900 shadow-md',
+        // 자연스러운 상하 방향 애니메이션 - 위에서 아래로 펼쳐지고 아래에서 위로 접힘
+        'transform-gpu will-change-transform',
+        // 사용자 정의 키프레임 애니메이션 적용
+        'data-[state=open]:animate-[dropDown_300ms_ease-out]',
+        'data-[state=closed]:animate-[dropUp_150ms_ease-in]',
         className
       )}
       position={position}
+      side='bottom'
+      align='start'
+      sideOffset={4}
+      alignOffset={0}
       {...props}
     >
       <SelectScrollUpButton />
