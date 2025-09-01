@@ -414,3 +414,4 @@ export function logSecurityEvent(event: SecurityEvent) {
 ---
 
 **🔐 보안은 모든 개발자의 책임입니다. 의심스러운 활동이나 취약점을 발견하면 즉시 보고해주세요.**
+

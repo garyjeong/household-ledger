@@ -46,8 +46,8 @@ docker run --name household-ledger \
   -d household-ledger
 
 # 5. 데이터베이스 스키마 설정
-pnpm db:generate
-pnpm db:push
+pnpm db:push        # 데이터베이스에 테이블 생성
+pnpm db:generate    # 애플리케이션용 TypeScript 클라이언트 생성
 
 # 6. 개발 서버 시작
 pnpm dev
