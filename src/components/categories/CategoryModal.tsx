@@ -19,9 +19,8 @@ import {
   useCreateCategory,
   useUpdateCategory,
   Category,
-  CreateCategoryData,
-  UpdateCategoryData,
 } from '@/hooks/use-categories'
+import { CreateCategoryData, UpdateCategoryData } from '@/lib/schemas/category'
 import { useToast } from '@/hooks/use-toast'
 import { useGroup } from '@/contexts/group-context'
 
@@ -70,8 +69,8 @@ export function CategoryModal({ isOpen, onClose, mode, category }: CategoryModal
   const { currentGroup } = useGroup()
 
   // API hooks
-  const createCategory = useCreateCategory()
-  const updateCategory = useUpdateCategory()
+  const { createCategory: createCategoryFn, loading: createLoading, error: createError } = useCreateCategory()
+  const { updateCategory: updateCategoryFn, loading: updateLoading, error: updateError } = useUpdateCategory()
 
   // 폼 관리
   const {
@@ -99,7 +98,7 @@ export function CategoryModal({ isOpen, onClose, mode, category }: CategoryModal
       reset({
         name: category.name,
         type: category.type as 'INCOME' | 'EXPENSE',
-        color: category.color,
+        color: category.color || '#6B7280',
       })
     } else if (mode === 'create') {
       reset({
@@ -132,7 +131,7 @@ export function CategoryModal({ isOpen, onClose, mode, category }: CategoryModal
           ownerId: parseInt(currentGroup.id),
         }
 
-        await createCategory.mutateAsync(createData)
+        await createCategoryFn(createData)
         toast({
           title: '카테고리 생성 완료',
           description: `"${data.name}" 카테고리가 생성되었습니다.`,
@@ -144,10 +143,7 @@ export function CategoryModal({ isOpen, onClose, mode, category }: CategoryModal
           color: data.color,
         }
 
-        await updateCategory.mutateAsync({
-          id: category.id,
-          data: updateData,
-        })
+        await updateCategoryFn(category.id, updateData)
         toast({
           title: '카테고리 수정 완료',
           description: `"${data.name}" 카테고리가 수정되었습니다.`,
@@ -164,7 +160,7 @@ export function CategoryModal({ isOpen, onClose, mode, category }: CategoryModal
     }
   }
 
-  const isLoading = createCategory.isPending || updateCategory.isPending
+  const isLoading = createLoading || updateLoading
 
   return (
     <Dialog open={isOpen} onOpenChange={() => !isLoading && handleClose()}>

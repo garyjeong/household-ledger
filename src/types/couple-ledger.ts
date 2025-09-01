@@ -3,6 +3,8 @@
  * 입력 최적화, 공동 가계부, 반응형 퍼스트 원칙
  */
 
+import { CategoryResponse } from '@/lib/schemas/category'
+
 // 기본 타입들
 export type Person = 'me' | 'shared' | 'partner'
 export type PayMethod = 'cash' | 'debit' | 'credit' | 'transfer' | 'other'
@@ -16,17 +18,7 @@ export interface SplitRule {
   partner: number
 }
 
-// 카테고리 관리
-export interface Category {
-  id: string
-  name: string
-  color: string
-  icon: string
-  type: TransactionType
-  favorite?: boolean
-  isDefault?: boolean
-  order?: number
-}
+// CategoryResponse는 @/lib/schemas/category에서 import
 
 // 거래 데이터
 export interface Transaction {
@@ -173,13 +165,12 @@ export interface QuickAddModalProps {
   onClose: () => void
   onSave: (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>
   initialData?: Partial<Transaction>
-  categories: Category[]
   templates: QuickTemplate[]
 }
 
 export interface TransactionListProps {
   transactions: Transaction[]
-  categories: Category[]
+  categories: CategoryResponse[]
   onEdit: (transaction: Transaction) => void
   onDelete: (id: string) => void
   onSelect: (ids: string[]) => void
@@ -189,12 +180,15 @@ export interface TransactionListProps {
 }
 
 export interface CategoryPickerProps {
-  categories: Category[]
+  categories: CategoryResponse[]
   selectedId?: string
   onSelect: (categoryId: string) => void
-  type?: TransactionType
+  type?: 'expense' | 'income' | 'transfer'
   showFavorites?: boolean
   recentCategories?: string[]
+  showAddButton?: boolean
+  maxDisplayCategories?: number
+  showMoreModal?: boolean
 }
 
 export interface AmountInputProps {

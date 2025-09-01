@@ -7,6 +7,7 @@ import {
   Calendar,
   Save,
   BookmarkPlus,
+  Loader2,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -18,7 +19,8 @@ import {
   QuickAddModalProps,
   QuickAddForm,
 } from '@/types/couple-ledger'
-import { CategoryPicker, defaultCategories } from './CategoryPicker'
+import { CategoryPicker } from './CategoryPicker'
+import { useCategories } from '@/hooks/use-categories'
 
 // 날짜 빠른 선택 칩
 const getDateChips = () => {
@@ -52,11 +54,13 @@ export function QuickAddModal({
   onClose,
   onSave,
   initialData,
-  categories = defaultCategories,
   templates = [],
 }: QuickAddModalProps) {
 
   const [isLoading, setIsLoading] = useState(false)
+
+  // API에서 카테고리 데이터 가져오기
+  const { categories, loading: categoriesLoading, error: categoriesError } = useCategories()
 
   // 폼 상태
   const [formData, setFormData] = useState<QuickAddForm>({
@@ -64,6 +68,10 @@ export function QuickAddModal({
     categoryId: '',
     date: new Date().toISOString().split('T')[0],
     memo: '',
+    payMethod: 'cash',
+    person: 'me',
+    tags: [],
+    saveAsTemplate: false,
   })
 
 
@@ -90,6 +98,10 @@ export function QuickAddModal({
       categoryId: '',
       date: new Date().toISOString().split('T')[0],
       memo: '',
+      payMethod: 'cash',
+      person: 'me',
+      tags: [],
+      saveAsTemplate: false,
     })
   }, [])
 
@@ -116,6 +128,9 @@ export function QuickAddModal({
         date: formData.date,
         memo: formData.memo,
         type: 'expense' as const,
+        person: formData.person,
+        payMethod: formData.payMethod,
+        tags: formData.tags,
         userId: '', // 실제 구현에서는 현재 사용자 ID
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -227,17 +242,29 @@ export function QuickAddModal({
               <h3 className='text-base font-bold text-slate-900'>카테고리</h3>
             </div>
 
-            <CategoryPicker
-              categories={categories}
-              selectedId={formData.categoryId}
-              onSelect={categoryId => setFormData(prev => ({ ...prev, categoryId }))}
-              type='expense'
-              showFavorites
-              recentCategories={[]} 
-              showAddButton={false}
-              maxDisplayCategories={6}
-              showMoreModal={true}
-            />
+            {categoriesLoading ? (
+              <div className='flex items-center justify-center py-8'>
+                <Loader2 className='h-6 w-6 animate-spin' />
+                <span className='ml-2 text-sm text-gray-600'>카테고리 로딩 중...</span>
+              </div>
+            ) : categoriesError ? (
+              <div className='text-center py-8'>
+                <p className='text-sm text-red-600'>카테고리를 불러오는데 실패했습니다.</p>
+                <p className='text-xs text-gray-500 mt-1'>{categoriesError}</p>
+              </div>
+            ) : (
+              <CategoryPicker
+                categories={categories}
+                selectedId={formData.categoryId}
+                onSelect={categoryId => setFormData(prev => ({ ...prev, categoryId }))}
+                type='expense'
+                showFavorites
+                recentCategories={[]} 
+                showAddButton={false}
+                maxDisplayCategories={6}
+                showMoreModal={true}
+              />
+            )}
           </div>
 
           {/* 날짜 선택 섹션 */}

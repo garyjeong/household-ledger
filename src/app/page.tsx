@@ -9,7 +9,7 @@ import { fetchMonthlyStats } from '@/lib/api/dashboard'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
-import { useCategories } from '@/hooks/use-categories'
+
 
 /**
  * 신혼부부 가계부 메인 페이지
@@ -35,8 +35,7 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // 카테고리 데이터 로딩
-  const { categories: expenseCategories, loading: categoriesLoading, error: categoriesError } = useCategories('EXPENSE')
+
 
   // 월별 통계 데이터 로드
   const loadMonthlyStats = async (period: string) => {
@@ -194,7 +193,6 @@ export default function HomePage() {
         isOpen={isQuickAddOpen}
         onClose={handleQuickAddClose}
         onSave={handleSaveTransaction}
-        categories={expenseCategories}
         templates={[]} // 템플릿 기능 향후 구현 예정
       />
     </>

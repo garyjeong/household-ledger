@@ -107,7 +107,6 @@ export const MonthlyTrendChart = React.memo(function MonthlyTrendChart({
                 <LineChart 
                   data={chartData} 
                   margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
-                  isAnimationActive={false}
                 >
                   <CartesianGrid strokeDasharray='2 2' stroke='#e2e8f0' opacity={0.5} />
                   <XAxis
@@ -161,7 +160,6 @@ export const MonthlyTrendChart = React.memo(function MonthlyTrendChart({
                 <BarChart
                   data={categoryChartData}
                   margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
-                  isAnimationActive={false}
                 >
                   <CartesianGrid strokeDasharray='2 2' stroke='#e2e8f0' opacity={0.5} />
                   <XAxis

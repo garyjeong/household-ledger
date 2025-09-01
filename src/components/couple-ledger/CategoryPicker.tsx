@@ -358,23 +358,11 @@ export function CategoryPicker({
           onSelect={handleSelect}
           categories={categories}
           selectedId={selectedId}
-          type={type}
+          type={type?.toUpperCase() as 'EXPENSE' | 'INCOME' | 'TRANSFER'}
         />
       )}
     </div>
   )
 }
 
-// 기본 카테고리 데이터 (임시)
-export const defaultCategories: Category[] = [
-  { id: '1', name: '식비', color: '#EF4444', icon: 'food', type: 'expense', favorite: true },
-  { id: '2', name: '커피/음료', color: '#F59E0B', icon: 'coffee', type: 'expense', favorite: true },
-  { id: '3', name: '교통비', color: '#3B82F6', icon: 'transport', type: 'expense', favorite: true },
-  { id: '4', name: '생활용품', color: '#10B981', icon: 'home', type: 'expense' },
-  { id: '5', name: '쇼핑', color: '#EC4899', icon: 'shopping', type: 'expense' },
-  { id: '6', name: '의료/건강', color: '#EF4444', icon: 'health', type: 'expense' },
-  { id: '7', name: '여행/숙박', color: '#8B5CF6', icon: 'travel', type: 'expense' },
-  { id: '8', name: '선물/경조사', color: '#F59E0B', icon: 'gift', type: 'expense' },
-  { id: '9', name: '급여', color: '#10B981', icon: 'finance', type: 'income', favorite: true },
-  { id: '10', name: '용돈', color: '#3B82F6', icon: 'finance', type: 'income' },
-]
+

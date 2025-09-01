@@ -72,24 +72,32 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [deleteCategory, setDeleteCategory] = useState<Category | null>(null)
 
-  // API hooks
-  const filters: CategoryFilters = {
-    ownerType: 'GROUP',
-    ownerId: currentGroup?.id,
-    ...(selectedTab !== 'all' && { type: selectedTab.toUpperCase() as 'INCOME' | 'EXPENSE' }),
-  }
+  // API hooks - currentGroup이 있을 때만 호출
+  const filters: CategoryFilters | null = React.useMemo(() => {
+    if (!currentGroup?.id) return null
+    
+    return {
+      ownerType: 'GROUP',
+      ownerId: currentGroup.id,
+      ...(selectedTab !== 'all' && { type: selectedTab.toUpperCase() as 'INCOME' | 'EXPENSE' }),
+    }
+  }, [currentGroup?.id, selectedTab])
 
-  const { data: categoriesData, isLoading, error } = useCategories(filters)
-  const deleteCategories = useDeleteCategory()
+  // currentGroup이 로드되기 전에는 API 호출하지 않음
+  const shouldFetchCategories = !!filters
+  const { data: categoriesData, isLoading, error } = useCategories(
+    shouldFetchCategories ? filters : null
+  )
+  const { deleteCategory: deleteCategoryFn, loading: deleteLoading, error: deleteError } = useDeleteCategory()
 
   // 카테고리 목록 필터링
   const filteredCategories = React.useMemo(() => {
-    if (!categoriesData?.categories) return []
+    if (!shouldFetchCategories || !categoriesData?.categories) return []
 
     return categoriesData.categories.filter((category: Category) =>
       category.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
-  }, [categoriesData?.categories, searchQuery])
+  }, [shouldFetchCategories, categoriesData?.categories, searchQuery])
 
   // 새 카테고리 추가
   const handleAddCategory = () => {
@@ -133,7 +141,7 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
     if (!deleteCategory) return
 
     try {
-      await deleteCategories.mutateAsync(deleteCategory.id)
+      await deleteCategoryFn(deleteCategory.id)
       toast({
         title: '카테고리 삭제 완료',
         description: `"${deleteCategory.name}" 카테고리가 삭제되었습니다.`,
@@ -157,7 +165,7 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
             {/* 카테고리 색상 원 */}
             <div
               className='w-6 h-6 rounded-full border-2 border-gray-200'
-              style={{ backgroundColor: category.color }}
+              style={{ backgroundColor: category.color || '#6B7280' }}
             />
 
             <div className='flex flex-col'>
@@ -205,12 +213,24 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
     </Card>
   )
 
+  // 그룹이 없는 상태 처리
+  if (!currentGroup) {
+    return (
+      <div className='text-center py-8'>
+        <p className='text-gray-600'>그룹에 가입하거나 생성한 후 카테고리를 관리할 수 있습니다.</p>
+        <p className='text-sm text-gray-500 mt-1'>
+          먼저 그룹 페이지에서 그룹을 생성하거나 초대 코드로 가입해주세요.
+        </p>
+      </div>
+    )
+  }
+
   if (error) {
     return (
       <div className='text-center py-8'>
         <p className='text-red-600'>카테고리를 불러오는 중 오류가 발생했습니다.</p>
         <p className='text-sm text-gray-500 mt-1'>
-          {error instanceof Error ? error.message : '알 수 없는 오류'}
+          {error || '알 수 없는 오류'}
         </p>
       </div>
     )
@@ -293,7 +313,7 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
         onClose={() => setDeleteCategory(null)}
         onConfirm={handleDeleteConfirm}
         categoryName={deleteCategory?.name || ''}
-        isLoading={deleteCategories.isPending}
+        isLoading={deleteLoading}
       />
     </div>
   )
