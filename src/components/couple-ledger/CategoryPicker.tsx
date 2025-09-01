@@ -16,12 +16,15 @@ import {
   Gift,
   CreditCard,
   Calculator,
+  MoreHorizontal,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { CategoryPickerProps, Category } from '@/types/couple-ledger'
+import { CategoryPickerProps } from '@/types/couple-ledger'
+import { CategoryResponse } from '@/lib/schemas/category'
+import { CategorySelectModal } from './CategorySelectModal'
 
 // 카테고리 아이콘 매핑
 const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -76,7 +79,7 @@ function getKoreanInitials(text: string): string {
 }
 
 // 검색 매칭 함수
-function matchesSearch(category: Category, searchQuery: string): boolean {
+function matchesSearch(category: CategoryResponse, searchQuery: string): boolean {
   const query = searchQuery.toLowerCase().trim()
   if (!query) return true
 
@@ -100,13 +103,19 @@ export function CategoryPicker({
   type = 'expense',
   showFavorites = true,
   recentCategories = [],
+  showAddButton = true,
+  maxDisplayCategories = 8,
+  showMoreModal = true,
 }: CategoryPickerProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [showAll, setShowAll] = useState(false)
+  const [isMoreModalOpen, setIsMoreModalOpen] = useState(false)
 
   // 타입별 카테고리 필터링
   const filteredCategories = useMemo(() => {
-    return categories.filter(cat => cat.type === type)
+    // type이 'expense'인 경우 'EXPENSE'로 변환
+    const targetType = type === 'expense' ? 'EXPENSE' : type === 'income' ? 'INCOME' : 'TRANSFER'
+    return categories.filter(cat => cat.type === targetType)
   }, [categories, type])
 
   // 검색된 카테고리
@@ -119,18 +128,36 @@ export function CategoryPicker({
     return recentCategories
       .map(id => filteredCategories.find(cat => cat.id === id))
       .filter(Boolean)
-      .slice(0, 6) as Category[]
+      .slice(0, 6) as CategoryResponse[]
   }, [recentCategories, filteredCategories])
 
-  // 즐겨찾기 카테고리
+  // 기본 카테고리 (즐겨찾기 역할)
   const favoriteCategories = useMemo(() => {
-    return filteredCategories.filter(cat => cat.favorite)
+    return filteredCategories.filter(cat => cat.isDefault)
   }, [filteredCategories])
 
-  // 일반 카테고리 (즐겨찾기 제외)
+  // 사용자 정의 카테고리
   const regularCategories = useMemo(() => {
-    return filteredCategories.filter(cat => !cat.favorite)
+    return filteredCategories.filter(cat => !cat.isDefault)
   }, [filteredCategories])
+
+  // 표시할 카테고리 (즐겨찾기 우선)
+  const displayedCategories = useMemo(() => {
+    if (showAll || !showMoreModal) {
+      return [...favoriteCategories, ...regularCategories]
+    }
+    
+    // showMoreModal이 true인 경우, maxDisplayCategories 만큼만 표시 (즐겨찾기 포함)
+    const allCategories = [...favoriteCategories, ...regularCategories]
+    return allCategories.slice(0, maxDisplayCategories)
+  }, [favoriteCategories, regularCategories, showAll, showMoreModal, maxDisplayCategories])
+
+  // 더 많은 카테고리가 있는지 확인
+  const hasMoreCategories = useMemo(() => {
+    if (!showMoreModal) return false
+    const totalCategories = favoriteCategories.length + regularCategories.length
+    return totalCategories > maxDisplayCategories
+  }, [showMoreModal, favoriteCategories.length, regularCategories.length, maxDisplayCategories])
 
   // 카테고리 선택 핸들러
   const handleSelect = useCallback(
@@ -148,9 +175,23 @@ export function CategoryPicker({
 
   // 카테고리 버튼 렌더링
   const renderCategoryButton = useCallback(
-    (category: Category, size: 'sm' | 'md' = 'md') => {
+    (category: CategoryResponse, size: 'sm' | 'md' = 'md') => {
       const isSelected = selectedId === category.id
       const buttonSizeClass = size === 'sm' ? 'h-12 px-3 text-sm' : 'h-14 px-4 text-base'
+
+      // 카테고리 이름에 따른 기본 아이콘 선택
+      const getDefaultIcon = (name: string) => {
+        if (name.includes('식비') || name.includes('음식')) return 'food'
+        if (name.includes('교통') || name.includes('차량')) return 'transport'
+        if (name.includes('주거') || name.includes('집')) return 'home'
+        if (name.includes('쇼핑') || name.includes('구매')) return 'shopping'
+        if (name.includes('의료') || name.includes('건강')) return 'health'
+        if (name.includes('여행') || name.includes('항공')) return 'travel'
+        if (name.includes('선물') || name.includes('기념')) return 'gift'
+        if (name.includes('카드') || name.includes('결제')) return 'card'
+        if (name.includes('투자') || name.includes('금융')) return 'finance'
+        return 'shopping' // 기본값
+      }
 
       return (
         <Button
@@ -169,13 +210,13 @@ export function CategoryPicker({
           ${size === 'sm' ? 'touch-target-sm' : 'touch-target'}
         `}
           style={{
-            borderColor: !isSelected ? category.color + '40' : undefined,
-            backgroundColor: isSelected ? category.color : undefined,
+            borderColor: !isSelected ? (category.color || '#6B7280') + '40' : undefined,
+            backgroundColor: isSelected ? (category.color || '#6B7280') : undefined,
           }}
         >
-          {renderIcon(category.icon, size === 'sm' ? 'h-4 w-4' : 'h-5 w-5')}
+          {renderIcon(getDefaultIcon(category.name), size === 'sm' ? 'h-4 w-4' : 'h-5 w-5')}
           <span className='font-medium'>{category.name}</span>
-          {category.favorite && (
+          {category.isDefault && (
             <Star className='h-3 w-3 ml-auto text-warning' fill='currentColor' />
           )}
         </Button>
@@ -194,22 +235,38 @@ export function CategoryPicker({
             <span className='text-sm font-medium text-text-secondary'>최근 사용</span>
           </div>
           <div className='grid grid-cols-3 sm:grid-cols-6 gap-2'>
-            {recentCategoriesData.map(category => (
-              <Button
-                key={category.id}
-                type='button'
-                variant={selectedId === category.id ? 'default' : 'outline'}
-                onClick={() => handleSelect(category.id)}
-                className='h-10 px-2 text-xs flex items-center gap-1.5 justify-center'
-                style={{
-                  borderColor: selectedId !== category.id ? category.color + '40' : undefined,
-                  backgroundColor: selectedId === category.id ? category.color : undefined,
-                }}
-              >
-                {renderIcon(category.icon, 'h-3 w-3')}
-                <span className='truncate'>{category.name}</span>
-              </Button>
-            ))}
+            {recentCategoriesData.map(category => {
+              // 카테고리 이름에 따른 기본 아이콘 선택
+              const getDefaultIcon = (name: string) => {
+                if (name.includes('식비') || name.includes('음식')) return 'food'
+                if (name.includes('교통') || name.includes('차량')) return 'transport'
+                if (name.includes('주거') || name.includes('집')) return 'home'
+                if (name.includes('쇼핑') || name.includes('구매')) return 'shopping'
+                if (name.includes('의료') || name.includes('건강')) return 'health'
+                if (name.includes('여행') || name.includes('항공')) return 'travel'
+                if (name.includes('선물') || name.includes('기념')) return 'gift'
+                if (name.includes('카드') || name.includes('결제')) return 'card'
+                if (name.includes('투자') || name.includes('금융')) return 'finance'
+                return 'shopping' // 기본값
+              }
+              
+              return (
+                <Button
+                  key={category.id}
+                  type='button'
+                  variant={selectedId === category.id ? 'default' : 'outline'}
+                  onClick={() => handleSelect(category.id)}
+                  className='h-10 px-2 text-xs flex items-center gap-1.5 justify-center'
+                  style={{
+                    borderColor: selectedId !== category.id ? (category.color || '#6B7280') + '40' : undefined,
+                    backgroundColor: selectedId === category.id ? (category.color || '#6B7280') : undefined,
+                  }}
+                >
+                  {renderIcon(getDefaultIcon(category.name), 'h-3 w-3')}
+                  <span className='truncate'>{category.name}</span>
+                </Button>
+              )
+            })}
           </div>
         </div>
       )}
@@ -244,24 +301,22 @@ export function CategoryPicker({
       ) : (
         // 일반 모드
         <div className='space-y-6'>
-          {/* 즐겨찾기 카테고리 */}
-          {showFavorites && favoriteCategories.length > 0 && (
-            <div className='space-y-3'>
-              <div className='flex items-center gap-2'>
-                <Star className='h-4 w-4 text-warning' fill='currentColor' />
-                <span className='text-sm font-medium text-text-secondary'>즐겨찾기</span>
-              </div>
-              <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-                {favoriteCategories.map(category => renderCategoryButton(category))}
-              </div>
-            </div>
-          )}
-
-          {/* 일반 카테고리 */}
+          {/* 전체 카테고리 */}
           <div className='space-y-3'>
             <div className='flex items-center justify-between'>
               <span className='text-sm font-medium text-text-secondary'>전체 카테고리</span>
-              {regularCategories.length > 8 && (
+              {showMoreModal && hasMoreCategories && (
+                <Button
+                  type='button'
+                  variant='ghost'
+                  onClick={() => setIsMoreModalOpen(true)}
+                  className='text-xs text-primary hover:text-primary/80 flex items-center gap-1'
+                >
+                  <MoreHorizontal className='h-3 w-3' />
+                  더보기
+                </Button>
+              )}
+              {!showMoreModal && (favoriteCategories.length + regularCategories.length) > 8 && (
                 <Button
                   type='button'
                   variant='ghost'
@@ -273,27 +328,39 @@ export function CategoryPicker({
               )}
             </div>
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-              {(showAll ? regularCategories : regularCategories.slice(0, 8)).map(category =>
-                renderCategoryButton(category)
-              )}
+              {displayedCategories.map(category => renderCategoryButton(category))}
             </div>
           </div>
         </div>
       )}
 
       {/* 새 카테고리 추가 버튼 */}
-      <Card className='border-dashed border-2 border-gray-300 hover:border-blue-500/50 transition-colors'>
-        <CardContent className='p-4'>
-          <Button
-            type='button'
-            variant='ghost'
-            className='w-full h-12 flex items-center gap-2 text-text-secondary hover:text-primary'
-          >
-            <Plus className='h-5 w-5' />
-            <span>새 카테고리 추가</span>
-          </Button>
-        </CardContent>
-      </Card>
+      {showAddButton && (
+        <Card className='border-dashed border-2 border-gray-300 hover:border-blue-500/50 transition-colors'>
+          <CardContent className='p-4'>
+            <Button
+              type='button'
+              variant='ghost'
+              className='w-full h-12 flex items-center gap-2 text-text-secondary hover:text-primary'
+            >
+              <Plus className='h-5 w-5' />
+              <span>새 카테고리 추가</span>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* 전체 카테고리 선택 모달 */}
+      {showMoreModal && (
+        <CategorySelectModal
+          isOpen={isMoreModalOpen}
+          onClose={() => setIsMoreModalOpen(false)}
+          onSelect={handleSelect}
+          categories={categories}
+          selectedId={selectedId}
+          type={type}
+        />
+      )}
     </div>
   )
 }

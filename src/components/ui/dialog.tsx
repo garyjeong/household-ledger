@@ -30,11 +30,13 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
   if (!open) return null
 
   return (
-    <div className='fixed inset-0 z-modal'>
+    <div 
+      className='fixed inset-0 z-modal'
+      onClick={() => onOpenChange?.(false)}
+    >
       {/* 배경 오버레이 */}
       <div
         className='absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in'
-        onClick={() => onOpenChange?.(false)}
       />
 
       {/* 모달 컨텐츠 */}
@@ -48,9 +50,10 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
 export interface DialogContentProps {
   children: React.ReactNode
   className?: string
+  onClick?: (e: React.MouseEvent) => void
 }
 
-export function DialogContent({ children, className = '' }: DialogContentProps) {
+export function DialogContent({ children, className = '', onClick }: DialogContentProps) {
   return (
     <div
       className={`
@@ -58,6 +61,7 @@ export function DialogContent({ children, className = '' }: DialogContentProps) 
       animate-scale-in max-w-md w-full max-h-[90vh] overflow-y-auto
       ${className}
     `}
+      onClick={onClick}
     >
       {children}
     </div>

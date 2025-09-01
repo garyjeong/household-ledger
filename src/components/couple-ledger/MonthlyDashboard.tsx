@@ -9,6 +9,8 @@ import {
   BarChart3,
   AlertTriangle,
   CheckCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -36,7 +38,7 @@ interface MonthlyDashboardProps {
  * - 예산 대비 실제 지출 비교
  * - 반응형 레이아웃
  */
-export function MonthlyDashboard({
+export const MonthlyDashboard = React.memo(function MonthlyDashboard({
   stats: propStats,
   selectedMonth,
   onMonthChange,
@@ -123,226 +125,230 @@ export function MonthlyDashboard({
   const savingsRate = stats.totalIncome > 0 ? (balance / stats.totalIncome) * 100 : 0
 
   const monthInfo = getCurrentMonthInfo()
-  
-  return (
-    <div className={`flex gap-3 ${className}`}>
-      {/* 좌측: 월 선택 영역 */}
-      <div className='flex-shrink-0 w-20'>
-        <div className='space-y-1'>
-          {/* 전달 */}
+
+    return (
+    <div className={`space-y-4 ${className}`}>
+      {/* 📊 컴팩트 헤더: 제목 + 월 선택 */}
+      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white border border-slate-200 rounded-lg p-4 shadow-sm'>
+        <div>
+          <h1 className='text-lg font-bold text-slate-900'>월별 대시보드</h1>
+          <p className='text-sm text-slate-600'>{formatMonth(selectedMonth)}</p>
+        </div>
+        <div className='flex items-center gap-2'>
           <Button
-            variant={monthInfo.prev.isSelected ? 'default' : 'outline'}
+            variant='outline'
             size='sm'
             onClick={() => handleMonthSelect(-1)}
-            className='w-full h-12 p-1 flex flex-col items-center justify-center text-xs'
+            className='flex items-center gap-1 h-8 px-3 text-xs font-medium'
           >
-            <span className='text-xs opacity-70'>{monthInfo.prev.label}</span>
-            <span className='font-semibold'>{monthInfo.prev.month}</span>
+            <ChevronLeft className='h-3 w-3' />
+            <span>{monthInfo.prev.month}</span>
           </Button>
-          
-          {/* 금달 */}
+          <div className='px-3 py-1.5 bg-blue-500 text-white rounded text-xs font-bold border border-blue-600'>
+            {monthInfo.current.month}
+          </div>
           <Button
-            variant={monthInfo.current.isSelected ? 'default' : 'outline'}
-            size='sm'
-            onClick={() => handleMonthSelect(0)}
-            className='w-full h-12 p-1 flex flex-col items-center justify-center text-xs bg-primary text-primary-foreground'
-          >
-            <span className='text-xs opacity-90'>{monthInfo.current.label}</span>
-            <span className='font-semibold'>{monthInfo.current.month}</span>
-          </Button>
-          
-          {/* 다음달 */}
-          <Button
-            variant={monthInfo.next.isSelected ? 'default' : 'outline'}
+            variant='outline'
             size='sm'
             onClick={() => handleMonthSelect(1)}
-            className='w-full h-12 p-1 flex flex-col items-center justify-center text-xs'
+            className='flex items-center gap-1 h-8 px-3 text-xs font-medium'
           >
-            <span className='text-xs opacity-70'>{monthInfo.next.label}</span>
-            <span className='font-semibold'>{monthInfo.next.month}</span>
+            <span>{monthInfo.next.month}</span>
+            <ChevronRight className='h-3 w-3' />
           </Button>
-          
-          {/* 현재 선택된 월 표시 */}
-          <div className='text-center pt-1'>
-            <p className='text-xs text-text-secondary'>월별 대시보드</p>
-          </div>
         </div>
       </div>
 
-      {/* 우측: 대시보드 콘텐츠 */}
-      <div className='flex-1 space-y-2'>
-
-      {/* 수입/지출 요약 카드 */}
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2'>
-        {/* 총 수입 */}
-        <Card className='card-hover'>
-          <CardContent className='p-2'>
-            <div className='flex items-center justify-between mb-1'>
-              <span className='text-xs font-medium text-text-secondary'>총 수입</span>
-              <TrendingUp className='h-3 w-3 text-success' />
-            </div>
-            <div className='text-lg font-bold text-success amount-display'>
-              {formatKRW(stats.totalIncome)}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 총 지출 */}
-        <Card className='card-hover'>
-          <CardContent className='p-2'>
-            <div className='flex items-center justify-between mb-1'>
-              <span className='text-xs font-medium text-text-secondary'>총 지출</span>
-              <TrendingDown className='h-3 w-3 text-danger' />
-            </div>
-            <div className='text-lg font-bold text-danger amount-display'>
-              {formatKRW(stats.totalExpense)}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 잔액 */}
-        <Card className='card-hover'>
-          <CardContent className='p-2'>
-            <div className='flex items-center justify-between mb-1'>
-              <span className='text-xs font-medium text-text-secondary'>잔액</span>
-              <PiggyBank
-                className={`h-3 w-3 ${balanceIsPositive ? 'text-success' : 'text-danger'}`}
-              />
-            </div>
-            <div
-              className={`text-lg font-bold amount-display ${balanceIsPositive ? 'text-success' : 'text-danger'}`}
-            >
-              {formatKRW(Math.abs(balance))}
-            </div>
-            <div className='text-xs text-text-secondary mt-0.5'>
-              저축률 {savingsRate.toFixed(1)}%
-            </div>
-          </CardContent>
-        </Card>
-
-
-      </div>
-
-
-
-      {/* 카테고리 & 예산 섹션 - 가로 배치 */}
-      <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
-        {/* 카테고리 TOP 5 */}
-        <Card className='card-hover'>
-          <CardContent className='p-2'>
-            <div className='flex items-center gap-1 mb-2'>
-              <BarChart3 className='h-3 w-3 text-primary' />
-              <h3 className='text-xs font-semibold'>카테고리 TOP 5</h3>
-            </div>
-            <div className='space-y-2'>
-              {(stats.categoryBreakdown || []).slice(0, 5).map((category, index) => (
-                <div key={category.categoryId} className='flex items-center gap-1.5'>
-                  {/* 순위 */}
-                  <div className='flex items-center justify-center w-4 h-4 rounded-full bg-surface-tertiary text-xs font-bold text-text-secondary'>
-                    {index + 1}
+      {/* 🎯 메인 대시보드 콘텐츠 */}
+      <div className='space-y-6'>
+          {/* 💰 수입/지출/잔액 요약 카드 */}
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            {/* 총 수입 - 새로운 디자인 */}
+            <Card className='border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow'>
+              <CardContent className='p-4'>
+                <div className='flex items-center gap-3 mb-2'>
+                  <div className='flex items-center justify-center w-10 h-10 bg-emerald-100 rounded-lg'>
+                    <TrendingUp className='h-5 w-5 text-emerald-600' />
                   </div>
-                  
-                  {/* 카테고리 정보 */}
-                  <div className='flex-1 min-w-0'>
-                    <div className='flex items-center justify-between'>
-                      <span className='text-xs font-medium text-text-primary truncate'>
-                        {category.categoryName}
-                      </span>
-                      <div className='flex items-center gap-1'>
-                        <span className='text-xs font-bold amount-display'>
-                          {formatKRW(category.amount)}
-                        </span>
-                        <Badge variant='secondary' className='text-xs px-1 py-0'>
-                          {category.percentage.toFixed(0)}%
-                        </Badge>
-                      </div>
-                    </div>
-                    
-                    {/* 진행률 바 */}
-                    <div className='w-full bg-surface-tertiary rounded-full h-1 overflow-hidden mt-0.5'>
-                      <div
-                        className='h-full transition-all duration-300'
-                        style={{
-                          width: `${category.percentage}%`,
-                          backgroundColor: category.color,
-                        }}
-                      />
-                    </div>
+                  <div>
+                    <h3 className='text-sm font-semibold text-slate-700'>총 수입</h3>
+                    <div className='w-8 h-1 bg-emerald-400 rounded-full mt-1'></div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                <div className='text-xl font-bold text-slate-900'>
+                  {formatKRW(stats.totalIncome)}
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* 예산 대비 실제 지출 */}
-        <Card className='card-hover'>
-          <CardContent className='p-2'>
-            <div className='flex items-center gap-1 mb-2'>
-              <Target className='h-3 w-3 text-primary' />
-              <h3 className='text-xs font-semibold'>예산 대비</h3>
-            </div>
-            <div className='space-y-2'>
-              {(stats.categoryBreakdown || []).slice(0, 5).map(budget => {
-                const category = (stats.categoryBreakdown || []).find(
-                  c => c.categoryId === budget.categoryId
-                )
-                const isOverBudget = budget.percentage > 100
-                const isNearLimit = budget.percentage > 90 && budget.percentage <= 100
+            {/* 총 지출 - 새로운 디자인 */}
+            <Card className='border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow'>
+              <CardContent className='p-4'>
+                <div className='flex items-center gap-3 mb-2'>
+                  <div className='flex items-center justify-center w-10 h-10 bg-slate-100 rounded-lg'>
+                    <TrendingDown className='h-5 w-5 text-slate-600' />
+                  </div>
+                  <div>
+                    <h3 className='text-sm font-semibold text-slate-700'>총 지출</h3>
+                    <div className='w-8 h-1 bg-slate-400 rounded-full mt-1'></div>
+                  </div>
+                </div>
+                <div className='text-xl font-bold text-slate-900'>
+                  {formatKRW(stats.totalExpense)}
+                </div>
+              </CardContent>
+            </Card>
 
-                return (
-                  <div key={budget.categoryId} className='space-y-1'>
-                    <div className='flex items-center justify-between'>
-                      <span className='text-xs font-medium text-text-primary truncate'>
-                        {category?.categoryName}
-                      </span>
-                      <div className='flex items-center gap-1'>
-                        {isOverBudget && <AlertTriangle className='h-3 w-3 text-danger' />}
-                        {isNearLimit && <AlertTriangle className='h-3 w-3 text-warning' />}
-                        {!isOverBudget && !isNearLimit && (
-                          <CheckCircle className='h-3 w-3 text-success' />
-                        )}
-                        <span
-                          className={`text-xs font-medium ${
-                            isOverBudget
-                              ? 'text-danger'
-                              : isNearLimit
-                                ? 'text-warning'
-                                : 'text-success'
-                          }`}
-                        >
-                          {budget.percentage.toFixed(0)}%
-                        </span>
+            {/* 잔액 - 새로운 디자인 */}
+            <Card className='border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow'>
+              <CardContent className='p-4'>
+                <div className='flex items-center gap-3 mb-2'>
+                  <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${balanceIsPositive ? 'bg-blue-100' : 'bg-amber-100'}`}>
+                    <PiggyBank className={`h-5 w-5 ${balanceIsPositive ? 'text-blue-600' : 'text-amber-600'}`} />
+                  </div>
+                  <div>
+                    <h3 className='text-sm font-semibold text-slate-700'>
+                      {balanceIsPositive ? '흑자' : '적자'}
+                    </h3>
+                    <div className={`w-8 h-1 rounded-full mt-1 ${balanceIsPositive ? 'bg-blue-400' : 'bg-amber-400'}`}></div>
+                  </div>
+                </div>
+                <div className={`text-xl font-bold ${balanceIsPositive ? 'text-blue-900' : 'text-amber-900'}`}>
+                  {formatKRW(Math.abs(balance))}
+                </div>
+                <div className='text-sm text-slate-600 mt-1'>
+                  저축률 {savingsRate.toFixed(1)}%
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+
+
+          {/* 📊 카테고리 & 예산 섹션 */}
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+            {/* 카테고리 TOP 5 - 새로운 디자인 */}
+            <Card className='border border-slate-200 bg-white shadow-sm'>
+              <CardContent className='p-4'>
+                <div className='flex items-center gap-3 mb-4'>
+                  <div className='flex items-center justify-center w-8 h-8 bg-slate-100 rounded-lg'>
+                    <BarChart3 className='h-4 w-4 text-slate-600' />
+                  </div>
+                  <h2 className='text-base font-bold text-slate-900'>카테고리 TOP 5</h2>
+                </div>
+                
+                <div className='space-y-4'>
+                  {(stats.categoryBreakdown || []).slice(0, 5).map((category, index) => (
+                    <div key={category.categoryId} className='flex items-center gap-4'>
+                      {/* 순위 배지 */}
+                      <div className='flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-sm font-bold'>
+                        {index + 1}
+                      </div>
+
+                      {/* 카테고리 정보 */}
+                      <div className='flex-1 min-w-0'>
+                        <div className='flex items-center justify-between mb-2'>
+                          <span className='text-sm font-semibold text-slate-900 truncate'>
+                            {category.categoryName}
+                          </span>
+                          <div className='flex items-center gap-2'>
+                            <span className='text-sm font-bold text-slate-900'>
+                              {formatKRW(category.amount)}
+                            </span>
+                            <Badge variant='secondary' className='text-xs px-2 py-0.5 bg-slate-100 text-slate-700 font-medium'>
+                              {category.percentage.toFixed(0)}%
+                            </Badge>
+                          </div>
+                        </div>
+                        
+                        {/* 진행률 바 */}
+                        <div className='w-full bg-slate-100 rounded-full h-2 overflow-hidden'>
+                          <div
+                            className='h-full rounded-full transition-all'
+                            style={{
+                              width: `${category.percentage}%`,
+                              backgroundColor: category.color || '#6b7280',
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
-                    
-                    {/* 예산 진행률 바 */}
-                    <div className='w-full bg-surface-tertiary rounded-full h-1 overflow-hidden'>
-                      <div
-                        className={`h-full transition-all duration-300 ${
-                          isOverBudget ? 'bg-danger' : isNearLimit ? 'bg-warning' : 'bg-success'
-                        }`}
-                        style={{ width: `${Math.min(budget.percentage, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-        {/* 월별 트렌드 차트 */}
+            {/* 예산 모니터링 - 새로운 디자인 */}
+            <Card className='border border-slate-200 bg-white shadow-sm'>
+              <CardContent className='p-4'>
+                <div className='flex items-center gap-3 mb-4'>
+                  <div className='flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg'>
+                    <Target className='h-4 w-4 text-blue-600' />
+                  </div>
+                  <h2 className='text-base font-bold text-slate-900'>예산 모니터링</h2>
+                </div>
+                
+                <div className='space-y-4'>
+                  {(stats.categoryBreakdown || []).slice(0, 5).map(budget => {
+                    const category = (stats.categoryBreakdown || []).find(
+                      c => c.categoryId === budget.categoryId
+                    )
+                    const isOverBudget = budget.percentage > 100
+                    const isNearLimit = budget.percentage > 80 && budget.percentage <= 100
+
+                    return (
+                      <div key={budget.categoryId} className='space-y-2'>
+                        <div className='flex items-center justify-between'>
+                          <span className='text-sm font-semibold text-slate-900 truncate'>
+                            {category?.categoryName}
+                          </span>
+                          <div className='flex items-center gap-2'>
+                            {isOverBudget && <AlertTriangle className='h-4 w-4 text-red-500' />}
+                            {isNearLimit && <AlertTriangle className='h-4 w-4 text-amber-500' />}
+                            {!isOverBudget && !isNearLimit && (
+                              <CheckCircle className='h-4 w-4 text-emerald-500' />
+                            )}
+                            <span
+                              className={`text-sm font-bold ${
+                                isOverBudget
+                                  ? 'text-red-600'
+                                  : isNearLimit
+                                    ? 'text-amber-600'
+                                    : 'text-emerald-600'
+                              }`}
+                            >
+                              {budget.percentage.toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* 예산 진행률 바 */}
+                        <div className='w-full bg-slate-100 rounded-full h-2 overflow-hidden'>
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              isOverBudget ? 'bg-red-500' : isNearLimit ? 'bg-amber-500' : 'bg-emerald-500'
+                            }`}
+                            style={{ width: `${Math.min(budget.percentage, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+        {/* 📈 월별 트렌드 차트 */}
         <MonthlyTrendChart
           dailyTrend={(stats.dailyTrend || []).map(item => ({
             date: item.date,
             amount: Math.abs(item.amount),
-            type: (item.type === 'income' ? 'income' : 'expense') as 'expense' | 'income'
+            type: item.type === 'income' ? ('income' as const) : ('expense' as const)
           }))}
           categoryBreakdown={stats.categoryBreakdown || []}
         />
       </div>
     </div>
   )
-}
+})

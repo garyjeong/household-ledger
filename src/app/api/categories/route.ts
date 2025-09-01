@@ -41,10 +41,10 @@ export async function GET(request: NextRequest) {
     // 쿼리 파라미터 검증
     const { searchParams } = new URL(request.url)
     const queryResult = categoryQuerySchema.safeParse({
-      ownerType: searchParams.get('ownerType'),
-      ownerId: searchParams.get('ownerId'),
-      type: searchParams.get('type'),
-      isDefault: searchParams.get('isDefault'),
+      ownerType: searchParams.get('ownerType') || undefined,
+      ownerId: searchParams.get('ownerId') || undefined,
+      type: searchParams.get('type') || undefined,
+      isDefault: searchParams.get('isDefault') || undefined,
     })
 
     if (!queryResult.success) {
