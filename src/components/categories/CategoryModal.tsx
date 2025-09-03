@@ -9,12 +9,12 @@ import React, { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Save, Loader2, TrendingUp, TrendingDown, Tag } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Save, Loader2, Tag, X } from 'lucide-react'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+
 import {
   useCreateCategory,
   useUpdateCategory,
@@ -30,41 +30,44 @@ const categoryFormSchema = z.object({
     .string()
     .min(1, '카테고리 이름을 입력해주세요')
     .max(20, '카테고리 이름은 20자 이하로 입력해주세요')
-    .regex(/^[a-zA-Z0-9가-힣\s\-_]+$/, '특수문자는 사용할 수 없습니다 (- _ 제외)'),
-  type: z.enum(['INCOME', 'EXPENSE']),
-  color: z.string().min(1, '색상을 선택해주세요'),
+    .trim(),
+  type: z.enum(['INCOME', 'EXPENSE'], {
+    required_error: '카테고리 유형을 선택해주세요',
+  }),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, '올바른 색상 코드를 선택해주세요'),
 })
 
 type CategoryFormData = z.infer<typeof categoryFormSchema>
 
-// 색상 팔레트
+// 기본 색상 옵션
 const colorOptions = [
   '#EF4444', // red-500
-  '#F97316', // orange-500
-  '#F59E0B', // amber-500
+  '#F97316', // orange-500  
   '#EAB308', // yellow-500
-  '#84CC16', // lime-500
   '#22C55E', // green-500
-  '#10B981', // emerald-500
-  '#14B8A6', // teal-500
   '#06B6D4', // cyan-500
   '#3B82F6', // blue-500
-  '#6366F1', // indigo-500
   '#8B5CF6', // violet-500
-  '#A855F7', // purple-500
-  '#D946EF', // fuchsia-500
   '#EC4899', // pink-500
-  '#F43F5E', // rose-500
+  '#6B7280', // gray-500
+  '#10B981', // emerald-500
+  '#F59E0B', // amber-500
+  '#8B5A2B', // brown-600
+  '#059669', // emerald-600
+  '#0D9488', // teal-600
+  '#7C3AED', // violet-600
+  '#DB2777', // pink-600
 ]
 
 interface CategoryModalProps {
   isOpen: boolean
   onClose: () => void
+  onSuccess?: () => void
   mode: 'create' | 'edit'
   category?: Category | null
 }
 
-export function CategoryModal({ isOpen, onClose, mode, category }: CategoryModalProps) {
+export function CategoryModal({ isOpen, onClose, onSuccess, mode, category }: CategoryModalProps) {
   const { toast } = useToast()
   const { currentGroup } = useGroup()
 
@@ -117,20 +120,22 @@ export function CategoryModal({ isOpen, onClose, mode, category }: CategoryModal
 
   // 폼 제출
   const onSubmit = async (data: CategoryFormData) => {
+    if (!currentGroup?.id) {
+      toast({
+        title: '그룹 정보 없음',
+        description: '그룹에 가입한 후 카테고리를 관리할 수 있습니다.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     try {
       if (mode === 'create') {
-        if (!currentGroup) {
-          throw new Error('그룹 정보가 없습니다')
-        }
-
         const createData: CreateCategoryData = {
-          name: data.name,
-          type: data.type,
-          color: data.color,
+          ...data,
           ownerType: 'GROUP',
-          ownerId: parseInt(currentGroup.id),
+          ownerId: parseInt(currentGroup.id, 10),
         }
-
         await createCategoryFn(createData)
         toast({
           title: '카테고리 생성 완료',
@@ -138,11 +143,8 @@ export function CategoryModal({ isOpen, onClose, mode, category }: CategoryModal
         })
       } else if (mode === 'edit' && category) {
         const updateData: UpdateCategoryData = {
-          name: data.name,
-          type: data.type,
-          color: data.color,
+          ...data,
         }
-
         await updateCategoryFn(category.id, updateData)
         toast({
           title: '카테고리 수정 완료',
@@ -150,6 +152,7 @@ export function CategoryModal({ isOpen, onClose, mode, category }: CategoryModal
         })
       }
 
+      onSuccess?.()
       handleClose()
     } catch (error) {
       toast({
@@ -163,66 +166,92 @@ export function CategoryModal({ isOpen, onClose, mode, category }: CategoryModal
   const isLoading = createLoading || updateLoading
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => !isLoading && handleClose()}>
-      <DialogContent className='sm:max-w-[425px]'>
-        <DialogHeader>
-          <DialogTitle className='flex items-center gap-2'>
-            <Tag className='h-5 w-5' />
-            {mode === 'create' ? '새 카테고리 추가' : '카테고리 편집'}
-          </DialogTitle>
-        </DialogHeader>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className='max-w-lg p-0'>
+        {/* 헤더 */}
+        <div className='p-6 border-b border-slate-200'>
+          <div className='flex items-center justify-between'>
+            <div className='flex items-center gap-3'>
+              <div className='flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg'>
+                <Tag className='h-5 w-5 text-blue-600' />
+              </div>
+              <div>
+                <h2 className='text-lg font-bold text-slate-900'>
+                  {mode === 'create' ? '새 카테고리 추가' : '카테고리 편집'}
+                </h2>
+              </div>
+            </div>
+            <Button variant='ghost' size='sm' onClick={handleClose} className='h-8 w-8 p-0'>
+              <X className='h-4 w-4' />
+            </Button>
+          </div>
+        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
+        <form onSubmit={handleSubmit(onSubmit)} className='p-6 space-y-6'>
           {/* 카테고리 이름 */}
-          <div className='space-y-2'>
-            <Label htmlFor='name'>카테고리 이름</Label>
+          <div className='space-y-3'>
+            <div className='flex items-center gap-2'>
+              <div className='flex items-center justify-center w-8 h-8 bg-green-100 rounded-lg'>
+                <span className='text-lg'>📝</span>
+              </div>
+              <h3 className='text-base font-bold text-slate-900'>카테고리 이름</h3>
+            </div>
             <Input
-              id='name'
               placeholder='예: 식비, 교통비, 용돈 등'
               {...register('name')}
               disabled={isLoading}
+              className='h-12 text-base'
             />
-            {errors.name && <p className='text-sm text-red-600'>{errors.name.message}</p>}
+            {errors.name && <p className='text-sm text-red-600 mt-1'>{errors.name.message}</p>}
           </div>
 
           {/* 카테고리 유형 */}
           <div className='space-y-3'>
-            <Label>카테고리 유형</Label>
-            <RadioGroup
-              value={selectedType}
-              onValueChange={value => setValue('type', value as 'INCOME' | 'EXPENSE')}
-              disabled={isLoading}
-            >
-              <div className='flex items-center space-x-2'>
-                <RadioGroupItem value='EXPENSE' id='expense' />
-                <Label htmlFor='expense' className='flex items-center gap-2 cursor-pointer'>
-                  <TrendingDown className='h-4 w-4 text-red-600' />
-                  지출
-                </Label>
+            <div className='flex items-center gap-2'>
+              <div className='flex items-center justify-center w-8 h-8 bg-purple-100 rounded-lg'>
+                <span className='text-lg'>🏷️</span>
               </div>
-              <div className='flex items-center space-x-2'>
-                <RadioGroupItem value='INCOME' id='income' />
-                <Label htmlFor='income' className='flex items-center gap-2 cursor-pointer'>
-                  <TrendingUp className='h-4 w-4 text-green-600' />
-                  수입
-                </Label>
-              </div>
-            </RadioGroup>
-            {errors.type && <p className='text-sm text-red-600'>{errors.type.message}</p>}
+              <h3 className='text-base font-bold text-slate-900'>카테고리 유형</h3>
+            </div>
+            <div className='grid grid-cols-2 gap-3'>
+              <Button
+                type='button'
+                variant={selectedType === 'EXPENSE' ? 'default' : 'outline'}
+                onClick={() => setValue('type', 'EXPENSE')}
+                disabled={isLoading}
+                className='h-12 flex items-center justify-center'
+              >
+                지출
+              </Button>
+              <Button
+                type='button'
+                variant={selectedType === 'INCOME' ? 'default' : 'outline'}
+                onClick={() => setValue('type', 'INCOME')}
+                disabled={isLoading}
+                className='h-12 flex items-center justify-center'
+              >
+                수입
+              </Button>
+            </div>
           </div>
 
           {/* 색상 선택 */}
           <div className='space-y-3'>
-            <Label>색상</Label>
-            <div className='grid grid-cols-8 gap-2'>
+            <div className='flex items-center gap-2'>
+              <div className='flex items-center justify-center w-8 h-8 bg-yellow-100 rounded-lg'>
+                <span className='text-lg'>🎨</span>
+              </div>
+              <h3 className='text-base font-bold text-slate-900'>색상 선택</h3>
+            </div>
+            <div className='grid grid-cols-8 gap-3'>
               {colorOptions.map(color => (
                 <button
                   key={color}
                   type='button'
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${
+                  className={`w-10 h-10 rounded-full border-4 transition-all hover:scale-110 ${
                     selectedColor === color
-                      ? 'border-gray-900 scale-110'
-                      : 'border-gray-200 hover:border-gray-400'
+                      ? 'border-slate-900 scale-110 shadow-lg'
+                      : 'border-slate-200 hover:border-slate-400'
                   }`}
                   style={{ backgroundColor: color }}
                   onClick={() => setValue('color', color)}
@@ -230,37 +259,53 @@ export function CategoryModal({ isOpen, onClose, mode, category }: CategoryModal
                 />
               ))}
             </div>
-            {errors.color && <p className='text-sm text-red-600'>{errors.color.message}</p>}
+            {errors.color && <p className='text-sm text-red-600 mt-1'>{errors.color.message}</p>}
           </div>
 
           {/* 미리보기 */}
-          <div className='p-3 bg-gray-50 rounded-lg'>
-            <Label className='text-sm text-gray-600 mb-2 block'>미리보기</Label>
-            <div className='flex items-center space-x-3'>
-              <div
-                className='w-6 h-6 rounded-full border-2 border-gray-200'
-                style={{ backgroundColor: selectedColor }}
-              />
-              <span className='font-medium'>{watch('name') || '카테고리 이름'}</span>
-              <div className='flex items-center gap-1'>
-                {selectedType === 'INCOME' ? (
-                  <TrendingUp className='h-4 w-4 text-green-600' />
-                ) : (
-                  <TrendingDown className='h-4 w-4 text-red-600' />
-                )}
-                <span className='text-sm text-gray-600'>
-                  {selectedType === 'INCOME' ? '수입' : '지출'}
-                </span>
+          <div className='space-y-3'>
+            <div className='flex items-center gap-2'>
+              <div className='flex items-center justify-center w-8 h-8 bg-indigo-100 rounded-lg'>
+                <span className='text-lg'>👀</span>
+              </div>
+              <h3 className='text-base font-bold text-slate-900'>미리보기</h3>
+            </div>
+            <div className='p-4 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200'>
+              <div className='flex items-center space-x-3'>
+                <div
+                  className='w-6 h-6 rounded-full border-2 border-white shadow-sm flex-shrink-0'
+                  style={{ backgroundColor: selectedColor }}
+                />
+                <span className='font-semibold text-slate-900'>{watch('name') || '카테고리 이름'}</span>
+                <div className='flex items-center'>
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    selectedType === 'INCOME' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {selectedType === 'INCOME' ? '수입' : '지출'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
           {/* 버튼 */}
-          <div className='flex justify-end space-x-2 pt-4'>
-            <Button type='button' variant='outline' onClick={handleClose} disabled={isLoading}>
+          <div className='flex gap-3 pt-6 border-t border-slate-200'>
+            <Button 
+              type='button' 
+              variant='outline' 
+              onClick={handleClose} 
+              disabled={isLoading}
+              className='flex-1 h-12'
+            >
               취소
             </Button>
-            <Button type='submit' disabled={isLoading} className='gap-2'>
+            <Button 
+              type='submit' 
+              disabled={isLoading} 
+              className='flex-1 h-12 gap-2'
+            >
               {isLoading ? (
                 <>
                   <Loader2 className='h-4 w-4 animate-spin' />

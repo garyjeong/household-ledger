@@ -334,6 +334,7 @@ function LoginPageContent() {
                       id='password'
                       type={showPassword ? 'text' : 'password'}
                       placeholder='비밀번호를 입력하세요'
+                      autoComplete='current-password'
                       className='pl-10 pr-10 h-10 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-slate-300/30 transition-all duration-200 rounded-lg'
                       {...register('password')}
                     />

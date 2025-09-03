@@ -4,18 +4,19 @@ import { CategoryResponse, CreateCategoryData, UpdateCategoryData } from '@/lib/
 // 카테고리 타입 정의 (기존 호환성 유지)
 export interface Category {
   id: string
+  groupId: string | null
+  createdBy: string
   name: string
   type: 'EXPENSE' | 'INCOME' | 'TRANSFER'
   color: string | null
   isDefault: boolean
-  ownerType: 'USER' | 'GROUP'
-  ownerId: string
+  createdAt: string
+  updatedAt: string
 }
 
 // 카테고리 필터 타입
 export interface CategoryFilters {
-  ownerType?: 'USER' | 'GROUP'
-  ownerId?: string
+  groupId?: string
   type?: 'EXPENSE' | 'INCOME' | 'TRANSFER'
   isDefault?: boolean
 }
@@ -65,8 +66,7 @@ export function useCategories(
     }
     // typeOrFilters가 객체이면 filters 처리
     else if (typeOrFilters && typeof typeOrFilters === 'object') {
-      if (typeOrFilters.ownerType) params.append('ownerType', typeOrFilters.ownerType)
-      if (typeOrFilters.ownerId) params.append('ownerId', typeOrFilters.ownerId)
+      if (typeOrFilters.groupId) params.append('groupId', typeOrFilters.groupId)
       if (typeOrFilters.type) params.append('type', typeOrFilters.type)
       if (typeOrFilters.isDefault !== undefined)
         params.append('isDefault', typeOrFilters.isDefault.toString())

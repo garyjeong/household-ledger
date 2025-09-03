@@ -4,11 +4,8 @@ import React from 'react'
 import {
   TrendingUp,
   TrendingDown,
-  PiggyBank,
-  Target,
   BarChart3,
-  AlertTriangle,
-  CheckCircle,
+  PieChart,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
@@ -117,19 +114,12 @@ export const MonthlyDashboard = React.memo(function MonthlyDashboard({
     }
   }
 
-  // 잔액 계산
-  const balance = stats.totalIncome - stats.totalExpense
-  const balanceIsPositive = balance >= 0
-
-  // 저축률 계산
-  const savingsRate = stats.totalIncome > 0 ? (balance / stats.totalIncome) * 100 : 0
-
   const monthInfo = getCurrentMonthInfo()
 
     return (
     <div className={`space-y-4 ${className}`}>
       {/* 📊 고정 헤더: 제목 + 월 선택 */}
-      <div className='sticky top-0 z-10 bg-white pb-4 mb-4 border-b border-gray-100'>
+      <div className='sticky top-0 z-20 bg-white pb-4 mb-4 border-b border-gray-100'>
         <div className='pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white border border-slate-200 rounded-lg p-4 shadow-sm'>
           <div>
             <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>월별 대시보드</h1>
@@ -163,63 +153,40 @@ export const MonthlyDashboard = React.memo(function MonthlyDashboard({
 
       {/* 🎯 메인 대시보드 콘텐츠 */}
       <div className='space-y-6'>
-          {/* 💰 수입/지출/잔액 요약 카드 */}
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-            {/* 총 수입 - 새로운 디자인 */}
+          {/* 💰 수입/지출 요약 카드 */}
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            {/* 총 수입 */}
             <Card className='border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow'>
-              <CardContent className='p-4'>
-                <div className='flex items-center gap-3 mb-2'>
-                  <div className='flex items-center justify-center w-10 h-10 bg-emerald-100 rounded-lg'>
-                    <TrendingUp className='h-5 w-5 text-emerald-600' />
+              <CardContent className='p-6'>
+                <div className='flex items-center gap-4 mb-3'>
+                  <div className='flex items-center justify-center w-12 h-12 bg-emerald-100 rounded-lg'>
+                    <TrendingUp className='h-6 w-6 text-emerald-600' />
                   </div>
                   <div>
-                    <h3 className='text-sm font-semibold text-slate-700'>총 수입</h3>
-                    <div className='w-8 h-1 bg-emerald-400 rounded-full mt-1'></div>
+                    <h3 className='text-lg font-semibold text-slate-700'>총 수입</h3>
+                    <div className='w-10 h-1 bg-emerald-400 rounded-full mt-1'></div>
                   </div>
                 </div>
-                <div className='text-xl font-bold text-slate-900'>
+                <div className='text-2xl font-bold text-slate-900'>
                   {formatKRW(stats.totalIncome)}
                 </div>
               </CardContent>
             </Card>
 
-            {/* 총 지출 - 새로운 디자인 */}
+            {/* 총 지출 */}
             <Card className='border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow'>
-              <CardContent className='p-4'>
-                <div className='flex items-center gap-3 mb-2'>
-                  <div className='flex items-center justify-center w-10 h-10 bg-slate-100 rounded-lg'>
-                    <TrendingDown className='h-5 w-5 text-slate-600' />
+              <CardContent className='p-6'>
+                <div className='flex items-center gap-4 mb-3'>
+                  <div className='flex items-center justify-center w-12 h-12 bg-red-100 rounded-lg'>
+                    <TrendingDown className='h-6 w-6 text-red-600' />
                   </div>
                   <div>
-                    <h3 className='text-sm font-semibold text-slate-700'>총 지출</h3>
-                    <div className='w-8 h-1 bg-slate-400 rounded-full mt-1'></div>
+                    <h3 className='text-lg font-semibold text-slate-700'>총 지출</h3>
+                    <div className='w-10 h-1 bg-red-400 rounded-full mt-1'></div>
                   </div>
                 </div>
-                <div className='text-xl font-bold text-slate-900'>
+                <div className='text-2xl font-bold text-slate-900'>
                   {formatKRW(stats.totalExpense)}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 잔액 - 새로운 디자인 */}
-            <Card className='border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow'>
-              <CardContent className='p-4'>
-                <div className='flex items-center gap-3 mb-2'>
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-lg ${balanceIsPositive ? 'bg-blue-100' : 'bg-amber-100'}`}>
-                    <PiggyBank className={`h-5 w-5 ${balanceIsPositive ? 'text-blue-600' : 'text-amber-600'}`} />
-                  </div>
-                  <div>
-                    <h3 className='text-sm font-semibold text-slate-700'>
-                      {balanceIsPositive ? '흑자' : '적자'}
-                    </h3>
-                    <div className={`w-8 h-1 rounded-full mt-1 ${balanceIsPositive ? 'bg-blue-400' : 'bg-amber-400'}`}></div>
-                  </div>
-                </div>
-                <div className={`text-xl font-bold ${balanceIsPositive ? 'text-blue-900' : 'text-amber-900'}`}>
-                  {formatKRW(Math.abs(balance))}
-                </div>
-                <div className='text-sm text-slate-600 mt-1'>
-                  저축률 {savingsRate.toFixed(1)}%
                 </div>
               </CardContent>
             </Card>
@@ -227,23 +194,23 @@ export const MonthlyDashboard = React.memo(function MonthlyDashboard({
 
 
 
-          {/* 📊 카테고리 & 예산 섹션 */}
+          {/* 📊 카테고리 분석 섹션 */}
           <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-            {/* 카테고리 TOP 5 - 새로운 디자인 */}
+            {/* 카테고리 TOP 5 */}
             <Card className='border border-slate-200 bg-white shadow-sm'>
-              <CardContent className='p-4'>
+              <CardContent className='p-6'>
                 <div className='flex items-center gap-3 mb-4'>
-                  <div className='flex items-center justify-center w-8 h-8 bg-slate-100 rounded-lg'>
-                    <BarChart3 className='h-4 w-4 text-slate-600' />
+                  <div className='flex items-center justify-center w-10 h-10 bg-slate-100 rounded-lg'>
+                    <BarChart3 className='h-5 w-5 text-slate-600' />
                   </div>
-                  <h2 className='text-base font-bold text-slate-900'>카테고리 TOP 5</h2>
+                  <h2 className='text-lg font-bold text-slate-900'>카테고리 TOP 5</h2>
                 </div>
                 
                 <div className='space-y-4'>
                   {(stats.categoryBreakdown || []).slice(0, 5).map((category, index) => (
                     <div key={category.categoryId} className='flex items-center gap-4'>
                       {/* 순위 배지 */}
-                      <div className='flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-sm font-bold'>
+                      <div className='flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 text-white text-sm font-bold'>
                         {index + 1}
                       </div>
 
@@ -280,76 +247,69 @@ export const MonthlyDashboard = React.memo(function MonthlyDashboard({
               </CardContent>
             </Card>
 
-            {/* 예산 모니터링 - 새로운 디자인 */}
+            {/* 카테고리별 차트 */}
             <Card className='border border-slate-200 bg-white shadow-sm'>
-              <CardContent className='p-4'>
+              <CardContent className='p-6'>
                 <div className='flex items-center gap-3 mb-4'>
-                  <div className='flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg'>
-                    <Target className='h-4 w-4 text-blue-600' />
+                  <div className='flex items-center justify-center w-10 h-10 bg-blue-100 rounded-lg'>
+                    <PieChart className='h-5 w-5 text-blue-600' />
                   </div>
-                  <h2 className='text-base font-bold text-slate-900'>예산 모니터링</h2>
+                  <h2 className='text-lg font-bold text-slate-900'>카테고리별 분포</h2>
                 </div>
                 
-                <div className='space-y-4'>
-                  {(stats.categoryBreakdown || []).slice(0, 5).map(budget => {
-                    const category = (stats.categoryBreakdown || []).find(
-                      c => c.categoryId === budget.categoryId
-                    )
-                    const isOverBudget = budget.percentage > 100
-                    const isNearLimit = budget.percentage > 80 && budget.percentage <= 100
-
-                    return (
-                      <div key={budget.categoryId} className='space-y-2'>
+                {/* 간단한 카테고리 분포 표시 */}
+                <div className='space-y-3'>
+                  {(stats.categoryBreakdown || []).slice(0, 8).map((category) => (
+                    <div key={category.categoryId} className='flex items-center gap-3'>
+                      <div
+                        className='w-4 h-4 rounded-full flex-shrink-0'
+                        style={{ backgroundColor: category.color || '#6b7280' }}
+                      />
+                      <div className='flex-1 min-w-0'>
                         <div className='flex items-center justify-between'>
-                          <span className='text-sm font-semibold text-slate-900 truncate'>
-                            {category?.categoryName}
+                          <span className='text-sm font-medium text-slate-900 truncate'>
+                            {category.categoryName}
                           </span>
-                          <div className='flex items-center gap-2'>
-                            {isOverBudget && <AlertTriangle className='h-4 w-4 text-red-500' />}
-                            {isNearLimit && <AlertTriangle className='h-4 w-4 text-amber-500' />}
-                            {!isOverBudget && !isNearLimit && (
-                              <CheckCircle className='h-4 w-4 text-emerald-500' />
-                            )}
-                            <span
-                              className={`text-sm font-bold ${
-                                isOverBudget
-                                  ? 'text-red-600'
-                                  : isNearLimit
-                                    ? 'text-amber-600'
-                                    : 'text-emerald-600'
-                              }`}
-                            >
-                              {budget.percentage.toFixed(0)}%
-                            </span>
-                          </div>
+                          <span className='text-sm font-bold text-slate-700'>
+                            {category.percentage.toFixed(1)}%
+                          </span>
                         </div>
-
-                        {/* 예산 진행률 바 */}
-                        <div className='w-full bg-slate-100 rounded-full h-2 overflow-hidden'>
+                        <div className='w-full bg-slate-100 rounded-full h-1.5 mt-1'>
                           <div
-                            className={`h-full rounded-full transition-all ${
-                              isOverBudget ? 'bg-red-500' : isNearLimit ? 'bg-amber-500' : 'bg-emerald-500'
-                            }`}
-                            style={{ width: `${Math.min(budget.percentage, 100)}%` }}
+                            className='h-full rounded-full transition-all'
+                            style={{
+                              width: `${category.percentage}%`,
+                              backgroundColor: category.color || '#6b7280',
+                            }}
                           />
                         </div>
                       </div>
-                    )
-                  })}
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
           </div>
 
-        {/* 📈 월별 트렌드 차트 */}
-        <MonthlyTrendChart
-          dailyTrend={(stats.dailyTrend || []).map(item => ({
-            date: item.date,
-            amount: Math.abs(item.amount),
-            type: item.type === 'income' ? ('income' as const) : ('expense' as const)
-          }))}
-          categoryBreakdown={stats.categoryBreakdown || []}
-        />
+        {/* 📈 최근 일주일 수입/지출 차트 */}
+        <Card className='border border-slate-200 bg-white shadow-sm'>
+          <CardContent className='p-6'>
+            <div className='flex items-center gap-3 mb-4'>
+              <div className='flex items-center justify-center w-10 h-10 bg-purple-100 rounded-lg'>
+                <BarChart3 className='h-5 w-5 text-purple-600' />
+              </div>
+              <h2 className='text-lg font-bold text-slate-900'>최근 일주일 수입/지출</h2>
+            </div>
+            <MonthlyTrendChart
+              dailyTrend={(stats.dailyTrend || []).slice(-7).map(item => ({
+                date: item.date,
+                amount: Math.abs(item.amount),
+                type: item.type === 'income' ? ('income' as const) : ('expense' as const)
+              }))}
+              categoryBreakdown={stats.categoryBreakdown || []}
+            />
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

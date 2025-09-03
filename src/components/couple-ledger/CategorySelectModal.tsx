@@ -62,8 +62,10 @@ export function CategorySelectModal({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md max-h-[80vh] p-0">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent 
+        className="max-w-md max-h-[80vh] p-0"
+      >
         {/* 헤더 */}
         <DialogHeader className="p-6 pb-4 border-b border-slate-200">
           <div className="flex items-center justify-between">
@@ -91,7 +93,7 @@ export function CategorySelectModal({
         </div>
 
         {/* 카테고리 목록 */}
-        <div className="flex-1 overflow-y-auto px-6 pb-6">
+        <div className="flex-1 overflow-y-auto px-6 pt-4 pb-6">
           {/* 기본 카테고리 */}
           {defaultCategories.length > 0 && (
             <div className="mb-6">
@@ -107,13 +109,13 @@ export function CategorySelectModal({
                     key={category.id}
                     variant={selectedId === category.id ? "default" : "outline"}
                     onClick={() => handleCategorySelect(category.id)}
-                    className="h-12 flex flex-col items-center justify-center gap-1 text-sm font-medium hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                    className="min-h-14 h-auto flex flex-col items-center justify-center gap-1 text-sm font-medium hover:bg-blue-50 hover:border-blue-300 transition-colors p-2"
                   >
                     <div 
-                      className="w-4 h-4 rounded-full"
+                      className="w-4 h-4 rounded-full flex-shrink-0"
                       style={{ backgroundColor: category.color || '#6B7280' }}
                     />
-                    <span className="truncate w-full">{category.name}</span>
+                    <span className="text-center leading-tight w-full break-words">{category.name}</span>
                   </Button>
                 ))}
               </div>
@@ -135,13 +137,13 @@ export function CategorySelectModal({
                     key={category.id}
                     variant={selectedId === category.id ? "default" : "outline"}
                     onClick={() => handleCategorySelect(category.id)}
-                    className="h-12 flex flex-col items-center justify-center gap-1 text-sm font-medium hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                    className="min-h-14 h-auto flex flex-col items-center justify-center gap-1 text-sm font-medium hover:bg-blue-50 hover:border-blue-300 transition-colors p-2"
                   >
                     <div 
-                      className="w-4 h-4 rounded-full"
+                      className="w-4 h-4 rounded-full flex-shrink-0"
                       style={{ backgroundColor: category.color || '#6B7280' }}
                     />
-                    <span className="truncate w-full">{category.name}</span>
+                    <span className="text-center leading-tight w-full break-words">{category.name}</span>
                   </Button>
                 ))}
               </div>

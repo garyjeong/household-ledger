@@ -31,7 +31,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
 
   return (
     <div 
-      className='fixed inset-0 z-modal'
+      className='fixed inset-0 z-50'
       onClick={() => onOpenChange?.(false)}
     >
       {/* 배경 오버레이 */}
@@ -54,6 +54,11 @@ export interface DialogContentProps {
 }
 
 export function DialogContent({ children, className = '', onClick }: DialogContentProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation() // 이벤트 전파 방지 - 모달 내용 클릭 시 모달이 닫히지 않도록
+    onClick?.(e)
+  }
+
   return (
     <div
       className={`
@@ -61,7 +66,7 @@ export function DialogContent({ children, className = '', onClick }: DialogConte
       animate-scale-in max-w-md w-full max-h-[90vh] overflow-y-auto
       ${className}
     `}
-      onClick={onClick}
+      onClick={handleClick}
     >
       {children}
     </div>

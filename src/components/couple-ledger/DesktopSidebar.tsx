@@ -246,24 +246,17 @@ export function DesktopSidebar({ onQuickAddClick, className = '' }: DesktopSideb
 
         {/* 사용자 정보 */}
         {!isCollapsed && user && (
-          <div className='p-4 border-t border-gray-200'>
-            <Card className='bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 shadow-sm'>
-              <CardContent className='p-3'>
-                <div className='flex items-center gap-3'>
-                  <div className='w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center'>
-                    <User className='h-4 w-4 text-white' />
-                  </div>
-                  <div className='flex-1 min-w-0'>
-                    <p className='text-sm font-medium text-gray-900 truncate'>
-                      {user.nickname || user.email}
-                    </p>
-                    <p className='text-xs text-gray-500 truncate'>
-                      {currentGroup ? currentGroup.name : '그룹 없음'}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className='p-3 border-t border-gray-200'>
+            <div className='flex items-center gap-3 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors'>
+              <div className='w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0'>
+                <User className='h-4 w-4 text-white' />
+              </div>
+              <div className='flex-1 min-w-0'>
+                <p className='text-sm font-medium text-gray-900 truncate'>
+                  {user.nickname || user.email}
+                </p>
+              </div>
+            </div>
           </div>
         )}
 

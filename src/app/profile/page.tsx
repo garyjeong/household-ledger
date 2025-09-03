@@ -268,7 +268,7 @@ export default function ProfilePage() {
     <ResponsiveLayout>
       <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
         {/* 헤더 */}
-        <div className='sticky top-0 z-10 bg-white pb-6 mb-6 border-b border-gray-100'>
+        <div className='sticky top-0 z-20 bg-white pb-6 mb-6 border-b border-gray-100'>
           <div className='pt-6'>
             <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>내 정보</h1>
             <p className='text-slate-600 mt-1'>프로필 및 설정 관리</p>

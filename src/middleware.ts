@@ -3,6 +3,8 @@
  * 화이트리스트 기반 보안, 토큰 검증, 요청 로깅 및 에러 처리
  */
 
+export const runtime = 'nodejs'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAccessToken } from '@/lib/auth'
 import { safeConsole } from '@/lib/security-utils'

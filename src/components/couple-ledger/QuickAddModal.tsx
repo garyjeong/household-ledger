@@ -21,7 +21,7 @@ import {
   QuickAddModalProps,
   QuickAddForm,
 } from '@/types/couple-ledger'
-import { CategoryPicker } from './CategoryPicker'
+import { CategorySelectModal } from './CategorySelectModal'
 import { useCategories } from '@/hooks/use-categories'
 import { useGroup } from '@/contexts/group-context'
 
@@ -61,6 +61,7 @@ export function QuickAddModal({
 }: QuickAddModalProps) {
 
   const [isLoading, setIsLoading] = useState(false)
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
 
   // 현재 그룹 정보 가져오기
   const { currentGroup, isLoading: groupLoading } = useGroup()
@@ -75,7 +76,7 @@ export function QuickAddModal({
     }
   }, [currentGroup?.id])
 
-  const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError } = useCategories(
+  const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError, refetch: refetchCategories } = useCategories(
     categoryFilters
   )
 
@@ -93,6 +94,9 @@ export function QuickAddModal({
     tags: [],
     saveAsTemplate: false,
   })
+  
+  // 선택된 카테고리 이름 찾기
+  const selectedCategory = categories.find(cat => cat.id === formData.categoryId)
 
 
 
@@ -225,12 +229,12 @@ export function QuickAddModal({
                 </h4>
                 <div className='grid grid-cols-3 gap-2'>
                   {[
-                    { amount: 5000, label: '5천', emoji: '☕' },
-                    { amount: 10000, label: '1만', emoji: '🍔' },
-                    { amount: 30000, label: '3만', emoji: '🍕' },
-                    { amount: 50000, label: '5만', emoji: '🛒' },
-                    { amount: 100000, label: '10만', emoji: '💳' },
-                    { amount: 0, label: '직접입력', emoji: '✏️' },
+                    { amount: 5000, label: '5,000원' },
+                    { amount: 10000, label: '10,000원' },
+                    { amount: 30000, label: '30,000원' },
+                    { amount: 50000, label: '50,000원' },
+                    { amount: 100000, label: '100,000원' },
+                    { amount: 0, label: '직접입력' },
                   ].map((item) => (
                     <Button
                       key={item.amount}
@@ -243,9 +247,8 @@ export function QuickAddModal({
                           setFormData(prev => ({ ...prev, amount: `${item.amount.toLocaleString()}원` }))
                         }
                       }}
-                      className='h-12 flex flex-col items-center justify-center gap-1 text-xs font-medium hover:bg-blue-50 hover:border-blue-300 transition-colors'
+                      className='h-12 flex items-center justify-center text-sm font-medium hover:bg-blue-50 hover:border-blue-300 transition-colors'
                     >
-                      <span className='text-base'>{item.emoji}</span>
                       <span>{item.label}</span>
                     </Button>
                   ))}
@@ -255,13 +258,6 @@ export function QuickAddModal({
 
           {/* 카테고리 선택 섹션 */}
           <div className='space-y-4'>
-            <div className='flex items-center gap-2'>
-              <div className='flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg'>
-                <span className='text-lg'>📂</span>
-              </div>
-              <h3 className='text-base font-bold text-slate-900'>카테고리</h3>
-            </div>
-
             {groupLoading || categoriesLoading ? (
               <div className='flex items-center justify-center py-8'>
                 <Loader2 className='h-6 w-6 animate-spin' />
@@ -269,6 +265,60 @@ export function QuickAddModal({
                   {groupLoading ? '그룹 정보 로딩 중...' : '카테고리 로딩 중...'}
                 </span>
               </div>
+            ) : categoriesError ? (
+              <Card className='border-2 border-dashed border-red-300 bg-red-50'>
+                <div className='p-6 text-center space-y-4'>
+                  <div className='w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto'>
+                    <X className='h-6 w-6 text-red-600' />
+                  </div>
+                  <div>
+                    <h4 className='font-semibold text-slate-900 mb-1'>카테고리를 불러올 수 없습니다</h4>
+                    <p className='text-sm text-slate-600 mb-4'>
+                      {categoriesError.includes('401') || categoriesError.includes('인증')
+                        ? '로그인이 만료되었습니다. 다시 로그인해 주세요.'
+                        : categoriesError}
+                    </p>
+                    <div className='flex gap-2 justify-center'>
+                      {categoriesError.includes('401') || categoriesError.includes('인증') ? (
+                        <>
+                          <Button
+                            variant='outline'
+                            onClick={() => window.location.reload()}
+                            className='gap-2'
+                          >
+                            새로고침
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              handleClose()
+                              window.location.href = '/login'
+                            }}
+                            className='gap-2'
+                          >
+                            다시 로그인
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            variant='outline'
+                            onClick={() => refetchCategories()}
+                            className='gap-2'
+                          >
+                            다시 시도
+                          </Button>
+                          <Button
+                            onClick={() => window.location.reload()}
+                            className='gap-2'
+                          >
+                            새로고침
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Card>
             ) : !currentGroup ? (
               <Card className='border-2 border-dashed border-blue-300 bg-blue-50'>
                 <div className='p-6 text-center space-y-4'>
@@ -328,17 +378,35 @@ export function QuickAddModal({
                 </div>
               </Card>
             ) : (
-              <CategoryPicker
-                categories={categories}
-                selectedId={formData.categoryId}
-                onSelect={categoryId => setFormData(prev => ({ ...prev, categoryId }))}
-                type='expense'
-                showFavorites
-                recentCategories={[]} 
-                showAddButton={false}
-                maxDisplayCategories={6}
-                showMoreModal={true}
-              />
+              <Button
+                type='button'
+                variant='outline'
+                onClick={() => setIsCategoryModalOpen(true)}
+                className='w-full h-14 flex items-center justify-between px-4 border-2 border-dashed border-slate-300 hover:border-blue-400 transition-colors'
+              >
+                <div className='flex items-center gap-3'>
+                  <div className='flex items-center justify-center w-8 h-8 bg-slate-100 rounded-lg'>
+                    <span className='text-lg'>📂</span>
+                  </div>
+                  <div className='text-left'>
+                    <p className='text-sm font-medium text-slate-900'>
+                      {selectedCategory ? selectedCategory.name : '카테고리 선택'}
+                    </p>
+                    <p className='text-xs text-slate-500'>
+                      {selectedCategory ? '다른 카테고리로 변경하려면 클릭' : '지출 카테고리를 선택해주세요'}
+                    </p>
+                  </div>
+                </div>
+                <div className='flex items-center gap-2'>
+                  {selectedCategory && (
+                    <div 
+                      className='w-4 h-4 rounded-full'
+                      style={{ backgroundColor: selectedCategory.color || '#6B7280' }}
+                    />
+                  )}
+                  <ArrowRight className='h-4 w-4 text-slate-400' />
+                </div>
+              </Button>
             )}
           </div>
 
@@ -435,6 +503,19 @@ export function QuickAddModal({
         </div>
 
       </DialogContent>
+      
+      {/* 카테고리 선택 모달 */}
+      <CategorySelectModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        onSelect={(categoryId) => {
+          setFormData(prev => ({ ...prev, categoryId }))
+          setIsCategoryModalOpen(false)
+        }}
+        categories={categories}
+        selectedId={formData.categoryId}
+        type='EXPENSE'
+      />
     </Dialog>
   )
 }

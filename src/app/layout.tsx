@@ -27,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang='ko'>
-      <body className={`${jetbrainsMono.variable} antialiased font-sans`}>
+      <body className={`${jetbrainsMono.variable} antialiased font-sans`} suppressHydrationWarning>
         <QueryProvider>
           <AlertProvider>
             <AuthProvider>

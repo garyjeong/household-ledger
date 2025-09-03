@@ -48,6 +48,8 @@ export async function getOptimizedMonthlyStats(
 
   try {
     // 🚀 최적화 1: 모든 집계를 단일 Raw SQL로 처리
+    const groupCondition = groupFilter.groupId ? `AND groupId = ${groupFilter.groupId}` : ''
+
     const aggregateResults = await prisma.$queryRaw<
       Array<{
         metric_type: string
@@ -62,7 +64,7 @@ export async function getOptimizedMonthlyStats(
       FROM transactions 
       WHERE date >= ${startDate} 
         AND date <= ${endDate}
-        ${groupFilter.groupId ? `AND groupId = ${BigInt(groupFilter.groupId)}` : ''}
+        ${groupCondition}
         
       UNION ALL
       
@@ -73,7 +75,7 @@ export async function getOptimizedMonthlyStats(
       FROM transactions 
       WHERE date >= ${startDate} 
         AND date <= ${endDate}
-        ${groupFilter.groupId ? `AND groupId = ${BigInt(groupFilter.groupId)}` : ''}
+        ${groupCondition}
         
       UNION ALL
       
@@ -84,7 +86,7 @@ export async function getOptimizedMonthlyStats(
       FROM transactions 
       WHERE date >= ${startDate} 
         AND date <= ${endDate}
-        ${groupFilter.groupId ? `AND groupId = ${BigInt(groupFilter.groupId)}` : ''}
+        ${groupCondition}
         
       UNION ALL
       
@@ -95,7 +97,7 @@ export async function getOptimizedMonthlyStats(
       FROM transactions 
       WHERE date >= ${startDate} 
         AND date <= ${endDate}
-        ${groupFilter.groupId ? `AND groupId = ${BigInt(groupFilter.groupId)}` : ''}
+        ${groupCondition}
         
       UNION ALL
       
@@ -106,7 +108,7 @@ export async function getOptimizedMonthlyStats(
       FROM transactions 
       WHERE date >= ${startDate} 
         AND date <= ${endDate}
-        ${groupFilter.groupId ? `AND groupId = ${BigInt(groupFilter.groupId)}` : ''}
+        ${groupCondition}
         
       UNION ALL
       
@@ -117,7 +119,7 @@ export async function getOptimizedMonthlyStats(
       FROM transactions 
       WHERE date >= ${startDate} 
         AND date <= ${endDate}
-        ${groupFilter.groupId ? `AND groupId = ${BigInt(groupFilter.groupId)}` : ''}
+        ${groupCondition}
     `
 
     // 🚀 최적화 2: 카테고리별 통계와 일별 트렌드를 병렬로 조회
@@ -139,7 +141,7 @@ export async function getOptimizedMonthlyStats(
         WHERE t.date >= ${startDate}
           AND t.date <= ${endDate}
           AND t.type = 'EXPENSE'
-          ${groupFilter.groupId ? `AND t.groupId = ${BigInt(groupFilter.groupId)}` : ''}
+          ${groupCondition}
         GROUP BY t.categoryId, c.name
         ORDER BY total_amount DESC
         LIMIT 5
@@ -160,7 +162,7 @@ export async function getOptimizedMonthlyStats(
         FROM transactions
         WHERE date >= ${startDate}
           AND date <= ${endDate}
-          ${groupFilter.groupId ? `AND groupId = ${BigInt(groupFilter.groupId)}` : ''}
+          ${groupCondition}
         GROUP BY DATE(date)
         ORDER BY transaction_date ASC
       `,

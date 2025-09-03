@@ -42,8 +42,7 @@ export async function GET(request: NextRequest) {
     // 쿼리 파라미터 검증
     const { searchParams } = new URL(request.url)
     const queryResult = categoryQuerySchema.safeParse({
-      ownerType: searchParams.get('ownerType') || undefined,
-      ownerId: searchParams.get('ownerId') || undefined,
+      groupId: searchParams.get('groupId') || undefined,
       type: searchParams.get('type') || undefined,
       isDefault: searchParams.get('isDefault') || undefined,
     })
@@ -61,43 +60,26 @@ export async function GET(request: NextRequest) {
 
     const query = queryResult.data
 
-    // 기본값 설정 및 검증
-    const ownerType = query.ownerType || 'USER'
+    // 사용자 그룹 정보 가져오기
+    const userInfo = await prisma.user.findUnique({
+      where: { id: BigInt(user.userId) },
+      select: { groupId: true }
+    })
 
-    // 그룹 타입인 경우 ownerId가 반드시 필요
-    if (ownerType === 'GROUP' && !query.ownerId) {
+    if (!userInfo) {
       return NextResponse.json(
-        {
-          error: '그룹 카테고리 조회 시 groupId(ownerId)가 필요합니다',
-          code: 'MISSING_GROUP_ID',
-        },
-        { status: 400 }
+        { error: '사용자를 찾을 수 없습니다', code: 'USER_NOT_FOUND' },
+        { status: 404 }
       )
     }
 
-    const ownerId = query.ownerId || parseInt(user.userId, 10)
-
-    // 소유권 검증 (그룹인 경우)
-    if (ownerType === 'GROUP') {
-      const ownershipResult = await verifyCategoryOwnership(
-        user.userId,
-        ownerType,
-        ownerId.toString()
-      )
-
-      if (!ownershipResult.isValid) {
-        return NextResponse.json(
-          { error: ownershipResult.error || '접근 권한이 없습니다', code: 'ACCESS_DENIED' },
-          { status: 403 }
-        )
-      }
-    }
+    // 그룹 ID 결정: 쿼리에서 지정된 groupId 또는 사용자의 groupId 사용
+    const targetGroupId = query.groupId ? BigInt(query.groupId) : userInfo.groupId
 
     // 기본 카테고리가 없으면 시드 데이터 생성
     const defaultCategoryCount = await prisma.category.count({
       where: {
-        ownerType: 'USER',
-        ownerId: BigInt(0),
+        groupId: null,
         isDefault: true,
       },
     })
@@ -106,23 +88,40 @@ export async function GET(request: NextRequest) {
       await seedDefaultCategories()
     }
 
-    // 사용 가능한 카테고리 목록 조회
-    const categories = await getAvailableCategories(ownerType, ownerId.toString(), query.type)
-
-    // isDefault 필터 적용
-    let filteredCategories = categories
-    if (query.isDefault !== undefined) {
-      filteredCategories = categories.filter(
-        (category: any) => category.isDefault === query.isDefault
-      )
+    // 카테고리 조회: 기본 카테고리 + 그룹 카테고리
+    const whereConditions: any = {
+      OR: [
+        // 기본 카테고리 (모든 사용자가 볼 수 있음)
+        { groupId: null, isDefault: true },
+        // 그룹 카테고리 (해당 그룹 멤버만 볼 수 있음)
+        ...(targetGroupId ? [{ groupId: targetGroupId, isDefault: false }] : [])
+      ]
     }
 
+    // 타입 필터 추가
+    if (query.type) {
+      whereConditions.type = query.type
+    }
+
+    // isDefault 필터 추가
+    if (query.isDefault !== undefined) {
+      whereConditions.isDefault = query.isDefault
+    }
+
+    const categories = await prisma.category.findMany({
+      where: whereConditions,
+      orderBy: [
+        { isDefault: 'desc' }, // 기본 카테고리 먼저
+        { name: 'asc' }        // 이름 순
+      ]
+    })
+
     // 응답 형태로 변환
-    const categoryResponses: CategoryResponse[] = filteredCategories.map(formatCategoryForResponse)
+    const categoryResponses: CategoryResponse[] = categories.map(formatCategoryForResponse)
 
     return NextResponse.json({
       categories: categoryResponses,
-      count: filteredCategories.length,
+      count: categories.length,
     })
   } catch (error) {
     safeConsole.error('카테고리 목록 조회 중 오류', error)
@@ -174,25 +173,34 @@ export async function POST(request: NextRequest) {
 
     const categoryData = validationResult.data
 
-    // 소유권 검증
-    const ownershipResult = await verifyCategoryOwnership(
-      user.userId,
-      categoryData.ownerType,
-      categoryData.ownerId.toString()
-    )
+    // 사용자 그룹 정보 가져오기
+    const userInfo = await prisma.user.findUnique({
+      where: { id: BigInt(user.userId) },
+      select: { groupId: true }
+    })
 
-    if (!ownershipResult.isValid) {
+    if (!userInfo) {
       return NextResponse.json(
-        { error: ownershipResult.error || '접근 권한이 없습니다', code: 'ACCESS_DENIED' },
+        { error: '사용자를 찾을 수 없습니다', code: 'USER_NOT_FOUND' },
+        { status: 404 }
+      )
+    }
+
+    // 그룹 ID 결정: 요청에서 지정된 groupId 또는 사용자의 groupId 사용
+    const targetGroupId = categoryData.groupId ? BigInt(categoryData.groupId) : userInfo.groupId
+
+    // 그룹이 없는 경우 기본 카테고리만 생성 가능 (관리자 권한 필요)
+    if (!targetGroupId && !categoryData.groupId) {
+      return NextResponse.json(
+        { error: '그룹 멤버만 카테고리를 생성할 수 있습니다', code: 'GROUP_REQUIRED' },
         { status: 403 }
       )
     }
 
-    // 중복 이름 검사 (같은 소유자 내에서 같은 타입)
+    // 중복 이름 검사 (같은 그룹 내에서 같은 타입)
     const existingCategory = await prisma.category.findFirst({
       where: {
-        ownerType: categoryData.ownerType,
-        ownerId: BigInt(categoryData.ownerId),
+        groupId: targetGroupId,
         name: categoryData.name,
         type: categoryData.type,
       },
@@ -208,8 +216,8 @@ export async function POST(request: NextRequest) {
     // 커스텀 카테고리 생성
     const newCategory = await prisma.category.create({
       data: {
-        ownerType: categoryData.ownerType,
-        ownerId: BigInt(categoryData.ownerId),
+        groupId: targetGroupId,
+        createdBy: BigInt(user.userId),
         name: categoryData.name,
         type: categoryData.type,
         color: categoryData.color,

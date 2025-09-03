@@ -29,10 +29,13 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
 
   // Relations
-  ownedGroups  Group[]       @relation("GroupOwner")
-  group        Group?        @relation("GroupMembers", fields: [groupId], references: [id])
-  groupInvites GroupInvite[] @relation("GroupInviteCreator")
-  transactions Transaction[] @relation("TransactionOwner")
+  ownedGroups    Group[]         @relation("GroupOwner")
+  group          Group?          @relation("GroupMembers", fields: [groupId], references: [id])
+  groupInvites   GroupInvite[]   @relation("GroupInviteCreator")
+  transactions   Transaction[]   @relation("TransactionOwner")
+  categories     Category[]      @relation("CategoryCreator")
+  tags           Tag[]           @relation("TagCreator")
+  recurringRules RecurringRule[] @relation("RecurringRuleCreator")
 
   @@index([groupId], map: "idx_users_group")
   @@map("users")
@@ -49,10 +52,13 @@ model Group {
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
-  owner        User          @relation("GroupOwner", fields: [ownerId], references: [id])
-  members      User[]        @relation("GroupMembers")
-  invites      GroupInvite[]
-  transactions Transaction[]
+  owner          User            @relation("GroupOwner", fields: [ownerId], references: [id])
+  members        User[]          @relation("GroupMembers")
+  invites        GroupInvite[]
+  transactions   Transaction[]
+  categories     Category[]
+  tags           Tag[]
+  recurringRules RecurringRule[]
 
   @@map("groups")
 }
@@ -84,25 +90,30 @@ model GroupInvite {
 
 /// 거래 분류 카테고리 관리
 /// - 수입/지출별 거래 분류 체계
-/// - 기본 카테고리 + 사용자 정의 카테고리
+/// - 기본 카테고리 + 그룹별 사용자 정의 카테고리
 /// - 통계 분석 및 예산 관리의 기본 단위
 /// - 예산 금액 직접 저장 (budgetAmount)
 model Category {
   id           BigInt          @id @default(autoincrement())
-  ownerType    OwnerType       @map("owner_type")
-  ownerId      BigInt          @map("owner_id")
+  groupId      BigInt?         @map("group_id")    // 그룹 ID (기본 카테고리는 null)
+  createdBy    BigInt          @map("created_by")  // 생성자 ID
   name         String          @db.VarChar(120)
   type         TransactionType
   color        String?         @db.VarChar(7)
   isDefault    Boolean         @default(false) @map("is_default")
   budgetAmount BigInt?         @default(0) @map("budget_amount") // 카테고리별 예산 금액
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
 
   // Relations
+  group          Group?        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  creator        User          @relation("CategoryCreator", fields: [createdBy], references: [id])
   transactions   Transaction[]
   recurringRules RecurringRule[]
 
-  @@unique([ownerType, ownerId, name, type], map: "ux_category_name")
-  @@index([ownerType, ownerId], map: "idx_categories_owner")
+  @@unique([groupId, name, type], map: "ux_category_name")
+  @@index([groupId], map: "idx_categories_group")
+  @@index([createdBy], map: "idx_categories_creator")
   @@map("categories")
 }
 
@@ -111,21 +122,23 @@ model Category {
 /// - 자유로운 태그 방식으로 유연한 분류
 model Tag {
   id        BigInt    @id @default(autoincrement())
-  ownerType OwnerType @map("owner_type")
-  ownerId   BigInt    @map("owner_id")
+  groupId   BigInt?   @map("group_id")    // 그룹 ID (기본 태그는 null)
+  createdBy BigInt    @map("created_by")  // 생성자 ID
   name      String    @db.VarChar(60)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
   // Relations
+  group        Group?        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  creator      User          @relation("TagCreator", fields: [createdBy], references: [id])
   transactions Transaction[]
 
-  @@unique([ownerType, ownerId, name], map: "ux_tag")
+  @@unique([groupId, name], map: "ux_tag")
+  @@index([groupId], map: "idx_tags_group")
   @@map("tags")
 }
 
-enum OwnerType {
-  USER
-  GROUP
-}
+
 
 // =============================================
 // Transaction Models
@@ -225,8 +238,8 @@ enum BudgetStatus {
 /// - 예상 잔액 계산 및 자동 거래 생성 기반
 model RecurringRule {
   id         BigInt             @id @default(autoincrement())
-  ownerType  OwnerType          @map("owner_type")
-  ownerId    BigInt             @map("owner_id")
+  groupId    BigInt?            @map("group_id")    // 그룹 ID (개인 규칙은 null)
+  createdBy  BigInt             @map("created_by")  // 생성자 ID
   startDate  DateTime           @map("start_date") @db.Date
   frequency  RecurringFrequency
   dayRule    String             @map("day_rule") @db.VarChar(20) // D1-D31 or MON,TUE,etc
@@ -239,9 +252,12 @@ model RecurringRule {
   updatedAt  DateTime           @updatedAt @map("updated_at")
 
   // Relations
+  group    Group?     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  creator  User       @relation("RecurringRuleCreator", fields: [createdBy], references: [id])
   category Category? @relation(fields: [categoryId], references: [id])
 
-  @@index([ownerType, ownerId, isActive], map: "idx_recurring_rules_owner_active")
+  @@index([groupId, isActive], map: "idx_recurring_rules_group_active")
+  @@index([createdBy, isActive], map: "idx_recurring_rules_creator_active")
   @@index([frequency, isActive], map: "idx_recurring_rules_frequency_active")
   @@map("recurring_rules")
 }

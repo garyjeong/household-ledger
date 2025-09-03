@@ -434,7 +434,7 @@ export async function findGroupById(
   }
 }
 
-export async function createGroup(data: CreateGroupData): Promise<Group> {
+export async function createGroup(data: CreateGroupData): Promise<GroupWithMembers> {
   const { prisma } = await import('@/lib/prisma')
   const { safeConsole } = await import('@/lib/security-utils')
 
@@ -450,7 +450,7 @@ export async function createGroup(data: CreateGroupData): Promise<Group> {
       })
 
       // 소유자의 그룹 설정
-      await tx.user.update({
+      const updatedUser = await tx.user.update({
         where: { id: BigInt(data.ownerId) },
         data: { groupId: newGroup.id },
       })
@@ -462,15 +462,34 @@ export async function createGroup(data: CreateGroupData): Promise<Group> {
         ownerId: data.ownerId,
       })
 
-      return newGroup
+      return { newGroup, updatedUser }
     })
 
+    // GroupWithMembers 타입에 맞게 members 배열 포함해서 반환
     return {
-      id: result.id.toString(),
-      name: result.name,
-      ownerId: result.ownerId.toString(),
-      createdAt: result.createdAt,
+      id: result.newGroup.id.toString(),
+      name: result.newGroup.name,
+      ownerId: result.newGroup.ownerId.toString(),
+      createdAt: result.newGroup.createdAt,
       memberCount: 1,
+      members: [
+        {
+          userId: result.updatedUser.id.toString(),
+          groupId: result.newGroup.id.toString(),
+          role: 'OWNER' as const,
+          joinedAt: result.newGroup.createdAt,
+          user: {
+            id: result.updatedUser.id.toString(),
+            email: result.updatedUser.email,
+            name: result.updatedUser.name,
+          }
+        }
+      ],
+      owner: {
+        id: result.updatedUser.id.toString(),
+        email: result.updatedUser.email,
+        name: result.updatedUser.name,
+      }
     }
   } catch (error) {
     safeConsole.error('그룹 생성 실패 (DB)', error, {

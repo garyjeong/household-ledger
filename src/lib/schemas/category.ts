@@ -2,7 +2,6 @@ import { z } from 'zod'
 
 // Transaction 타입 정의 (Category에서 사용)
 export const transactionTypes = ['EXPENSE', 'INCOME', 'TRANSFER'] as const
-export const ownerTypes = ['USER', 'GROUP'] as const
 
 // 색상 hex 코드 검증 패턴
 const hexColorPattern = /^#[0-9A-Fa-f]{6}$/
@@ -21,10 +20,7 @@ export const createCategorySchema = z.object({
     .string()
     .regex(hexColorPattern, '올바른 색상 코드를 입력해주세요 (예: #FF5733)')
     .optional(),
-  ownerType: z.enum(['USER', 'GROUP'], {
-    message: '소유자 타입을 선택해주세요',
-  }),
-  ownerId: z.number().int().positive('소유자 ID는 양수여야 합니다'),
+  groupId: z.number().int().positive('그룹 ID는 양수여야 합니다').optional().nullable(),
 })
 
 // 카테고리 수정 스키마 (isDefault는 수정 불가)
@@ -48,8 +44,7 @@ export const updateCategorySchema = z.object({
 
 // 카테고리 조회 스키마 (쿼리 파라미터)
 export const categoryQuerySchema = z.object({
-  ownerType: z.enum(['USER', 'GROUP']).optional(),
-  ownerId: z
+  groupId: z
     .string()
     .optional()
     .transform(val => (val ? parseInt(val, 10) : undefined))
@@ -70,24 +65,28 @@ export type CategoryQuery = z.infer<typeof categoryQuerySchema>
 // 카테고리 응답 타입 (BigInt를 string으로 변환)
 export type CategoryResponse = {
   id: string
-  ownerType: 'USER' | 'GROUP'
-  ownerId: string
+  groupId: string | null
+  createdBy: string
   name: string
   type: 'EXPENSE' | 'INCOME' | 'TRANSFER'
   color: string | null
   isDefault: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 // BigInt를 string으로 변환하는 헬퍼 함수
 export function formatCategoryForResponse(category: any): CategoryResponse {
   return {
     id: category.id.toString(),
-    ownerType: category.ownerType,
-    ownerId: category.ownerId.toString(),
+    groupId: category.groupId ? category.groupId.toString() : null,
+    createdBy: category.createdBy.toString(),
     name: category.name,
     type: category.type,
     color: category.color,
     isDefault: category.isDefault,
+    createdAt: category.createdAt.toISOString(),
+    updatedAt: category.updatedAt.toISOString(),
   }
 }
 

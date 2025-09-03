@@ -13,8 +13,7 @@ export async function seedDefaultCategories() {
       // 기본 카테고리가 이미 존재하는지 확인
       const existingCategory = await prisma.category.findFirst({
         where: {
-          ownerType: 'USER',
-          ownerId: BigInt(0), // 시스템 기본 카테고리는 ownerId를 0으로 설정
+          groupId: null, // 기본 카테고리는 groupId가 null
           name: category.name,
           type: category.type,
           isDefault: true,
@@ -24,8 +23,8 @@ export async function seedDefaultCategories() {
       if (!existingCategory) {
         const newCategory = await prisma.category.create({
           data: {
-            ownerType: 'USER',
-            ownerId: BigInt(0), // 시스템 기본 카테고리
+            groupId: null, // 기본 카테고리는 그룹에 속하지 않음
+            createdBy: BigInt(0), // 시스템 생성 (기본 카테고리)
             name: category.name,
             type: category.type,
             color: category.color,
@@ -50,26 +49,23 @@ export async function seedDefaultCategories() {
  * (기본 카테고리 + 해당 소유자의 커스텀 카테고리)
  */
 export async function getAvailableCategories(
-  ownerType: 'USER' | 'GROUP',
-  ownerId: string,
+  groupId: string | null,
   transactionType?: 'EXPENSE' | 'INCOME' | 'TRANSFER'
 ) {
   try {
     const whereConditions = [
       // 기본 카테고리 (시스템)
       {
-        ownerType: 'USER' as const,
-        ownerId: BigInt(0),
+        groupId: null,
         isDefault: true,
         ...(transactionType && { type: transactionType }),
       },
-      // 사용자/그룹의 커스텀 카테고리
-      {
-        ownerType,
-        ownerId: BigInt(ownerId),
+      // 그룹의 커스텀 카테고리
+      ...(groupId ? [{
+        groupId: BigInt(groupId),
         isDefault: false,
         ...(transactionType && { type: transactionType }),
-      },
+      }] : []),
     ]
 
     const categories = await prisma.category.findMany({
@@ -94,41 +90,41 @@ export async function getAvailableCategories(
  * 기본 카테고리인지 확인
  */
 export function isDefaultCategory(category: any): boolean {
-  return category.isDefault && category.ownerType === 'USER' && category.ownerId.toString() === '0'
+  return category.isDefault && category.groupId === null
 }
 
 /**
  * 카테고리 삭제 가능 여부 확인
  */
-export function canDeleteCategory(category: any, userId: string): boolean {
+export function canDeleteCategory(category: any, userId: string, userGroupId?: string | null): boolean {
   // 기본 카테고리는 삭제 불가
   if (isDefaultCategory(category)) {
     return false
   }
 
-  // 커스텀 카테고리는 소유자만 삭제 가능
-  if (category.ownerType === 'USER') {
-    return category.ownerId.toString() === userId
+  // 그룹 카테고리는 같은 그룹 멤버만 삭제 가능
+  if (category.groupId) {
+    return userGroupId && category.groupId.toString() === userGroupId
   }
 
-  // 그룹 카테고리는 그룹 멤버만 삭제 가능 (추후 권한 확인 로직 추가)
-  return true
+  // 개인 카테고리는 생성자만 삭제 가능
+  return category.createdBy && category.createdBy.toString() === userId
 }
 
 /**
  * 카테고리 수정 가능 여부 확인
  */
-export function canEditCategory(category: any, userId: string): boolean {
+export function canEditCategory(category: any, userId: string, userGroupId?: string | null): boolean {
   // 기본 카테고리는 수정 불가
   if (isDefaultCategory(category)) {
     return false
   }
 
-  // 커스텀 카테고리는 소유자만 수정 가능
-  if (category.ownerType === 'USER') {
-    return category.ownerId.toString() === userId
+  // 그룹 카테고리는 같은 그룹 멤버만 수정 가능
+  if (category.groupId) {
+    return userGroupId && category.groupId.toString() === userGroupId
   }
 
-  // 그룹 카테고리는 그룹 멤버만 수정 가능 (추후 권한 확인 로직 추가)
-  return true
+  // 개인 카테고리는 생성자만 수정 가능
+  return category.createdBy && category.createdBy.toString() === userId
 }

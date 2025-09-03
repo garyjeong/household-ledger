@@ -13,37 +13,33 @@ import {
   Trash2,
   Filter,
   Tag,
-  TrendingUp,
-  TrendingDown,
   Loader2,
+  ArrowUpDown,
+  Settings,
+  Check,
+  MoreVertical,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+
 import { useCategories, useDeleteCategory, Category, CategoryFilters } from '@/hooks/use-categories'
 import { useToast } from '@/hooks/use-toast'
 import { useGroup } from '@/contexts/group-context'
 import { CategoryModal } from './CategoryModal'
 import { DeleteConfirmDialog } from './DeleteConfirmDialog'
+import { isDefaultCategory } from '@/lib/seed-categories'
 
 interface CategoryManagementProps {
   className?: string
-}
-
-/**
- * 카테고리 아이콘 렌더링
- */
-const getCategoryIcon = (type: string) => {
-  switch (type) {
-    case 'INCOME':
-      return <TrendingUp className='h-4 w-4 text-green-600' />
-    case 'EXPENSE':
-      return <TrendingDown className='h-4 w-4 text-red-600' />
-    default:
-      return <Tag className='h-4 w-4 text-gray-600' />
-  }
 }
 
 /**
@@ -55,6 +51,8 @@ const getTypeColor = (type: string) => {
       return 'bg-green-100 text-green-800'
     case 'EXPENSE':
       return 'bg-red-100 text-red-800'
+    case 'TRANSFER':
+      return 'bg-blue-100 text-blue-800'
     default:
       return 'bg-gray-100 text-gray-800'
   }
@@ -65,39 +63,70 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
   const { currentGroup } = useGroup()
 
   // 상태 관리
-  const [selectedTab, setSelectedTab] = useState<'all' | 'income' | 'expense'>('all')
+  const [selectedTab, setSelectedTab] = useState<'all' | 'income' | 'expense' | 'transfer'>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [sortOrder, setSortOrder] = useState<'default' | 'name-asc' | 'name-desc' | 'type'>('default')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [deleteCategory, setDeleteCategory] = useState<Category | null>(null)
+  
+  // 다중 선택 관련 상태
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set())
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+  
+
 
   // API hooks - currentGroup이 있을 때만 호출
   const filters: CategoryFilters | null = React.useMemo(() => {
     if (!currentGroup?.id) return null
     
     return {
-      ownerType: 'GROUP',
-      ownerId: currentGroup.id,
-      ...(selectedTab !== 'all' && { type: selectedTab.toUpperCase() as 'INCOME' | 'EXPENSE' }),
+      groupId: currentGroup.id,
+      ...(selectedTab !== 'all' && { type: selectedTab.toUpperCase() as 'INCOME' | 'EXPENSE' | 'TRANSFER' }),
     }
   }, [currentGroup?.id, selectedTab])
 
   // currentGroup이 로드되기 전에는 API 호출하지 않음
   const shouldFetchCategories = !!filters
-  const { data: categoriesData, isLoading, error } = useCategories(
+  const { data: categoriesData, isLoading, error, refetch } = useCategories(
     shouldFetchCategories ? filters : null
   )
   const { deleteCategory: deleteCategoryFn, loading: deleteLoading, error: deleteError } = useDeleteCategory()
 
-  // 카테고리 목록 필터링
+  // 카테고리 목록 필터링 및 정렬
   const filteredCategories = React.useMemo(() => {
     if (!shouldFetchCategories || !categoriesData?.categories) return []
 
-    return categoriesData.categories.filter((category: Category) =>
+    // 검색 필터링
+    let filtered = categoriesData.categories.filter((category: Category) =>
       category.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
-  }, [shouldFetchCategories, categoriesData?.categories, searchQuery])
+
+    // 정렬 적용
+    switch (sortOrder) {
+      case 'name-asc':
+        filtered = filtered.sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+        break
+      case 'name-desc':
+        filtered = filtered.sort((a, b) => b.name.localeCompare(a.name, 'ko'))
+        break
+      case 'type':
+        filtered = filtered.sort((a, b) => {
+          // 타입별 정렬 (수입 > 지출 > 기타)
+          const typeOrder = { INCOME: 0, EXPENSE: 1, TRANSFER: 2 }
+          const typeCompare = typeOrder[a.type as keyof typeof typeOrder] - typeOrder[b.type as keyof typeof typeOrder]
+          return typeCompare !== 0 ? typeCompare : a.name.localeCompare(b.name, 'ko')
+        })
+        break
+      case 'default':
+      default:
+        // 기본 정렬 유지 (API에서 반환되는 순서)
+        break
+    }
+
+    return filtered
+  }, [shouldFetchCategories, categoriesData?.categories, searchQuery, sortOrder])
 
   // 새 카테고리 추가
   const handleAddCategory = () => {
@@ -108,7 +137,7 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
 
   // 카테고리 편집
   const handleEditCategory = (category: Category) => {
-    if (category.isDefault) {
+    if (isDefaultCategory(category)) {
       toast({
         title: '편집 불가',
         description: '기본 카테고리는 편집할 수 없습니다.',
@@ -124,7 +153,7 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
 
   // 카테고리 삭제 확인
   const handleDeleteClick = (category: Category) => {
-    if (category.isDefault) {
+    if (isDefaultCategory(category)) {
       toast({
         title: '삭제 불가',
         description: '기본 카테고리는 삭제할 수 없습니다.',
@@ -147,6 +176,7 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
         description: `"${deleteCategory.name}" 카테고리가 삭제되었습니다.`,
       })
       setDeleteCategory(null)
+      refetch?.() // 삭제 후 리스트 새로고침
     } catch (error) {
       toast({
         title: '삭제 실패',
@@ -156,67 +186,214 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
     }
   }
 
-  // 컴팩트한 카테고리 아이템 렌더링
-  const renderCategoryItem = (category: Category) => (
-    <div
-      key={category.id}
-      className='group flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200'
-    >
-      <div className='flex items-center space-x-3 flex-1 min-w-0'>
-        {/* 카테고리 색상 원 */}
-        <div
-          className='w-4 h-4 rounded-full border border-white shadow-sm flex-shrink-0'
-          style={{ backgroundColor: category.color || '#6B7280' }}
-        />
+  // 카테고리 생성/수정 성공 후 콜백
+  const handleCategorySuccess = React.useCallback(() => {
+    refetch?.() // 리스트 새로고침
+  }, [refetch])
 
-        {/* 카테고리 정보 */}
-        <div className='flex items-center space-x-3 flex-1 min-w-0'>
-          <div className='flex items-center space-x-2 flex-1 min-w-0'>
-            <span className='font-medium text-gray-900 truncate'>{category.name}</span>
-            {category.isDefault && (
-              <Badge variant='secondary' className='text-xs py-0 px-2 h-5'>
-                기본
-              </Badge>
-            )}
+  // 정렬 토글 핸들러
+  const toggleSortOrder = () => {
+    const sortSequence: Array<typeof sortOrder> = ['default', 'name-asc', 'name-desc', 'type']
+    const currentIndex = sortSequence.indexOf(sortOrder)
+    const nextIndex = (currentIndex + 1) % sortSequence.length
+    setSortOrder(sortSequence[nextIndex])
+  }
+
+  // 정렬 순서 라벨 가져오기
+  const getSortOrderLabel = () => {
+    switch (sortOrder) {
+      case 'default':
+        return '기본'
+      case 'name-asc':
+        return '가나다'
+      case 'name-desc':
+        return '다나가'
+      case 'type':
+        return '타입별'
+      default:
+        return '기본'
+    }
+  }
+
+  // 다중 선택 관련 핸들러들
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode)
+    setSelectedCategories(new Set())
+  }
+
+  const toggleCategorySelection = (categoryId: string) => {
+    const newSelected = new Set(selectedCategories)
+    if (newSelected.has(categoryId)) {
+      newSelected.delete(categoryId)
+    } else {
+      newSelected.add(categoryId)
+    }
+    setSelectedCategories(newSelected)
+  }
+
+  const selectAllCategories = () => {
+    const selectableCategories = filteredCategories.filter(cat => !isDefaultCategory(cat))
+    setSelectedCategories(new Set(selectableCategories.map(cat => cat.id)))
+  }
+
+  const clearSelection = () => {
+    setSelectedCategories(new Set())
+  }
+
+  // 다중 삭제 핸들러
+  const handleMultipleDelete = async () => {
+    if (selectedCategories.size === 0) return
+
+    const categoriesToDelete = filteredCategories.filter(cat => 
+      selectedCategories.has(cat.id) && !cat.isDefault
+    )
+
+    if (categoriesToDelete.length === 0) {
+      toast({
+        title: '삭제 불가',
+        description: '기본 카테고리는 삭제할 수 없습니다.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      // 각 카테고리를 순차적으로 삭제
+      for (const category of categoriesToDelete) {
+        await deleteCategoryFn(category.id)
+      }
+
+      toast({
+        title: '카테고리 삭제 완료',
+        description: `${categoriesToDelete.length}개의 카테고리가 삭제되었습니다.`,
+      })
+      
+      setSelectedCategories(new Set())
+      setIsSelectionMode(false)
+      refetch?.()
+    } catch (error) {
+      toast({
+        title: '삭제 실패',
+        description: error instanceof Error ? error.message : '카테고리 삭제에 실패했습니다.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+
+
+
+
+  // 카드 형태의 카테고리 아이템 렌더링
+  const renderCategoryItem = (category: Category) => {
+    // 편집/삭제 가능 여부 확인 (기본 카테고리가 아닌 경우만)
+    const canEdit = !isDefaultCategory(category)
+
+    const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      // 선택 모드일 때만 카드 클릭으로 선택/해제
+      if (isSelectionMode && canEdit) {
+        e.preventDefault()
+        e.stopPropagation()
+        toggleCategorySelection(category.id)
+      }
+    }
+
+    const handleSettingsClick = (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      // 설정 메뉴 드롭다운을 여기서 처리 (나중에 DropdownMenu로 구현 가능)
+    }
+
+    return (
+      <Card
+        key={category.id}
+        className={`group hover:shadow-md transition-all duration-200 hover:border-blue-300 relative ${
+          selectedCategories.has(category.id) ? 'ring-2 ring-blue-500 border-blue-500' : ''
+        } ${
+          isSelectionMode && canEdit ? 'cursor-pointer' : 'cursor-default'
+        }`}
+        onClick={handleCardClick}
+      >
+        <CardContent className='p-3'>
+          <div className='flex items-center justify-between w-full'>
+            {/* 좌측: 체크박스 + 색상 + 카테고리명 */}
+            <div className='flex items-center gap-3 flex-1 min-w-0'>
+              {/* 체크박스 (선택 모드일 때만) */}
+              {isSelectionMode && canEdit && (
+                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                  selectedCategories.has(category.id)
+                    ? 'bg-blue-500 border-blue-500'
+                    : 'border-gray-300 hover:border-blue-400'
+                }`}>
+                  {selectedCategories.has(category.id) && (
+                    <Check className='h-3 w-3 text-white' />
+                  )}
+                </div>
+              )}
+              
+              {/* 색상 원 */}
+              <div
+                className='w-5 h-5 rounded-full border border-white shadow-sm flex-shrink-0'
+                style={{ backgroundColor: category.color || '#6B7280' }}
+              />
+              
+              {/* 카테고리명 */}
+              <h3 className='font-semibold text-gray-900 truncate text-sm flex-1'>
+                {category.name}
+              </h3>
+            </div>
+
+            {/* 우측: 타입 배지 + 설정 버튼 */}
+            <div className='flex items-center gap-2 flex-shrink-0'>
+              {/* 타입 배지 */}
+              <span className={`text-xs px-2 py-1 rounded-full font-medium ${getTypeColor(category.type)}`}>
+                {category.type === 'INCOME' ? '수입' : '지출'}
+              </span>
+              
+              {/* 설정 버튼 (커스텀 카테고리만, 선택 모드가 아닐 때만) */}
+              {canEdit && !isSelectionMode && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant='ghost'
+                      size='sm'
+                      className='h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity'
+                      onClick={(e) => e.stopPropagation()}
+                      title='카테고리 설정'
+                    >
+                      <Settings className='h-4 w-4 text-gray-400 hover:text-gray-600' />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align='end' className='w-32'>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleEditCategory(category)
+                      }}
+                      className='flex items-center gap-2'
+                    >
+                      <Edit2 className='h-4 w-4' />
+                      편집
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteClick(category)
+                      }}
+                      className='flex items-center gap-2 text-red-600 focus:text-red-600'
+                    >
+                      <Trash2 className='h-4 w-4' />
+                      삭제
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
-
-          {/* 타입 표시 */}
-          <div className='flex items-center space-x-1 flex-shrink-0'>
-            {getCategoryIcon(category.type)}
-            <span className={`text-xs px-2 py-1 rounded-full font-medium ${getTypeColor(category.type)}`}>
-              {category.type === 'INCOME' ? '수입' : '지출'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 액션 버튼 */}
-      <div className={`flex items-center space-x-1 transition-opacity flex-shrink-0 ml-3 ${
-        category.isDefault ? 'opacity-30' : 'opacity-0 group-hover:opacity-100'
-      }`}>
-        <Button
-          variant='ghost'
-          size='sm'
-          onClick={() => handleEditCategory(category)}
-          disabled={category.isDefault}
-          className='h-7 w-7 p-0 hover:bg-blue-100 disabled:hover:bg-transparent disabled:cursor-not-allowed'
-          title={category.isDefault ? '기본 카테고리는 편집할 수 없습니다' : '편집'}
-        >
-          <Edit2 className='h-3.5 w-3.5' />
-        </Button>
-        <Button
-          variant='ghost'
-          size='sm'
-          onClick={() => handleDeleteClick(category)}
-          disabled={category.isDefault}
-          className='h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:text-gray-400 disabled:hover:bg-transparent disabled:cursor-not-allowed'
-          title={category.isDefault ? '기본 카테고리는 삭제할 수 없습니다' : '삭제'}
-        >
-          <Trash2 className='h-3.5 w-3.5' />
-        </Button>
-      </div>
-    </div>
-  )
+        </CardContent>
+      </Card>
+    )
+  }
 
   // 그룹이 없는 상태 처리
   if (!currentGroup) {
@@ -244,45 +421,125 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
   return (
     <div className={className}>
       {/* 헤더 */}
-      <div className='sticky top-0 z-10 bg-white pb-4 mb-4 border-b border-gray-100'>
+      <div className='sticky top-0 z-20 bg-white pb-4 mb-4 border-b border-gray-100'>
         <div className='pt-4 flex items-center justify-between'>
           <div>
             <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>카테고리 관리</h1>
-            <p className='text-slate-600 mt-1'>수입과 지출 카테고리를 관리하세요</p>
+            <p className='text-slate-600 mt-1'>
+              {isSelectionMode 
+                ? `${selectedCategories.size}개 선택됨`
+                : '수입과 지출 카테고리를 관리하세요'
+              }
+            </p>
           </div>
-          <Button onClick={handleAddCategory} className='gap-2 h-9'>
-            <Plus className='h-4 w-4' />새 카테고리
-          </Button>
+          <div className='flex items-center gap-2'>
+            {isSelectionMode ? (
+              <>
+                {selectedCategories.size > 0 && (
+                  <>
+                    <Button 
+                      variant='outline' 
+                      size='sm' 
+                      onClick={selectAllCategories}
+                      className='gap-2 h-9'
+                    >
+                      전체 선택
+                    </Button>
+                    <Button 
+                      variant='outline' 
+                      size='sm' 
+                      onClick={clearSelection}
+                      className='gap-2 h-9'
+                    >
+                      선택 해제
+                    </Button>
+                    <Button 
+                      variant='destructive' 
+                      size='sm' 
+                      onClick={handleMultipleDelete}
+                      className='gap-2 h-9'
+                      disabled={deleteLoading}
+                    >
+                      <Trash2 className='h-4 w-4' />
+                      {selectedCategories.size}개 삭제
+                    </Button>
+                  </>
+                )}
+                <Button 
+                  variant='outline' 
+                  onClick={toggleSelectionMode}
+                  className='gap-2 h-9'
+                >
+                  완료
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant='outline' 
+                  onClick={toggleSelectionMode}
+                  className='gap-2 h-9'
+                >
+                  선택
+                </Button>
+                <Button onClick={handleAddCategory} className='gap-2 h-9'>
+                  <Plus className='h-4 w-4' />새 카테고리
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
       {/* 검색 및 필터 */}
-      <div className='flex items-center justify-between mb-4'>
-        <div className='relative flex-1 max-w-sm'>
-          <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4' />
-          <Input
-            placeholder='카테고리 검색...'
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className='pl-10 h-9'
-          />
-        </div>
-        
-        {/* 카테고리 수 표시 */}
-        {!isLoading && filteredCategories.length > 0 && (
-          <div className='text-sm text-gray-500 ml-4'>
-            총 {filteredCategories.length}개
+      <div className='mb-4 space-y-3'>
+        {/* 상단: 검색과 정렬 */}
+        <div className='flex items-center justify-between'>
+          {/* 좌측: 검색 */}
+          <div className='relative flex-1 max-w-sm'>
+            <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4' />
+            <Input
+              placeholder='카테고리 검색...'
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className='pl-10 h-9'
+            />
           </div>
-        )}
+          
+          {/* 우측: 정렬 토글 버튼 */}
+          <div className='flex items-center'>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={toggleSortOrder}
+              className='flex items-center gap-2 h-9'
+              title={`현재: ${getSortOrderLabel()} 순서`}
+            >
+              <ArrowUpDown className='h-4 w-4' />
+              {getSortOrderLabel()}
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* 탭 */}
+      {/* 탭과 카운트 */}
       <Tabs value={selectedTab} onValueChange={value => setSelectedTab(value as any)}>
-        <TabsList className='mb-4'>
-          <TabsTrigger value='all'>전체</TabsTrigger>
-          <TabsTrigger value='expense'>지출</TabsTrigger>
-          <TabsTrigger value='income'>수입</TabsTrigger>
-        </TabsList>
+        <div className='flex items-center justify-between mb-4'>
+          {/* 좌측: 카테고리 수 표시 */}
+          {!isLoading && filteredCategories.length > 0 && (
+            <div className='text-sm text-gray-600 font-medium'>
+              총 {filteredCategories.length}개
+            </div>
+          )}
+          
+          {/* 우측: 탭 */}
+          <TabsList>
+            <TabsTrigger value='all'>전체</TabsTrigger>
+            <TabsTrigger value='expense'>지출</TabsTrigger>
+            <TabsTrigger value='income'>수입</TabsTrigger>
+            <TabsTrigger value='transfer'>이체</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value={selectedTab}>
           {isLoading ? (
@@ -306,7 +563,7 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
               )}
             </div>
           ) : (
-            <div className='space-y-2'>
+            <div className='grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3'>
               {filteredCategories.map(renderCategoryItem)}
             </div>
           )}
@@ -317,6 +574,7 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
       <CategoryModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onSuccess={handleCategorySuccess}
         mode={modalMode}
         category={editingCategory}
       />
@@ -329,6 +587,8 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
         categoryName={deleteCategory?.name || ''}
         isLoading={deleteLoading}
       />
+
+
     </div>
   )
 }

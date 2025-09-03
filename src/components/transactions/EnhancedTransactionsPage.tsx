@@ -146,7 +146,7 @@ export function EnhancedTransactionsPage() {
       <ResponsiveLayout>
         <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
           {/* 헤더 */}
-          <div className='sticky top-0 z-10 bg-white pb-6 mb-6 border-b border-gray-100'>
+          <div className='sticky top-0 z-20 bg-white pb-6 mb-6 border-b border-gray-100'>
             <div className='pt-6 flex flex-col md:flex-row md:items-center justify-between gap-4'>
               <div>
                 <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>거래내역</h1>

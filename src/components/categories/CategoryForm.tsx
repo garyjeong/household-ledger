@@ -70,12 +70,11 @@ export function CategoryForm({
       name: initialData?.name || '',
       type: initialData?.type || 'EXPENSE',
       color: initialData?.color || '#6B7280',
-      ownerType: initialData?.ownerType || 'GROUP',
-      ownerId: initialData?.ownerId
-        ? parseInt(initialData.ownerId)
+      groupId: initialData?.groupId
+        ? parseInt(initialData.groupId)
         : currentGroup
           ? parseInt(currentGroup.id)
-          : 1,
+          : undefined,
     },
   })
 
