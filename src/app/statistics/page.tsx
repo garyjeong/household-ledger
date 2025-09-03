@@ -24,9 +24,7 @@ import {
   DollarSign,
   Wallet,
   Calculator,
-  ArrowLeft,
 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import { ResponsiveLayout } from '@/components/couple-ledger/DesktopSidebar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -53,7 +51,6 @@ const formatKRW = (amount: number): string => {
 }
 
 export default function StatisticsPage() {
-  const router = useRouter()
   const [filters, setFilters] = useState<StatisticsFilters>({
     period: 'current-month',
   })
@@ -90,7 +87,7 @@ export default function StatisticsPage() {
   // 로딩 상태
   if (isLoading) {
     return (
-      <ResponsiveLayout onQuickAddClick={() => {}}>
+      <ResponsiveLayout>
         <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
           <div className='flex items-center justify-center min-h-[400px]'>
             <div className='text-center'>
@@ -106,7 +103,7 @@ export default function StatisticsPage() {
   // 에러 상태
   if (isError || !statistics) {
     return (
-      <ResponsiveLayout onQuickAddClick={() => {}}>
+      <ResponsiveLayout>
         <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
           <div className='flex items-center justify-center min-h-[400px]'>
             <div className='text-center'>
@@ -127,35 +124,31 @@ export default function StatisticsPage() {
   }
 
   return (
-    <ResponsiveLayout onQuickAddClick={() => {}}>
+    <ResponsiveLayout>
       <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
         {/* 헤더 */}
-        <div className='flex items-center justify-between mb-6'>
-          <div className='flex items-center gap-4'>
-            <Button variant='ghost' size='sm' onClick={() => router.back()} className='gap-2'>
-              <ArrowLeft className='h-4 w-4' />
-              뒤로가기
-            </Button>
+        <div className='sticky top-0 z-10 bg-white pb-6 mb-6 border-b border-gray-100'>
+          <div className='pt-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4'>
             <div>
-              <h1 className='text-2xl font-bold text-gray-900'>통계 분석</h1>
-              <p className='text-gray-500'>카테고리별 수입·지출 통계 및 트렌드 분석</p>
+              <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>통계 분석</h1>
+              <p className='text-slate-600 mt-1'>카테고리별 수입·지출 통계 및 트렌드 분석</p>
             </div>
-          </div>
 
-          <div className='flex items-center gap-2'>
-            <Button
-              variant='outline'
-              onClick={() => refetch()}
-              className='gap-2'
-              disabled={isLoading}
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              새로고침
-            </Button>
-            <Button onClick={handleExportData} className='gap-2'>
-              <Download className='h-4 w-4' />
-              내보내기
-            </Button>
+            <div className='flex items-center gap-2'>
+              <Button
+                variant='outline'
+                onClick={() => refetch()}
+                className='gap-2 border-slate-300 text-slate-700 hover:bg-slate-50'
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                새로고침
+              </Button>
+              <Button onClick={handleExportData} className='gap-2 bg-blue-600 hover:bg-blue-700'>
+                <Download className='h-4 w-4' />
+                내보내기
+              </Button>
+            </div>
           </div>
         </div>
 

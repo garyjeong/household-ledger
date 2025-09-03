@@ -11,18 +11,16 @@
 'use client'
 
 import React, { useState } from 'react'
+import Link from 'next/link'
 import {
   User,
   Users,
   Settings,
   Shield,
-  LogOut,
   Heart,
   Calendar,
   Smartphone,
-  ArrowLeft,
 } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 import { ResponsiveLayout } from '@/components/couple-ledger/DesktopSidebar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -31,27 +29,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ProfileForm } from '@/components/profile/ProfileForm'
 import { PasswordChangeForm } from '@/components/profile/PasswordChangeForm'
 import { useProfile } from '@/hooks/use-profile'
-import { useAuth } from '@/contexts/auth-context'
 import { useGroup } from '@/contexts/group-context'
 
 type TabType = 'profile' | 'security' | 'account'
 
 export default function ProfilePage() {
-  const router = useRouter()
-  const { logout } = useAuth()
   const { currentGroup } = useGroup()
   const { data: profile, isLoading: profileLoading } = useProfile()
 
   const [activeTab, setActiveTab] = useState<TabType>('profile')
-
-  // 로그아웃 처리
-  const handleLogout = () => {
-    const confirmed = window.confirm('정말 로그아웃하시겠습니까?')
-    if (confirmed) {
-      logout()
-      router.push('/login')
-    }
-  }
 
   // 계정 삭제 (추후 구현)
   const handleDeleteAccount = () => {
@@ -138,6 +124,9 @@ export default function ProfilePage() {
                       <p className='text-sm text-gray-600'>
                         • 모든 거래 내역이 실시간으로 동기화됩니다
                       </p>
+                      <p className='text-sm text-gray-600 mt-2'>
+                        • 그룹 관리는 좌측 메뉴의 <strong>"그룹 관리"</strong>에서 가능합니다
+                      </p>
                     </div>
                   </div>
                 ) : (
@@ -147,10 +136,12 @@ export default function ProfilePage() {
                       아직 그룹에 연결되지 않았습니다
                     </h3>
                     <p className='text-gray-600 mb-4'>가족과 함께 가계부를 관리해보세요</p>
-                    <Button onClick={() => router.push('/group/join')} className='gap-2'>
-                      <Users className='h-4 w-4' />
-                      그룹 참여하기
-                    </Button>
+                    <Link href='/groups'>
+                      <Button className='gap-2'>
+                        <Users className='h-4 w-4' />
+                        그룹 관리 페이지로 이동
+                      </Button>
+                    </Link>
                   </div>
                 )}
               </CardContent>
@@ -260,7 +251,7 @@ export default function ProfilePage() {
 
   if (profileLoading) {
     return (
-      <ResponsiveLayout onQuickAddClick={() => {}}>
+      <ResponsiveLayout>
         <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
           <div className='flex items-center justify-center min-h-[400px]'>
             <div className='text-center'>
@@ -274,29 +265,14 @@ export default function ProfilePage() {
   }
 
   return (
-    <ResponsiveLayout onQuickAddClick={() => {}}>
+    <ResponsiveLayout>
       <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
         {/* 헤더 */}
-        <div className='flex items-center justify-between mb-6'>
-          <div className='flex items-center gap-4'>
-            <Button variant='ghost' size='sm' onClick={() => router.back()} className='gap-2'>
-              <ArrowLeft className='h-4 w-4' />
-              뒤로가기
-            </Button>
-            <div>
-              <h1 className='text-2xl font-bold text-gray-900'>내 정보</h1>
-              <p className='text-gray-500'>프로필 및 설정 관리</p>
-            </div>
+        <div className='sticky top-0 z-10 bg-white pb-6 mb-6 border-b border-gray-100'>
+          <div className='pt-6'>
+            <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>내 정보</h1>
+            <p className='text-slate-600 mt-1'>프로필 및 설정 관리</p>
           </div>
-
-          <Button
-            variant='outline'
-            onClick={handleLogout}
-            className='gap-2 text-red-600 hover:text-red-700 hover:border-red-300'
-          >
-            <LogOut className='h-4 w-4' />
-            로그아웃
-          </Button>
         </div>
 
         {/* 탭 네비게이션 */}

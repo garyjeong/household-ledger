@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { ResponsiveLayout } from '@/components/couple-ledger/DesktopSidebar'
 import { MonthlyDashboard } from '@/components/couple-ledger/MonthlyDashboard'
-import { QuickAddModal } from '@/components/couple-ledger/QuickAddModal'
-import { Transaction, MonthlyStats } from '@/types/couple-ledger'
+import { MonthlyStats } from '@/types/couple-ledger'
 import { fetchMonthlyStats } from '@/lib/api/dashboard'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/auth-context'
@@ -30,7 +29,6 @@ export default function HomePage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
 
-  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -76,43 +74,7 @@ export default function HomePage() {
     }
   }, [authLoading, isAuthenticated, selectedMonth, router])
 
-  // 빠른입력 모달 열기
-  const handleQuickAddClick = () => {
-    setIsQuickAddOpen(true)
-  }
 
-  // 빠른입력 모달 닫기
-  const handleQuickAddClose = () => {
-    setIsQuickAddOpen(false)
-  }
-
-  // 거래 저장 핸들러
-  const handleSaveTransaction = async (
-    transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>
-  ) => {
-    try {
-      // 실제 거래 저장 API 호출 구현 필요
-      console.log('거래 저장 API 구현 필요:', transaction)
-
-      // 거래 저장 후 월별 통계 다시 로드 (실시간 업데이트)
-      await loadMonthlyStats(selectedMonth)
-
-      toast({
-        title: '성공',
-        description: '거래가 성공적으로 저장되었습니다.',
-      })
-
-      return Promise.resolve()
-    } catch (error) {
-      console.error('거래 저장 실패:', error)
-      toast({
-        title: '오류',
-        description: '거래 저장에 실패했습니다.',
-        variant: 'destructive',
-      })
-      throw error
-    }
-  }
 
   // 인증 로딩 중일 때 렌더링
   if (authLoading) {
@@ -141,7 +103,7 @@ export default function HomePage() {
   // 월별 통계 로딩 중일 때의 렌더링
   if (isLoading) {
     return (
-      <ResponsiveLayout onQuickAddClick={handleQuickAddClick}>
+      <ResponsiveLayout>
         <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
           <div className='flex items-center justify-center min-h-[400px]'>
             <div className='text-center'>
@@ -156,7 +118,7 @@ export default function HomePage() {
 
   if (error || !monthlyStats) {
     return (
-      <ResponsiveLayout onQuickAddClick={handleQuickAddClick}>
+      <ResponsiveLayout>
         <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
           <div className='flex items-center justify-center min-h-[400px]'>
             <div className='text-center'>
@@ -175,26 +137,15 @@ export default function HomePage() {
   }
 
   return (
-    <>
-      {/* 반응형 레이아웃 */}
-      <ResponsiveLayout onQuickAddClick={handleQuickAddClick}>
-        {/* 메인 컨텐츠 */}
-        <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
-          <MonthlyDashboard
-            stats={monthlyStats}
-            selectedMonth={selectedMonth}
-            onMonthChange={handleMonthChange}
-          />
-        </div>
-      </ResponsiveLayout>
-
-      {/* 빠른입력 모달 */}
-      <QuickAddModal
-        isOpen={isQuickAddOpen}
-        onClose={handleQuickAddClose}
-        onSave={handleSaveTransaction}
-        templates={[]} // 템플릿 기능 향후 구현 예정
-      />
-    </>
+    <ResponsiveLayout>
+      {/* 메인 컨텐츠 */}
+      <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
+        <MonthlyDashboard
+          stats={monthlyStats}
+          selectedMonth={selectedMonth}
+          onMonthChange={handleMonthChange}
+        />
+      </div>
+    </ResponsiveLayout>
   )
 }

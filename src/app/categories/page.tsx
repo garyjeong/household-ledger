@@ -16,8 +16,8 @@ import { CategoryManagement } from '@/components/categories/CategoryManagement'
 
 export default function CategoriesPage() {
   return (
-    <ResponsiveLayout onQuickAddClick={() => {}}>
-      <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
+    <ResponsiveLayout>
+      <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-3 md:py-4 lg:py-6'>
         <CategoryManagement />
       </div>
     </ResponsiveLayout>

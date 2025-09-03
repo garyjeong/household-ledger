@@ -13,6 +13,7 @@ import {
   type CategoryResponse,
 } from '@/lib/schemas/category'
 import { getAvailableCategories, seedDefaultCategories } from '@/lib/seed-categories'
+import { safeConsole } from '@/lib/security-utils'
 
 /**
  * GET /api/categories
@@ -124,7 +125,7 @@ export async function GET(request: NextRequest) {
       count: filteredCategories.length,
     })
   } catch (error) {
-    console.error('카테고리 목록 조회 중 오류:', error)
+    safeConsole.error('카테고리 목록 조회 중 오류', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다', code: 'INTERNAL_ERROR' },
       { status: 500 }
@@ -224,7 +225,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('카테고리 생성 중 오류:', error)
+    safeConsole.error('카테고리 생성 중 오류', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다', code: 'INTERNAL_ERROR' },
       { status: 500 }

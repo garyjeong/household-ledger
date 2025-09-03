@@ -156,69 +156,74 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
     }
   }
 
-  // 카테고리 카드 렌더링
-  const renderCategoryCard = (category: Category) => (
-    <Card key={category.id} className='transition-all hover:shadow-md'>
-      <CardContent className='p-4'>
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center space-x-3'>
-            {/* 카테고리 색상 원 */}
-            <div
-              className='w-6 h-6 rounded-full border-2 border-gray-200'
-              style={{ backgroundColor: category.color || '#6B7280' }}
-            />
+  // 컴팩트한 카테고리 아이템 렌더링
+  const renderCategoryItem = (category: Category) => (
+    <div
+      key={category.id}
+      className='group flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200'
+    >
+      <div className='flex items-center space-x-3 flex-1 min-w-0'>
+        {/* 카테고리 색상 원 */}
+        <div
+          className='w-4 h-4 rounded-full border border-white shadow-sm flex-shrink-0'
+          style={{ backgroundColor: category.color || '#6B7280' }}
+        />
 
-            <div className='flex flex-col'>
-              <div className='flex items-center space-x-2'>
-                <h3 className='font-medium text-gray-900'>{category.name}</h3>
-                {category.isDefault && (
-                  <Badge variant='secondary' className='text-xs'>
-                    기본
-                  </Badge>
-                )}
-              </div>
-
-              <div className='flex items-center space-x-2 mt-1'>
-                {getCategoryIcon(category.type)}
-                <Badge className={`text-xs ${getTypeColor(category.type)}`}>
-                  {category.type === 'INCOME' ? '수입' : '지출'}
-                </Badge>
-              </div>
-            </div>
+        {/* 카테고리 정보 */}
+        <div className='flex items-center space-x-3 flex-1 min-w-0'>
+          <div className='flex items-center space-x-2 flex-1 min-w-0'>
+            <span className='font-medium text-gray-900 truncate'>{category.name}</span>
+            {category.isDefault && (
+              <Badge variant='secondary' className='text-xs py-0 px-2 h-5'>
+                기본
+              </Badge>
+            )}
           </div>
 
-          {/* 액션 버튼 */}
-          <div className='flex items-center space-x-1'>
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={() => handleEditCategory(category)}
-              disabled={category.isDefault}
-              className='h-8 w-8 p-0'
-            >
-              <Edit2 className='h-4 w-4' />
-            </Button>
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={() => handleDeleteClick(category)}
-              disabled={category.isDefault}
-              className='h-8 w-8 p-0 text-red-600 hover:text-red-700'
-            >
-              <Trash2 className='h-4 w-4' />
-            </Button>
+          {/* 타입 표시 */}
+          <div className='flex items-center space-x-1 flex-shrink-0'>
+            {getCategoryIcon(category.type)}
+            <span className={`text-xs px-2 py-1 rounded-full font-medium ${getTypeColor(category.type)}`}>
+              {category.type === 'INCOME' ? '수입' : '지출'}
+            </span>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* 액션 버튼 */}
+      <div className={`flex items-center space-x-1 transition-opacity flex-shrink-0 ml-3 ${
+        category.isDefault ? 'opacity-30' : 'opacity-0 group-hover:opacity-100'
+      }`}>
+        <Button
+          variant='ghost'
+          size='sm'
+          onClick={() => handleEditCategory(category)}
+          disabled={category.isDefault}
+          className='h-7 w-7 p-0 hover:bg-blue-100 disabled:hover:bg-transparent disabled:cursor-not-allowed'
+          title={category.isDefault ? '기본 카테고리는 편집할 수 없습니다' : '편집'}
+        >
+          <Edit2 className='h-3.5 w-3.5' />
+        </Button>
+        <Button
+          variant='ghost'
+          size='sm'
+          onClick={() => handleDeleteClick(category)}
+          disabled={category.isDefault}
+          className='h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:text-gray-400 disabled:hover:bg-transparent disabled:cursor-not-allowed'
+          title={category.isDefault ? '기본 카테고리는 삭제할 수 없습니다' : '삭제'}
+        >
+          <Trash2 className='h-3.5 w-3.5' />
+        </Button>
+      </div>
+    </div>
   )
 
   // 그룹이 없는 상태 처리
   if (!currentGroup) {
     return (
-      <div className='text-center py-8'>
-        <p className='text-gray-600'>그룹에 가입하거나 생성한 후 카테고리를 관리할 수 있습니다.</p>
-        <p className='text-sm text-gray-500 mt-1'>
+      <div className='text-center py-6'>
+        <p className='text-gray-600 text-sm'>그룹에 가입하거나 생성한 후 카테고리를 관리할 수 있습니다.</p>
+        <p className='text-xs text-gray-500 mt-1'>
           먼저 그룹 페이지에서 그룹을 생성하거나 초대 코드로 가입해주세요.
         </p>
       </div>
@@ -227,9 +232,9 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
 
   if (error) {
     return (
-      <div className='text-center py-8'>
-        <p className='text-red-600'>카테고리를 불러오는 중 오류가 발생했습니다.</p>
-        <p className='text-sm text-gray-500 mt-1'>
+      <div className='text-center py-6'>
+        <p className='text-red-600 text-sm'>카테고리를 불러오는 중 오류가 발생했습니다.</p>
+        <p className='text-xs text-gray-500 mt-1'>
           {error || '알 수 없는 오류'}
         </p>
       </div>
@@ -239,32 +244,41 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
   return (
     <div className={className}>
       {/* 헤더 */}
-      <div className='flex items-center justify-between mb-6'>
-        <div>
-          <h1 className='text-2xl font-bold text-gray-900'>카테고리 관리</h1>
-          <p className='text-gray-600 mt-1'>수입과 지출 카테고리를 관리하세요</p>
+      <div className='sticky top-0 z-10 bg-white pb-4 mb-4 border-b border-gray-100'>
+        <div className='pt-4 flex items-center justify-between'>
+          <div>
+            <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>카테고리 관리</h1>
+            <p className='text-slate-600 mt-1'>수입과 지출 카테고리를 관리하세요</p>
+          </div>
+          <Button onClick={handleAddCategory} className='gap-2 h-9'>
+            <Plus className='h-4 w-4' />새 카테고리
+          </Button>
         </div>
-        <Button onClick={handleAddCategory} className='gap-2'>
-          <Plus className='h-4 w-4' />새 카테고리
-        </Button>
       </div>
 
       {/* 검색 및 필터 */}
-      <div className='flex items-center space-x-4 mb-6'>
-        <div className='relative flex-1 max-w-md'>
+      <div className='flex items-center justify-between mb-4'>
+        <div className='relative flex-1 max-w-sm'>
           <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4' />
           <Input
             placeholder='카테고리 검색...'
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className='pl-10'
+            className='pl-10 h-9'
           />
         </div>
+        
+        {/* 카테고리 수 표시 */}
+        {!isLoading && filteredCategories.length > 0 && (
+          <div className='text-sm text-gray-500 ml-4'>
+            총 {filteredCategories.length}개
+          </div>
+        )}
       </div>
 
       {/* 탭 */}
       <Tabs value={selectedTab} onValueChange={value => setSelectedTab(value as any)}>
-        <TabsList className='mb-6'>
+        <TabsList className='mb-4'>
           <TabsTrigger value='all'>전체</TabsTrigger>
           <TabsTrigger value='expense'>지출</TabsTrigger>
           <TabsTrigger value='income'>수입</TabsTrigger>
@@ -272,28 +286,28 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
 
         <TabsContent value={selectedTab}>
           {isLoading ? (
-            <div className='flex items-center justify-center py-12'>
-              <Loader2 className='h-6 w-6 animate-spin' />
-              <span className='ml-2'>카테고리 목록을 불러오는 중...</span>
+            <div className='flex items-center justify-center py-8'>
+              <Loader2 className='h-5 w-5 animate-spin' />
+              <span className='ml-2 text-sm'>카테고리 목록을 불러오는 중...</span>
             </div>
           ) : filteredCategories.length === 0 ? (
-            <div className='text-center py-12'>
-              <Tag className='h-12 w-12 text-gray-400 mx-auto mb-4' />
-              <h3 className='text-lg font-medium text-gray-900 mb-2'>
+            <div className='text-center py-8'>
+              <Tag className='h-10 w-10 text-gray-400 mx-auto mb-3' />
+              <h3 className='text-base font-medium text-gray-900 mb-2'>
                 {searchQuery ? '검색 결과가 없습니다' : '카테고리가 없습니다'}
               </h3>
-              <p className='text-gray-600 mb-4'>
+              <p className='text-sm text-gray-600 mb-4'>
                 {searchQuery ? '다른 검색어로 시도해보세요' : '새로운 카테고리를 추가해보세요'}
               </p>
               {!searchQuery && (
-                <Button onClick={handleAddCategory} className='gap-2'>
+                <Button onClick={handleAddCategory} className='gap-2 h-9'>
                   <Plus className='h-4 w-4' />첫 번째 카테고리 추가
                 </Button>
               )}
             </div>
           ) : (
-            <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-              {filteredCategories.map(renderCategoryCard)}
+            <div className='space-y-2'>
+              {filteredCategories.map(renderCategoryItem)}
             </div>
           )}
         </TabsContent>

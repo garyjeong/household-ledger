@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
+import { safeConsole } from './security-utils'
 
 // JWT 관련 타입 정의
 export interface JWTPayload {
@@ -99,11 +100,11 @@ export function verifyAccessToken(token: string): JWTPayload | null {
     return decoded
   } catch (error: any) {
     if (error.name === 'TokenExpiredError') {
-      console.warn('Access token expired:', error.expiredAt)
+      safeConsole.warn('Access token expired', { expiredAt: error.expiredAt })
     } else if (error.name === 'JsonWebTokenError') {
-      console.error('Access token malformed:', error.message)
+      safeConsole.error('Access token malformed', error)
     } else {
-      console.error('Access token verification failed:', error)
+      safeConsole.error('Access token verification failed', error)
     }
     return null
   }
@@ -115,11 +116,11 @@ export function verifyRefreshToken(token: string): JWTPayload | null {
     return decoded
   } catch (error: any) {
     if (error.name === 'TokenExpiredError') {
-      console.warn('Refresh token expired:', error.expiredAt)
+      safeConsole.warn('Refresh token expired', { expiredAt: error.expiredAt })
     } else if (error.name === 'JsonWebTokenError') {
-      console.error('Refresh token malformed:', error.message)
+      safeConsole.error('Refresh token malformed', error)
     } else {
-      console.error('Refresh token verification failed:', error)
+      safeConsole.error('Refresh token verification failed', error)
     }
     return null
   }
@@ -366,7 +367,7 @@ export async function findGroupsByUserId(userId: string): Promise<GroupWithMembe
 
     return groups
   } catch (error) {
-    console.error('findGroupsByUserId error:', error)
+    safeConsole.error('findGroupsByUserId error', error)
     return []
   }
 }
@@ -428,13 +429,14 @@ export async function findGroupById(
       },
     }
   } catch (error) {
-    console.error('Error finding group by ID:', error)
+    safeConsole.error('Error finding group by ID', error)
     return null
   }
 }
 
 export async function createGroup(data: CreateGroupData): Promise<Group> {
   const { prisma } = await import('@/lib/prisma')
+  const { safeConsole } = await import('@/lib/security-utils')
 
   try {
     // 트랜잭션을 사용하여 그룹과 소유자 멤버십을 동시에 생성
@@ -453,6 +455,13 @@ export async function createGroup(data: CreateGroupData): Promise<Group> {
         data: { groupId: newGroup.id },
       })
 
+      // 성공 로깅
+      safeConsole.log('그룹 생성 성공 (DB)', {
+        groupId: newGroup.id.toString(),
+        groupName: newGroup.name,
+        ownerId: data.ownerId,
+      })
+
       return newGroup
     })
 
@@ -464,7 +473,11 @@ export async function createGroup(data: CreateGroupData): Promise<Group> {
       memberCount: 1,
     }
   } catch (error) {
-    console.error('Error creating group:', error)
+    safeConsole.error('그룹 생성 실패 (DB)', error, {
+      operation: 'createGroup',
+      groupName: data.name,
+      ownerId: data.ownerId,
+    })
     throw new Error('그룹 생성에 실패했습니다.')
   }
 }
@@ -509,7 +522,7 @@ export async function generateInviteCode(
       expiresAt,
     }
   } catch (error) {
-    console.error('Error generating invite code:', error)
+    safeConsole.error('Error generating invite code', error)
     throw new Error('초대 코드 생성에 실패했습니다.')
   }
 }
@@ -540,42 +553,63 @@ export async function validateInviteCode(
 
     return { groupId: invite.groupId.toString(), isValid: true }
   } catch (error) {
-    console.error('Error validating invite code:', error)
+    safeConsole.error('Error validating invite code', error)
     return { groupId: '', isValid: false }
   }
 }
 
 export async function joinGroup(groupId: string, userId: string): Promise<boolean> {
   const { prisma } = await import('@/lib/prisma')
+  const { safeConsole } = await import('@/lib/security-utils')
 
   try {
-    // 이미 그룹에 속해있는지 확인
-    const user = await prisma.user.findUnique({
-      where: { id: BigInt(userId) },
+    // 트랜잭션으로 데이터 무결성 보장
+    const result = await prisma.$transaction(async tx => {
+      // 1. 사용자 존재 및 그룹 상태 확인
+      const user = await tx.user.findUnique({
+        where: { id: BigInt(userId) },
+      })
+
+      if (!user) {
+        throw new Error('사용자를 찾을 수 없습니다')
+      }
+
+      if (user.groupId) {
+        throw new Error('이미 다른 그룹에 속해있습니다')
+      }
+
+      // 2. 그룹 존재 확인
+      const group = await tx.group.findUnique({
+        where: { id: BigInt(groupId) },
+      })
+
+      if (!group) {
+        throw new Error('그룹을 찾을 수 없습니다')
+      }
+
+      // 3. 그룹 참여 (User.groupId 업데이트)
+      await tx.user.update({
+        where: { id: BigInt(userId) },
+        data: { groupId: BigInt(groupId) },
+      })
+
+      // 4. 성공 로깅
+      safeConsole.log('그룹 참여 성공', {
+        groupId,
+        userId,
+        groupName: group.name,
+      })
+
+      return true
     })
 
-    if (user?.groupId) {
-      return false // 이미 다른 그룹에 속해있음
-    }
-
-    // 그룹이 존재하는지 확인
-    const group = await prisma.group.findUnique({
-      where: { id: BigInt(groupId) },
-    })
-
-    if (!group) {
-      return false
-    }
-
-    // 그룹 참여 (단순히 User.groupId 업데이트)
-    await prisma.user.update({
-      where: { id: BigInt(userId) },
-      data: { groupId: BigInt(groupId) },
-    })
-
-    return true
+    return result
   } catch (error) {
-    console.error('Error joining group:', error)
+    safeConsole.error('그룹 참여 실패', error, {
+      groupId,
+      userId,
+      operation: 'joinGroup',
+    })
     return false
   }
 }
@@ -608,7 +642,7 @@ export async function leaveGroup(groupId: string, userId: string): Promise<boole
 
     return true
   } catch (error) {
-    console.error('Error leaving group:', error)
+    safeConsole.error('Error leaving group', error)
     return false
   }
 }
@@ -635,7 +669,7 @@ export async function updateGroupMemberRole(
     // 단순화된 스키마에서는 별도의 역할 업데이트 없음
     return true
   } catch (error) {
-    console.error('Error updating group member role:', error)
+    safeConsole.error('Error updating group member role', error)
     return false
   }
 }
@@ -733,7 +767,7 @@ export async function verifyResourceOwnership(
 
     return { isValid: false, error: '올바르지 않은 소유자 타입입니다' }
   } catch (error) {
-    console.error('소유권 검증 중 오류:', error)
+    safeConsole.error('소유권 검증 중 오류', error)
     return { isValid: false, error: '소유권 검증에 실패했습니다' }
   }
 }
@@ -792,7 +826,7 @@ export async function getGroupMemberRole(
 
     return 'MEMBER'
   } catch (error) {
-    console.error('Error getting group member role:', error)
+    safeConsole.error('Error getting group member role', error)
     return null
   }
 }
@@ -823,10 +857,10 @@ export async function cleanupExpiredInviteCodes(): Promise<number> {
       },
     })
 
-    console.log(`Cleaned up ${result.count} expired invite codes`)
+    safeConsole.log(`Cleaned up ${result.count} expired invite codes`)
     return result.count
   } catch (error) {
-    console.error('Error cleaning up expired invite codes:', error)
+    safeConsole.error('Error cleaning up expired invite codes', error)
     return 0
   }
 }

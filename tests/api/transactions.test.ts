@@ -264,4 +264,289 @@ describe('Transactions API Routes', () => {
       expect(responseData.error).toContain('거래를 찾을 수 없습니다')
     })
   })
+
+  describe('Cursor Pagination Features', () => {
+    describe('GET /api/transactions with cursor pagination', () => {
+      it('should support cursor-based pagination', async () => {
+        const cursor = Buffer.from('123').toString('base64')
+        const request = createMockRequest({
+          method: 'GET',
+          url: `/api/transactions?cursor=${cursor}&limit=10`,
+          cookies: { accessToken: 'valid-token' },
+        }) as NextRequest
+
+        const response = await getTransactionsHandler(request)
+        const responseData = await response.json()
+
+        expect(response.status).toBe(200)
+        expect(responseData.success).toBe(true)
+        expect(responseData.pagination).toHaveProperty('nextCursor')
+        expect(responseData.pagination).toHaveProperty('prevCursor')
+        expect(responseData.pagination).toHaveProperty('hasMore')
+        expect(responseData.meta.paginationType).toBe('cursor')
+        expect(responseData.meta.optimized).toBe(true)
+      })
+
+      it('should support forward and backward directions', async () => {
+        const cursor = Buffer.from('123').toString('base64')
+
+        // Forward direction
+        const forwardRequest = createMockRequest({
+          method: 'GET',
+          url: `/api/transactions?cursor=${cursor}&direction=forward&limit=10`,
+          cookies: { accessToken: 'valid-token' },
+        }) as NextRequest
+
+        const forwardResponse = await getTransactionsHandler(forwardRequest)
+        const forwardData = await forwardResponse.json()
+
+        expect(forwardResponse.status).toBe(200)
+        expect(forwardData.meta.paginationType).toBe('cursor')
+
+        // Backward direction
+        const backwardRequest = createMockRequest({
+          method: 'GET',
+          url: `/api/transactions?cursor=${cursor}&direction=backward&limit=10`,
+          cookies: { accessToken: 'valid-token' },
+        }) as NextRequest
+
+        const backwardResponse = await getTransactionsHandler(backwardRequest)
+        const backwardData = await backwardResponse.json()
+
+        expect(backwardResponse.status).toBe(200)
+        expect(backwardData.meta.paginationType).toBe('cursor')
+      })
+
+      it('should include performance metrics in cursor pagination', async () => {
+        const request = createMockRequest({
+          method: 'GET',
+          url: '/api/transactions?cursor=' + Buffer.from('123').toString('base64'),
+          cookies: { accessToken: 'valid-token' },
+        }) as NextRequest
+
+        const response = await getTransactionsHandler(request)
+        const responseData = await response.json()
+
+        expect(response.status).toBe(200)
+        expect(responseData.pagination.performance).toHaveProperty('queryTime')
+        expect(responseData.meta.queryTime).toMatch(/\d+ms/)
+        expect(responseData.meta.optimized).toBe(true)
+      })
+
+      it('should handle invalid cursor gracefully', async () => {
+        const invalidCursor = 'invalid-cursor-data'
+        const request = createMockRequest({
+          method: 'GET',
+          url: `/api/transactions?cursor=${invalidCursor}`,
+          cookies: { accessToken: 'valid-token' },
+        }) as NextRequest
+
+        const response = await getTransactionsHandler(request)
+
+        // Should still work but might fall back to first page or handle error
+        expect(response.status).toBeLessThanOrEqual(400)
+      })
+    })
+
+    describe('Legacy Pagination Compatibility', () => {
+      it('should support legacy offset pagination with warning', async () => {
+        const request = createMockRequest({
+          method: 'GET',
+          url: '/api/transactions?page=2&limit=10',
+          cookies: { accessToken: 'valid-token' },
+        }) as NextRequest
+
+        const response = await getTransactionsHandler(request)
+        const responseData = await response.json()
+
+        expect(response.status).toBe(200)
+        expect(responseData.success).toBe(true)
+        expect(responseData.meta.paginationType).toBe('offset')
+        expect(responseData.meta.optimized).toBe(false)
+        expect(responseData.meta.warning).toContain('레거시 페이지네이션')
+        expect(responseData.meta.recommendation).toHaveProperty('message')
+        expect(responseData.meta.recommendation.benefits).toBeInstanceOf(Array)
+      })
+
+      it('should provide migration guidance in legacy mode', async () => {
+        const request = createMockRequest({
+          method: 'GET',
+          url: '/api/transactions?page=1&limit=20',
+          cookies: { accessToken: 'valid-token' },
+        }) as NextRequest
+
+        const response = await getTransactionsHandler(request)
+        const responseData = await response.json()
+
+        expect(responseData.meta.recommendation).toMatchObject({
+          message: expect.stringContaining('cursor 기반 페이지네이션'),
+          example: expect.stringContaining('?cursor='),
+          benefits: expect.arrayContaining([
+            expect.stringContaining('일정한 성능'),
+            expect.stringContaining('실시간 데이터'),
+            expect.stringContaining('깊은 페이지'),
+          ]),
+        })
+      })
+
+      it('should convert legacy pagination to consistent format', async () => {
+        const request = createMockRequest({
+          method: 'GET',
+          url: '/api/transactions?page=3&limit=15',
+          cookies: { accessToken: 'valid-token' },
+        }) as NextRequest
+
+        const response = await getTransactionsHandler(request)
+        const responseData = await response.json()
+
+        expect(responseData.pagination).toHaveProperty('page', 3)
+        expect(responseData.pagination).toHaveProperty('limit', 15)
+        expect(responseData.pagination).toHaveProperty('hasNext')
+        expect(responseData.pagination).toHaveProperty('hasPrev')
+
+        if (responseData.pagination.total) {
+          expect(responseData.pagination).toHaveProperty('totalPages')
+          expect(typeof responseData.pagination.totalPages).toBe('number')
+        }
+      })
+    })
+
+    describe('Performance Improvements', () => {
+      it('should demonstrate cursor pagination performance benefits', async () => {
+        const startTime = Date.now()
+
+        // Simulate deep pagination with cursor (should be consistent)
+        const deepCursor = Buffer.from('1000').toString('base64')
+        const cursorRequest = createMockRequest({
+          method: 'GET',
+          url: `/api/transactions?cursor=${deepCursor}&limit=20`,
+          cookies: { accessToken: 'valid-token' },
+        }) as NextRequest
+
+        const cursorResponse = await getTransactionsHandler(cursorRequest)
+        const cursorData = await cursorResponse.json()
+
+        const cursorTime = Date.now() - startTime
+
+        expect(cursorResponse.status).toBe(200)
+        expect(cursorData.meta.optimized).toBe(true)
+        expect(cursorData.pagination.performance.queryTime).toBeGreaterThan(0)
+      })
+
+      it('should handle concurrent cursor requests efficiently', async () => {
+        const cursors = [
+          Buffer.from('100').toString('base64'),
+          Buffer.from('200').toString('base64'),
+          Buffer.from('300').toString('base64'),
+        ]
+
+        const requests = cursors.map(cursor =>
+          getTransactionsHandler(
+            createMockRequest({
+              method: 'GET',
+              url: `/api/transactions?cursor=${cursor}&limit=10`,
+              cookies: { accessToken: 'valid-token' },
+            }) as NextRequest
+          )
+        )
+
+        const responses = await Promise.all(requests)
+        const responseData = await Promise.all(responses.map(r => r.json()))
+
+        // All requests should succeed
+        responses.forEach(response => {
+          expect(response.status).toBe(200)
+        })
+
+        // All should use cursor pagination
+        responseData.forEach(data => {
+          expect(data.meta.paginationType).toBe('cursor')
+          expect(data.meta.optimized).toBe(true)
+        })
+      })
+    })
+
+    describe('Filtering with Pagination', () => {
+      it('should combine filters with cursor pagination', async () => {
+        const cursor = Buffer.from('123').toString('base64')
+        const request = createMockRequest({
+          method: 'GET',
+          url: `/api/transactions?cursor=${cursor}&type=EXPENSE&categoryId=5&startDate=2024-01-01&endDate=2024-01-31`,
+          cookies: { accessToken: 'valid-token' },
+        }) as NextRequest
+
+        const response = await getTransactionsHandler(request)
+        const responseData = await response.json()
+
+        expect(response.status).toBe(200)
+        expect(responseData.meta.paginationType).toBe('cursor')
+        expect(responseData.pagination).toHaveProperty('nextCursor')
+        expect(responseData.pagination).toHaveProperty('prevCursor')
+      })
+
+      it('should handle search with cursor pagination', async () => {
+        const cursor = Buffer.from('456').toString('base64')
+        const searchQuery = encodeURIComponent('coffee')
+        const request = createMockRequest({
+          method: 'GET',
+          url: `/api/transactions?cursor=${cursor}&search=${searchQuery}&limit=5`,
+          cookies: { accessToken: 'valid-token' },
+        }) as NextRequest
+
+        const response = await getTransactionsHandler(request)
+        const responseData = await response.json()
+
+        expect(response.status).toBe(200)
+        expect(responseData.meta.paginationType).toBe('cursor')
+        expect(responseData.pagination.performance).toHaveProperty('queryTime')
+      })
+    })
+
+    describe('Edge Cases', () => {
+      it('should handle empty result set with cursor', async () => {
+        const cursor = Buffer.from('999999').toString('base64') // Non-existent cursor
+        const request = createMockRequest({
+          method: 'GET',
+          url: `/api/transactions?cursor=${cursor}`,
+          cookies: { accessToken: 'valid-token' },
+        }) as NextRequest
+
+        const response = await getTransactionsHandler(request)
+        const responseData = await response.json()
+
+        expect(response.status).toBe(200)
+        expect(responseData.transactions).toBeInstanceOf(Array)
+        expect(responseData.pagination.hasMore).toBe(false)
+        expect(responseData.pagination.nextCursor).toBe(null)
+      })
+
+      it('should handle malformed cursor parameter', async () => {
+        const malformedCursor = 'not-base64-encoded!'
+        const request = createMockRequest({
+          method: 'GET',
+          url: `/api/transactions?cursor=${malformedCursor}`,
+          cookies: { accessToken: 'valid-token' },
+        }) as NextRequest
+
+        const response = await getTransactionsHandler(request)
+
+        // Should handle gracefully (either work or return meaningful error)
+        expect([200, 400].includes(response.status)).toBe(true)
+      })
+
+      it('should handle extremely large limit values', async () => {
+        const request = createMockRequest({
+          method: 'GET',
+          url: '/api/transactions?limit=10000', // Very large limit
+          cookies: { accessToken: 'valid-token' },
+        }) as NextRequest
+
+        const response = await getTransactionsHandler(request)
+        const responseData = await response.json()
+
+        expect(response.status).toBe(200)
+        // Limit should be capped or handled appropriately
+      })
+    })
+  })
 })

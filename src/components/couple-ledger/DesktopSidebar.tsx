@@ -14,11 +14,16 @@ import {
   ChevronRight,
   Heart,
   Zap,
+  LogOut,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useNavigation, MobileNavigation } from './MobileNavigation'
+import { useAuth } from '@/contexts/auth-context'
+import { useGroup } from '@/contexts/group-context'
+import { QuickAddModal } from './QuickAddModal'
+import { useToast } from '@/hooks/use-toast'
 
 interface DesktopSidebarProps {
   onQuickAddClick: () => void
@@ -68,6 +73,14 @@ const sidebarMenu = [
         badge: null,
       },
       {
+        id: 'groups',
+        label: '그룹 관리',
+        href: '/groups',
+        icon: Users,
+        description: '가족 그룹 생성 및 관리',
+        badge: null,
+      },
+      {
         id: 'categories',
         label: '카테고리',
         href: '/categories',
@@ -93,6 +106,8 @@ export function DesktopSidebar({ onQuickAddClick, className = '' }: DesktopSideb
   const [isCollapsed, setIsCollapsed] = useState(false)
   const { currentPage } = useNavigation()
   const pathname = usePathname()
+  const { logout, user } = useAuth()
+  const { currentGroup } = useGroup()
 
   // 현재 활성 경로 확인
   const isActive = (href: string) => {
@@ -100,6 +115,14 @@ export function DesktopSidebar({ onQuickAddClick, className = '' }: DesktopSideb
       return pathname === '/'
     }
     return pathname.startsWith(href)
+  }
+
+  // 로그아웃 처리
+  const handleLogout = () => {
+    const confirmed = window.confirm('정말 로그아웃하시겠습니까?')
+    if (confirmed) {
+      logout()
+    }
   }
 
   return (
@@ -221,31 +244,45 @@ export function DesktopSidebar({ onQuickAddClick, className = '' }: DesktopSideb
           </div>
         </nav>
 
-        {/* 하단 상태 정보 */}
-        {!isCollapsed && (
+        {/* 사용자 정보 */}
+        {!isCollapsed && user && (
           <div className='p-4 border-t border-gray-200'>
-            <Card className='bg-gray-50 border-none shadow-none'>
-              <CardHeader className='pb-2'>
-                <div className='flex items-center gap-2'>
-                  <Users className='h-4 w-4 text-green-500' />
-                  <span className='text-sm font-medium text-gray-900'>공동 가계부</span>
-                </div>
-              </CardHeader>
-              <CardContent className='pt-0'>
-                <div className='text-xs text-gray-500 space-y-1'>
-                  <div className='flex justify-between'>
-                    <span>이번 달 공동지출</span>
-                    <span className='font-mono'>₩0</span>
+            <Card className='bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 shadow-sm'>
+              <CardContent className='p-3'>
+                <div className='flex items-center gap-3'>
+                  <div className='w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center'>
+                    <User className='h-4 w-4 text-white' />
                   </div>
-                  <div className='flex justify-between'>
-                    <span>정산 대기</span>
-                    <span className='font-mono text-amber-500'>₩0</span>
+                  <div className='flex-1 min-w-0'>
+                    <p className='text-sm font-medium text-gray-900 truncate'>
+                      {user.nickname || user.email}
+                    </p>
+                    <p className='text-xs text-gray-500 truncate'>
+                      {currentGroup ? currentGroup.name : '그룹 없음'}
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
         )}
+
+        {/* 구분선과 로그아웃 버튼 */}
+        <div className='border-t border-gray-200'>
+          <div className='p-4'>
+            <Button
+              onClick={handleLogout}
+              variant='ghost'
+              className={`
+                w-full text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors duration-200
+                ${isCollapsed ? 'h-12 p-0' : 'h-10 justify-start gap-3'}
+              `}
+            >
+              <LogOut className='h-4 w-4' />
+              {!isCollapsed && '로그아웃'}
+            </Button>
+          </div>
+        </div>
       </div>
     </aside>
   )
@@ -277,24 +314,71 @@ export function DesktopLayout({
 // 반응형 레이아웃 래퍼 (모바일 + 데스크탑)
 export function ResponsiveLayout({
   children,
-  onQuickAddClick,
 }: {
   children: React.ReactNode
-  onQuickAddClick: () => void
 }) {
+  const { toast } = useToast()
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
+
+  // 빠른입력 모달 열기
+  const handleQuickAddClick = () => {
+    setIsQuickAddOpen(true)
+  }
+
+  // 빠른입력 모달 닫기
+  const handleQuickAddClose = () => {
+    setIsQuickAddOpen(false)
+  }
+
+  // 거래 저장 핸들러
+  const handleSaveTransaction = async (
+    transaction: any // 실제 Transaction 타입 사용
+  ) => {
+    try {
+      // TODO: 실제 거래 저장 API 호출 구현
+      console.log('거래 저장 API 구현 필요:', transaction)
+
+      toast({
+        title: '성공',
+        description: '거래가 성공적으로 저장되었습니다.',
+      })
+
+      // 모달 닫기
+      setIsQuickAddOpen(false)
+
+      return Promise.resolve()
+    } catch (error) {
+      console.error('거래 저장 실패:', error)
+      toast({
+        title: '오류',
+        description: '거래 저장에 실패했습니다.',
+        variant: 'destructive',
+      })
+      throw error
+    }
+  }
+
   return (
     <>
       {/* 모바일 레이아웃 (md 미만에서만 표시) */}
       <div className='block md:hidden'>
-        <MobileNavigationWrapper onQuickAddClick={onQuickAddClick}>
+        <MobileNavigationWrapper onQuickAddClick={handleQuickAddClick}>
           {children}
         </MobileNavigationWrapper>
       </div>
 
       {/* 데스크탑 레이아웃 (md 이상에서만 표시) */}
       <div className='hidden md:block'>
-        <DesktopLayout onQuickAddClick={onQuickAddClick}>{children}</DesktopLayout>
+        <DesktopLayout onQuickAddClick={handleQuickAddClick}>{children}</DesktopLayout>
       </div>
+
+      {/* 빠른입력 모달 - 모든 페이지에서 공통 사용 */}
+      <QuickAddModal
+        isOpen={isQuickAddOpen}
+        onClose={handleQuickAddClose}
+        onSave={handleSaveTransaction}
+        templates={[]} // 템플릿 기능 향후 구현 예정
+      />
     </>
   )
 }

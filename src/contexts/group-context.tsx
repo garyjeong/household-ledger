@@ -70,20 +70,32 @@ export function GroupProvider({ children }: GroupProviderProps) {
   useEffect(() => {
     if (!isAuthenticated || !user) return
 
+    let refreshTimeout: NodeJS.Timeout
+
+    const debouncedRefresh = () => {
+      clearTimeout(refreshTimeout)
+      refreshTimeout = setTimeout(() => {
+        refreshGroups()
+      }, 1000) // 1초 디바운싱
+    }
+
     const handleFocus = () => {
-      refreshGroups()
+      debouncedRefresh()
+    }
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        debouncedRefresh()
+      }
     }
 
     window.addEventListener('focus', handleFocus)
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) {
-        refreshGroups()
-      }
-    })
+    document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
       window.removeEventListener('focus', handleFocus)
-      document.removeEventListener('visibilitychange', handleFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      clearTimeout(refreshTimeout)
     }
   }, [isAuthenticated, user])
 
@@ -110,7 +122,7 @@ export function GroupProvider({ children }: GroupProviderProps) {
   }, [groups])
 
   const refreshGroups = async () => {
-    if (!user) return
+    if (!user || isLoading) return
 
     setIsLoading(true)
     try {
@@ -120,7 +132,14 @@ export function GroupProvider({ children }: GroupProviderProps) {
 
       if (response.ok) {
         const data = await response.json()
-        setGroups(data.groups || [])
+        const fetchedGroups = data.groups || []
+        
+        // 중복 방지 로직: ID 기준으로 유니크한 그룹만 설정
+        const uniqueGroups = fetchedGroups.filter((group: any, index: number, self: any[]) => 
+          index === self.findIndex((g: any) => g.id === group.id)
+        )
+        
+        setGroups(uniqueGroups)
       }
     } catch (error) {
       console.error('Failed to fetch groups:', error)
@@ -157,8 +176,22 @@ export function GroupProvider({ children }: GroupProviderProps) {
       const data = await response.json()
 
       if (response.ok) {
-        await refreshGroups() // 그룹 목록 새로고침
-        return { success: true, group: data.group }
+        // 전체 새로고침 대신 새 그룹을 로컬 상태에 추가
+        const newGroup = data.group
+        setGroups(prevGroups => {
+          // 중복 방지: 이미 같은 ID의 그룹이 있으면 추가하지 않음
+          const existingGroup = prevGroups.find(g => g.id === newGroup.id)
+          if (existingGroup) {
+            return prevGroups
+          }
+          return [...prevGroups, newGroup]
+        })
+        
+        // 새로 생성된 그룹을 현재 그룹으로 설정
+        setCurrentGroup(newGroup)
+        localStorage.setItem(CURRENT_GROUP_KEY, newGroup.id)
+        
+        return { success: true, group: newGroup }
       } else {
         return { success: false, error: data.error || '그룹 생성에 실패했습니다.' }
       }
@@ -206,8 +239,22 @@ export function GroupProvider({ children }: GroupProviderProps) {
       const data = await response.json()
 
       if (response.ok) {
-        await refreshGroups() // 그룹 목록 새로고침
-        return { success: true, group: data.group }
+        // 전체 새로고침 대신 참여한 그룹을 로컬 상태에 추가
+        const joinedGroup = data.group
+        setGroups(prevGroups => {
+          // 중복 방지: 이미 같은 ID의 그룹이 있으면 추가하지 않음
+          const existingGroup = prevGroups.find(g => g.id === joinedGroup.id)
+          if (existingGroup) {
+            return prevGroups
+          }
+          return [...prevGroups, joinedGroup]
+        })
+        
+        // 참여한 그룹을 현재 그룹으로 설정
+        setCurrentGroup(joinedGroup)
+        localStorage.setItem(CURRENT_GROUP_KEY, joinedGroup.id)
+        
+        return { success: true, group: joinedGroup }
       } else {
         return { success: false, error: data.error || '그룹 참여에 실패했습니다.' }
       }

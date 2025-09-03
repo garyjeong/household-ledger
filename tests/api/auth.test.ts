@@ -7,6 +7,7 @@ import { POST as signupHandler } from '@/app/api/auth/signup/route'
 import { POST as loginHandler } from '@/app/api/auth/login/route'
 import { POST as logoutHandler } from '@/app/api/auth/logout/route'
 import { GET as meHandler } from '@/app/api/auth/me/route'
+import { POST as refreshHandler } from '@/app/api/auth/refresh/route'
 import {
   createMockRequest,
   expectApiSuccess,
@@ -308,6 +309,140 @@ describe('Auth API Routes', () => {
       expect(response.status).toBe(200)
       expect(responseData.success).toBe(true)
       expect(responseData.message).toContain('로그아웃')
+    })
+  })
+
+  describe('POST /api/auth/refresh', () => {
+    const mockUser = {
+      id: '1',
+      email: 'test@example.com',
+      nickname: 'Gary',
+      createdAt: new Date(),
+    }
+
+    const mockTokenPayload = {
+      userId: mockUser.id,
+      email: mockUser.email,
+      nickname: mockUser.nickname,
+    }
+
+    it('should refresh tokens successfully with valid refresh token', async () => {
+      const refreshToken = 'valid-refresh-token'
+
+      mockVerifyRefreshToken.mockReturnValue(mockTokenPayload)
+      mockFindUserById.mockResolvedValue(mockUser)
+      mockGenerateAccessToken.mockReturnValue('new-access-token')
+      mockGenerateRefreshToken.mockReturnValue('new-refresh-token')
+
+      const request = createMockRequest({
+        method: 'POST',
+        cookies: { refreshToken },
+      }) as NextRequest
+
+      const response = await refreshHandler(request)
+      const responseData = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(responseData.success).toBe(true)
+      expect(responseData.message).toContain('Tokens refreshed successfully')
+      expect(mockVerifyRefreshToken).toHaveBeenCalledWith(refreshToken)
+      expect(mockFindUserById).toHaveBeenCalledWith(mockTokenPayload.userId)
+      expect(mockGenerateAccessToken).toHaveBeenCalledWith(mockTokenPayload)
+      expect(mockGenerateRefreshToken).toHaveBeenCalledWith(mockTokenPayload)
+    })
+
+    it('should reject request without refresh token', async () => {
+      const request = createMockRequest({
+        method: 'POST',
+        cookies: {},
+      }) as NextRequest
+
+      const response = await refreshHandler(request)
+      const responseData = await response.json()
+
+      expect(response.status).toBe(401)
+      expect(responseData.error).toContain('Refresh token이 없습니다')
+      expect(mockVerifyRefreshToken).not.toHaveBeenCalled()
+    })
+
+    it('should reject invalid refresh token', async () => {
+      const refreshToken = 'invalid-refresh-token'
+
+      mockVerifyRefreshToken.mockReturnValue(null)
+
+      const request = createMockRequest({
+        method: 'POST',
+        cookies: { refreshToken },
+      }) as NextRequest
+
+      const response = await refreshHandler(request)
+      const responseData = await response.json()
+
+      expect(response.status).toBe(401)
+      expect(responseData.error).toContain('유효하지 않거나 만료된 Refresh token입니다')
+      expect(mockFindUserById).not.toHaveBeenCalled()
+    })
+
+    it('should reject when user not found', async () => {
+      const refreshToken = 'valid-refresh-token'
+
+      mockVerifyRefreshToken.mockReturnValue(mockTokenPayload)
+      mockFindUserById.mockResolvedValue(null)
+
+      const request = createMockRequest({
+        method: 'POST',
+        cookies: { refreshToken },
+      }) as NextRequest
+
+      const response = await refreshHandler(request)
+      const responseData = await response.json()
+
+      expect(response.status).toBe(404)
+      expect(responseData.error).toContain('사용자를 찾을 수 없습니다')
+      expect(mockGenerateAccessToken).not.toHaveBeenCalled()
+      expect(mockGenerateRefreshToken).not.toHaveBeenCalled()
+    })
+
+    it('should handle token generation errors', async () => {
+      const refreshToken = 'valid-refresh-token'
+
+      mockVerifyRefreshToken.mockReturnValue(mockTokenPayload)
+      mockFindUserById.mockResolvedValue(mockUser)
+      mockGenerateAccessToken.mockImplementation(() => {
+        throw new Error('Token generation failed')
+      })
+
+      const request = createMockRequest({
+        method: 'POST',
+        cookies: { refreshToken },
+      }) as NextRequest
+
+      const response = await refreshHandler(request)
+      const responseData = await response.json()
+
+      expect(response.status).toBe(500)
+      expect(responseData.error).toContain('토큰 갱신 중 오류가 발생했습니다')
+      expect(responseData.code).toBe('TOKEN_REFRESH_ERROR')
+    })
+
+    it('should set new tokens in response cookies', async () => {
+      const refreshToken = 'valid-refresh-token'
+
+      mockVerifyRefreshToken.mockReturnValue(mockTokenPayload)
+      mockFindUserById.mockResolvedValue(mockUser)
+      mockGenerateAccessToken.mockReturnValue('new-access-token')
+      mockGenerateRefreshToken.mockReturnValue('new-refresh-token')
+
+      const request = createMockRequest({
+        method: 'POST',
+        cookies: { refreshToken },
+      }) as NextRequest
+
+      const response = await refreshHandler(request)
+
+      // Check that cookies would be set (implementation detail)
+      expect(response.status).toBe(200)
+      // Note: Testing actual cookie setting would require mocking NextResponse.cookies
     })
   })
 

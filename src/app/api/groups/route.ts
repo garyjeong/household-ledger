@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { verifyAccessToken, findGroupsByUserId, createGroup } from '@/lib/auth'
+import { safeConsole } from '@/lib/security-utils'
 
 const createGroupSchema = z.object({
   name: z
@@ -32,7 +33,10 @@ export async function GET(request: NextRequest) {
       groups,
     })
   } catch (error) {
-    console.error('Get groups error:', error)
+    safeConsole.error('그룹 목록 조회 실패', error, {
+      endpoint: '/api/groups',
+      method: 'GET',
+    })
     return NextResponse.json({ error: '그룹 목록 조회 중 오류가 발생했습니다.' }, { status: 500 })
   }
 }
@@ -68,6 +72,13 @@ export async function POST(request: NextRequest) {
       ownerId: payload.userId,
     })
 
+    // 성공 로깅
+    safeConsole.log('그룹 생성 성공', {
+      groupId: newGroup.id,
+      groupName: newGroup.name,
+      ownerId: payload.userId,
+    })
+
     return NextResponse.json(
       {
         success: true,
@@ -76,7 +87,11 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('Create group error:', error)
+    safeConsole.error('그룹 생성 실패', error, {
+      endpoint: '/api/groups',
+      method: 'POST',
+      ownerId: payload?.userId,
+    })
     return NextResponse.json({ error: '그룹 생성 중 오류가 발생했습니다.' }, { status: 500 })
   }
 }

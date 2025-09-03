@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus, List, BarChart3, User, Home, Receipt } from 'lucide-react'
+import { Plus, List, BarChart3, User, Home, Receipt, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
@@ -36,6 +36,13 @@ const navigationItems = [
     description: '월별 통계',
   },
   {
+    id: 'groups',
+    label: '그룹',
+    href: '/groups',
+    icon: Users,
+    description: '그룹 관리',
+  },
+  {
     id: 'categories',
     label: '카테고리',
     href: '/categories',
@@ -55,7 +62,7 @@ const navigationItems = [
  * 신혼부부 가계부 전용 모바일 하단 네비게이션
  *
  * 구성:
- * - 5개 주요 탭: 홈, 거래내역, 통계, 카테고리, 내정보
+ * - 6개 주요 탭: 홈, 거래내역, 통계, 그룹, 카테고리, 내정보
  * - 중앙 플로팅 "+" 버튼: 빠른입력 모달
  * - 터치 최적화 48px 터치 타겟
  * - 활성 상태 시각적 표시

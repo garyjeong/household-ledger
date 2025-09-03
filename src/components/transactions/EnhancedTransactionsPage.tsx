@@ -131,7 +131,7 @@ export function EnhancedTransactionsPage() {
 
   if (!currentGroup) {
     return (
-      <ResponsiveLayout onQuickAddClick={() => {}}>
+      <ResponsiveLayout>
         <div className='flex items-center justify-center h-64'>
           <div className='text-center'>
             <p className='text-gray-500'>그룹을 선택해주세요</p>
@@ -143,44 +143,46 @@ export function EnhancedTransactionsPage() {
 
   return (
     <>
-      <ResponsiveLayout onQuickAddClick={handleAddTransaction}>
+      <ResponsiveLayout>
         <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
           {/* 헤더 */}
-          <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6'>
-            <div>
-              <h1 className='text-2xl font-bold text-gray-900'>거래내역</h1>
-              <p className='text-gray-500'>모든 수입과 지출을 확인하세요</p>
-              {ratesLoading && (
-                <div className='flex items-center gap-2 text-sm text-blue-600 mt-1'>
-                  <RefreshCw className='h-3 w-3 animate-spin' />
-                  환율 정보 업데이트 중...
-                </div>
-              )}
-            </div>
+          <div className='sticky top-0 z-10 bg-white pb-6 mb-6 border-b border-gray-100'>
+            <div className='pt-6 flex flex-col md:flex-row md:items-center justify-between gap-4'>
+              <div>
+                <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>거래내역</h1>
+                <p className='text-slate-600 mt-1'>모든 수입과 지출을 확인하세요</p>
+                {ratesLoading && (
+                  <div className='flex items-center gap-2 text-sm text-blue-600 mt-1'>
+                    <RefreshCw className='h-3 w-3 animate-spin' />
+                    환율 정보 업데이트 중...
+                  </div>
+                )}
+              </div>
 
-            <div className='flex gap-2'>
-              <Button
-                variant='outline'
-                className='gap-2'
-                onClick={handleAddTransaction}
-                disabled={createTransactionMutation.isPending}
-              >
-                <Plus className='h-4 w-4' />
-                거래 추가
-              </Button>
-              <Button variant='outline' className='gap-2'>
-                <Download className='h-4 w-4' />
-                내보내기
-              </Button>
-              <Button
-                variant='outline'
-                className='gap-2'
-                onClick={() => refetchTransactions()}
-                disabled={transactionsLoading}
-              >
-                <RefreshCw className={`h-4 w-4 ${transactionsLoading ? 'animate-spin' : ''}`} />
-                새로고침
-              </Button>
+              <div className='flex gap-2'>
+                <Button
+                  variant='outline'
+                  className='gap-2 border-slate-300 text-slate-700 hover:bg-slate-50'
+                  onClick={handleAddTransaction}
+                  disabled={createTransactionMutation.isPending}
+                >
+                  <Plus className='h-4 w-4' />
+                  거래 추가
+                </Button>
+                <Button variant='outline' className='gap-2 border-slate-300 text-slate-700 hover:bg-slate-50'>
+                  <Download className='h-4 w-4' />
+                  내보내기
+                </Button>
+                <Button
+                  variant='outline'
+                  className='gap-2 border-slate-300 text-slate-700 hover:bg-slate-50'
+                  onClick={() => refetchTransactions()}
+                  disabled={transactionsLoading}
+                >
+                  <RefreshCw className={`h-4 w-4 ${transactionsLoading ? 'animate-spin' : ''}`} />
+                  새로고침
+                </Button>
+              </div>
             </div>
           </div>
 

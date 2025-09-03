@@ -128,34 +128,36 @@ export const MonthlyDashboard = React.memo(function MonthlyDashboard({
 
     return (
     <div className={`space-y-4 ${className}`}>
-      {/* 📊 컴팩트 헤더: 제목 + 월 선택 */}
-      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white border border-slate-200 rounded-lg p-4 shadow-sm'>
-        <div>
-          <h1 className='text-lg font-bold text-slate-900'>월별 대시보드</h1>
-          <p className='text-sm text-slate-600'>{formatMonth(selectedMonth)}</p>
-        </div>
-        <div className='flex items-center gap-2'>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => handleMonthSelect(-1)}
-            className='flex items-center gap-1 h-8 px-3 text-xs font-medium'
-          >
-            <ChevronLeft className='h-3 w-3' />
-            <span>{monthInfo.prev.month}</span>
-          </Button>
-          <div className='px-3 py-1.5 bg-blue-500 text-white rounded text-xs font-bold border border-blue-600'>
-            {monthInfo.current.month}
+      {/* 📊 고정 헤더: 제목 + 월 선택 */}
+      <div className='sticky top-0 z-10 bg-white pb-4 mb-4 border-b border-gray-100'>
+        <div className='pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white border border-slate-200 rounded-lg p-4 shadow-sm'>
+          <div>
+            <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>월별 대시보드</h1>
+            <p className='text-slate-600 mt-1'>{formatMonth(selectedMonth)}</p>
           </div>
-          <Button
-            variant='outline'
-            size='sm'
-            onClick={() => handleMonthSelect(1)}
-            className='flex items-center gap-1 h-8 px-3 text-xs font-medium'
-          >
-            <span>{monthInfo.next.month}</span>
-            <ChevronRight className='h-3 w-3' />
-          </Button>
+          <div className='flex items-center gap-2'>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => handleMonthSelect(-1)}
+              className='flex items-center gap-1 h-8 px-3 text-xs font-medium border-slate-300 text-slate-700 hover:bg-slate-50'
+            >
+              <ChevronLeft className='h-3 w-3' />
+              <span>{monthInfo.prev.month}</span>
+            </Button>
+            <div className='px-3 py-1.5 bg-blue-500 text-white rounded text-xs font-bold border border-blue-600'>
+              {monthInfo.current.month}
+            </div>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => handleMonthSelect(1)}
+              className='flex items-center gap-1 h-8 px-3 text-xs font-medium border-slate-300 text-slate-700 hover:bg-slate-50'
+            >
+              <span>{monthInfo.next.month}</span>
+              <ChevronRight className='h-3 w-3' />
+            </Button>
+          </div>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import {
   X,
   Zap,
@@ -8,6 +8,8 @@ import {
   Save,
   BookmarkPlus,
   Loader2,
+  Users,
+  ArrowRight,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -21,6 +23,7 @@ import {
 } from '@/types/couple-ledger'
 import { CategoryPicker } from './CategoryPicker'
 import { useCategories } from '@/hooks/use-categories'
+import { useGroup } from '@/contexts/group-context'
 
 // 날짜 빠른 선택 칩
 const getDateChips = () => {
@@ -59,8 +62,25 @@ export function QuickAddModal({
 
   const [isLoading, setIsLoading] = useState(false)
 
-  // API에서 카테고리 데이터 가져오기
-  const { categories, loading: categoriesLoading, error: categoriesError } = useCategories()
+  // 현재 그룹 정보 가져오기
+  const { currentGroup, isLoading: groupLoading } = useGroup()
+
+  // 현재 그룹의 카테고리만 가져오기
+  const categoryFilters = useMemo(() => {
+    if (!currentGroup?.id) return null
+    
+    return {
+      ownerType: 'GROUP' as const,
+      ownerId: currentGroup.id,
+    }
+  }, [currentGroup?.id])
+
+  const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError } = useCategories(
+    categoryFilters
+  )
+
+  // 카테고리 배열 추출
+  const categories = categoriesData?.categories || []
 
   // 폼 상태
   const [formData, setFormData] = useState<QuickAddForm>({
@@ -242,16 +262,71 @@ export function QuickAddModal({
               <h3 className='text-base font-bold text-slate-900'>카테고리</h3>
             </div>
 
-            {categoriesLoading ? (
+            {groupLoading || categoriesLoading ? (
               <div className='flex items-center justify-center py-8'>
                 <Loader2 className='h-6 w-6 animate-spin' />
-                <span className='ml-2 text-sm text-gray-600'>카테고리 로딩 중...</span>
+                <span className='ml-2 text-sm text-gray-600'>
+                  {groupLoading ? '그룹 정보 로딩 중...' : '카테고리 로딩 중...'}
+                </span>
               </div>
+            ) : !currentGroup ? (
+              <Card className='border-2 border-dashed border-blue-300 bg-blue-50'>
+                <div className='p-6 text-center space-y-4'>
+                  <div className='w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto'>
+                    <Users className='h-6 w-6 text-blue-600' />
+                  </div>
+                  <div>
+                    <h4 className='font-semibold text-slate-900 mb-1'>그룹이 필요합니다</h4>
+                    <p className='text-sm text-slate-600 mb-4'>
+                      빠른 입력을 사용하려면 먼저 가족 그룹을 생성하거나 참여해야 합니다.
+                    </p>
+                    <Button
+                      onClick={() => {
+                        handleClose()
+                        // 그룹 관리 페이지로 이동
+                        window.location.href = '/groups'
+                      }}
+                      className='w-full gap-2'
+                    >
+                      <Users className='h-4 w-4' />
+                      그룹 관리로 이동
+                      <ArrowRight className='h-4 w-4' />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
             ) : categoriesError ? (
               <div className='text-center py-8'>
                 <p className='text-sm text-red-600'>카테고리를 불러오는데 실패했습니다.</p>
                 <p className='text-xs text-gray-500 mt-1'>{categoriesError}</p>
               </div>
+            ) : categories.length === 0 ? (
+              <Card className='border-2 border-dashed border-amber-300 bg-amber-50'>
+                <div className='p-6 text-center space-y-4'>
+                  <div className='w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto'>
+                    <span className='text-lg'>📂</span>
+                  </div>
+                  <div>
+                    <h4 className='font-semibold text-slate-900 mb-1'>카테고리가 없습니다</h4>
+                    <p className='text-sm text-slate-600 mb-4'>
+                      이 그룹에는 아직 카테고리가 없습니다. 카테고리를 먼저 생성해주세요.
+                    </p>
+                    <Button
+                      onClick={() => {
+                        handleClose()
+                        // 카테고리 관리 페이지로 이동
+                        window.location.href = '/categories'
+                      }}
+                      variant='outline'
+                      className='w-full gap-2'
+                    >
+                      <span className='text-lg'>📂</span>
+                      카테고리 관리로 이동
+                      <ArrowRight className='h-4 w-4' />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
             ) : (
               <CategoryPicker
                 categories={categories}
@@ -328,11 +403,27 @@ export function QuickAddModal({
             <Button
               type='button'
               onClick={handleSave}
-              disabled={!formData.amount || !formData.categoryId || isLoading}
-              className='flex-1 h-14 text-base font-medium'
+              disabled={
+                !formData.amount || 
+                !formData.categoryId || 
+                !currentGroup || 
+                categories.length === 0 ||
+                isLoading
+              }
+              className='flex-1 h-14 text-base font-medium disabled:opacity-50'
             >
               {isLoading ? (
                 <span className='text-base'>저장 중...</span>
+              ) : !currentGroup ? (
+                <>
+                  <Users className='h-5 w-5 mr-2' />
+                  그룹 필요
+                </>
+              ) : categories.length === 0 ? (
+                <>
+                  <span className='text-lg mr-2'>📂</span>
+                  카테고리 필요
+                </>
               ) : (
                 <>
                   <Save className='h-5 w-5 mr-2' />

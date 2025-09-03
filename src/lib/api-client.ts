@@ -1,10 +1,11 @@
 /**
  * API 클라이언트 유틸리티
  * JWT 토큰 자동 갱신 및 재시도 로직 포함
- * 전역 에러 처리 및 로깅 통합
+ * 전역 에러 처리 및 보안 로깅 통합
  */
 
 import { handleApiError, handleNetworkError, withRetry, type ErrorReport } from './error-handler'
+import { logApiCall, safeConsole } from './security-utils'
 
 interface ApiResponse<T = any> {
   ok: boolean
@@ -15,11 +16,53 @@ interface ApiResponse<T = any> {
 }
 
 /**
- * API 호출 함수 (인증 에러 처리 포함)
+ * 토큰 갱신 시도 (재귀 호출 방지를 위한 플래그)
+ */
+let isRefreshing = false
+let refreshPromise: Promise<boolean> | null = null
+
+/**
+ * Refresh Token을 사용하여 Access Token 갱신
+ */
+async function refreshAccessToken(): Promise<boolean> {
+  if (isRefreshing) {
+    return refreshPromise || Promise.resolve(false)
+  }
+
+  isRefreshing = true
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+      })
+
+      if (response.ok) {
+        safeConsole.log('✅ Access Token 갱신 성공')
+        return true
+      } else {
+        safeConsole.warn('❌ Refresh Token 만료 또는 무효', { status: response.status })
+        return false
+      }
+    } catch (error) {
+      safeConsole.error('토큰 갱신 중 네트워크 오류', error)
+      return false
+    } finally {
+      isRefreshing = false
+      refreshPromise = null
+    }
+  })()
+
+  return refreshPromise
+}
+
+/**
+ * API 호출 함수 (인증 에러 처리 및 자동 토큰 갱신 포함)
  */
 export async function apiCall<T = any>(
   url: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  skipRetry = false
 ): Promise<ApiResponse<T>> {
   const defaultOptions: RequestInit = {
     credentials: 'include',
@@ -38,24 +81,35 @@ export async function apiCall<T = any>(
     // API 호출 시도
     const response = await fetch(url, defaultOptions)
 
-    // 401 에러 (인증 실패)인 경우 즉시 로그인 페이지로 리다이렉트
-    if (response.status === 401) {
-      console.log('인증 실패. 로그인 페이지로 리다이렉트')
+    // 401 에러 (인증 실패)인 경우 토큰 갱신 시도
+    if (response.status === 401 && !skipRetry && url !== '/api/auth/refresh') {
+      safeConsole.info('🔄 401 에러 감지, 토큰 갱신 시도 중...')
 
-      // 인증 에러 처리
-      const authError = new Error('인증이 필요합니다. 다시 로그인해주세요.')
-      errorReport = handleApiError(authError, url)
+      // 토큰 갱신 시도
+      const refreshSuccess = await refreshAccessToken()
 
-      // 로그인 페이지로 리다이렉트 (브라우저 환경에서만)
-      if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-        window.location.href = '/login'
-      }
+      if (refreshSuccess) {
+        // 갱신 성공 시 원래 요청 재시도 (skipRetry=true로 무한 루프 방지)
+        safeConsole.info('🔄 토큰 갱신 성공, 원래 요청 재시도')
+        return apiCall<T>(url, options, true)
+      } else {
+        // 갱신 실패 시 로그인 페이지로 리다이렉트
+        safeConsole.warn('❌ 토큰 갱신 실패, 로그인 페이지로 리다이렉트')
 
-      return {
-        ok: false,
-        status: 401,
-        error: authError.message,
-        errorReport,
+        const authError = new Error('세션이 만료되었습니다. 다시 로그인해주세요.')
+        errorReport = handleApiError(authError, url)
+
+        // 로그인 페이지로 리다이렉트 (브라우저 환경에서만)
+        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          window.location.href = '/login'
+        }
+
+        return {
+          ok: false,
+          status: 401,
+          error: authError.message,
+          errorReport,
+        }
       }
     }
 
@@ -89,10 +143,8 @@ export async function apiCall<T = any>(
     }
 
     // 성공적인 응답 로깅 (개발 환경에서만)
-    if (process.env.NODE_ENV === 'development') {
-      const duration = Date.now() - startTime
-      console.log(`[API Success] ${options.method || 'GET'} ${url} (${duration}ms)`)
-    }
+    const duration = Date.now() - startTime
+    logApiCall(options.method || 'GET', url, response.status, duration)
 
     return {
       ok: true,
@@ -105,7 +157,7 @@ export async function apiCall<T = any>(
     errorReport = handleNetworkError(networkError, url)
 
     const duration = Date.now() - startTime
-    console.error(`[API Error] ${options.method || 'GET'} ${url} (${duration}ms):`, error)
+    logApiCall(options.method || 'GET', url, 500, duration, error)
 
     return {
       ok: false,
