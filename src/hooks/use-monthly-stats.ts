@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { MonthlyStats } from '@/types/couple-ledger'
 import { useGroup } from '@/contexts/group-context'
+import { apiGet } from '@/lib/api-client'
 
 interface UseMonthlyStatsOptions {
   period: string // YYYY-MM 형식
@@ -30,21 +31,17 @@ export function useMonthlyStats({ period, refetchInterval = 30000 }: UseMonthlyS
         params.append('groupId', currentGroup.id)
       }
 
-      const response = await fetch(`/api/dashboard/monthly-stats?${params}`, {
-        credentials: 'include',
-      })
+      const response = await apiGet(`/api/dashboard/monthly-stats?${params}`)
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      const result: MonthlyStatsResponse = await response.json()
-
-      if (!result.success || !result.data) {
-        throw new Error(result.error || 'Failed to fetch monthly stats')
+      if (!response.data?.success || !response.data?.data) {
+        throw new Error(response.data?.error || 'Failed to fetch monthly stats')
       }
 
-      return result.data
+      return response.data.data
     },
     enabled: true,
     staleTime: 5 * 60 * 1000, // 5분간 fresh 상태 유지
@@ -102,21 +99,17 @@ export function usePrefetchMonthlyStats() {
           params.append('groupId', currentGroup.id)
         }
 
-        const response = await fetch(`/api/dashboard/monthly-stats?${params}`, {
-          credentials: 'include',
-        })
+        const response = await apiGet(`/api/dashboard/monthly-stats?${params}`)
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
 
-        const result: MonthlyStatsResponse = await response.json()
-
-        if (!result.success || !result.data) {
-          throw new Error(result.error || 'Failed to fetch monthly stats')
+        if (!response.data?.success || !response.data?.data) {
+          throw new Error(response.data?.error || 'Failed to fetch monthly stats')
         }
 
-        return result.data
+        return response.data.data
       },
       staleTime: 5 * 60 * 1000,
     })
@@ -134,21 +127,17 @@ export function usePrefetchMonthlyStats() {
             params.append('groupId', currentGroup.id)
           }
 
-          const response = await fetch(`/api/dashboard/monthly-stats?${params}`, {
-            credentials: 'include',
-          })
+          const response = await apiGet(`/api/dashboard/monthly-stats?${params}`)
 
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`)
           }
 
-          const result: MonthlyStatsResponse = await response.json()
-
-          if (!result.success || !result.data) {
-            throw new Error(result.error || 'Failed to fetch monthly stats')
+          if (!response.data?.success || !response.data?.data) {
+            throw new Error(response.data?.error || 'Failed to fetch monthly stats')
           }
 
-          return result.data
+          return response.data.data
         },
         staleTime: 5 * 60 * 1000,
       })

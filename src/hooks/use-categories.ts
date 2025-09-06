@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { CategoryResponse, CreateCategoryData, UpdateCategoryData } from '@/lib/schemas/category'
+import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api-client'
 
 // 카테고리 타입 정의 (기존 호환성 유지)
 export interface Category {
@@ -105,9 +106,7 @@ export function useCategories(
         setLoading(true)
         setError(null)
 
-        const response = await fetch(`/api/categories?${paramString}`, {
-          credentials: 'include',
-        })
+        const response = await apiGet(`/api/categories?${paramString}`)
 
         if (!response.ok) {
           // 400 에러인 경우 재시도하지 않음 (잘못된 요청)
@@ -117,8 +116,7 @@ export function useCategories(
           throw new Error(`카테고리를 불러오는데 실패했습니다 (${response.status})`)
         }
 
-        const data = await response.json()
-        const categoriesData = data.categories || []
+        const categoriesData = response.data?.categories || []
 
         // 캐시에 저장
         categoriesCache.set(paramString, {
@@ -189,26 +187,16 @@ export function useCreateCategory() {
       setLoading(true)
       setError(null)
 
-      const response = await fetch('/api/categories', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      })
+      const response = await apiPost('/api/categories', data)
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || '카테고리 생성에 실패했습니다')
+        throw new Error(response.error || '카테고리 생성에 실패했습니다')
       }
-
-      const result = await response.json()
 
       // 캐시 클리어 (새 카테고리 추가됨)
       clearCategoriesCache()
 
-      return result.category
+      return response.data?.category
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다'
       setError(errorMessage)
@@ -235,26 +223,16 @@ export function useUpdateCategory() {
       setLoading(true)
       setError(null)
 
-      const response = await fetch(`/api/categories/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      })
+      const response = await apiPut(`/api/categories/${id}`, data)
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || '카테고리 수정에 실패했습니다')
+        throw new Error(response.error || '카테고리 수정에 실패했습니다')
       }
-
-      const result = await response.json()
 
       // 캐시 클리어 (카테고리 수정됨)
       clearCategoriesCache()
 
-      return result.category
+      return response.data?.category
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다'
       setError(errorMessage)
@@ -281,14 +259,10 @@ export function useDeleteCategory() {
       setLoading(true)
       setError(null)
 
-      const response = await fetch(`/api/categories/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      })
+      const response = await apiDelete(`/api/categories/${id}`)
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || '카테고리 삭제에 실패했습니다')
+        throw new Error(response.error || '카테고리 삭제에 실패했습니다')
       }
 
       // 캐시 클리어 (카테고리 삭제됨)

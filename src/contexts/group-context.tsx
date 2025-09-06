@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { GroupWithMembers } from '@/lib/auth'
 import { useAuth } from './auth-context'
+import { apiGet, apiPost } from '@/lib/api-client'
 
 interface GroupContextType {
   groups: GroupWithMembers[]
@@ -126,13 +127,10 @@ export function GroupProvider({ children }: GroupProviderProps) {
 
     setIsLoading(true)
     try {
-      const response = await fetch('/api/groups', {
-        credentials: 'include',
-      })
+      const response = await apiGet('/api/groups')
 
-      if (response.ok) {
-        const data = await response.json()
-        const fetchedGroups = data.groups || []
+      if (response.ok && response.data) {
+        const fetchedGroups = response.data.groups || []
         
         // 중복 방지 로직: ID 기준으로 유니크한 그룹만 설정
         const uniqueGroups = fetchedGroups.filter((group: any, index: number, self: any[]) => 
@@ -164,20 +162,11 @@ export function GroupProvider({ children }: GroupProviderProps) {
 
   const createGroup = async (name: string) => {
     try {
-      const response = await fetch('/api/groups', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name }),
-        credentials: 'include',
-      })
+      const response = await apiPost('/api/groups', { name })
 
-      const data = await response.json()
-
-      if (response.ok) {
+      if (response.ok && response.data) {
         // 전체 새로고침 대신 새 그룹을 로컬 상태에 추가
-        const newGroup = data.group
+        const newGroup = response.data.group
         setGroups(prevGroups => {
           // 중복 방지: 이미 같은 ID의 그룹이 있으면 추가하지 않음
           const existingGroup = prevGroups.find(g => g.id === newGroup.id)
@@ -193,7 +182,7 @@ export function GroupProvider({ children }: GroupProviderProps) {
         
         return { success: true, group: newGroup }
       } else {
-        return { success: false, error: data.error || '그룹 생성에 실패했습니다.' }
+        return { success: false, error: response.error || '그룹 생성에 실패했습니다.' }
       }
     } catch (error) {
       console.error('Create group error:', error)
@@ -203,21 +192,16 @@ export function GroupProvider({ children }: GroupProviderProps) {
 
   const generateInvite = async (groupId: string) => {
     try {
-      const response = await fetch(`/api/groups/${groupId}/invite`, {
-        method: 'POST',
-        credentials: 'include',
-      })
+      const response = await apiPost(`/api/groups/${groupId}/invite`)
 
-      const data = await response.json()
-
-      if (response.ok) {
+      if (response.ok && response.data) {
         return {
           success: true,
-          inviteUrl: data.inviteUrl,
-          inviteCode: data.inviteCode,
+          inviteUrl: response.data.inviteUrl,
+          inviteCode: response.data.inviteCode,
         }
       } else {
-        return { success: false, error: data.error || '초대 링크 생성에 실패했습니다.' }
+        return { success: false, error: response.error || '초대 링크 생성에 실패했습니다.' }
       }
     } catch (error) {
       console.error('Generate invite error:', error)
@@ -227,20 +211,11 @@ export function GroupProvider({ children }: GroupProviderProps) {
 
   const joinGroupByCode = async (inviteCode: string) => {
     try {
-      const response = await fetch('/api/groups/join', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ inviteCode }),
-        credentials: 'include',
-      })
+      const response = await apiPost('/api/groups/join', { inviteCode })
 
-      const data = await response.json()
-
-      if (response.ok) {
+      if (response.ok && response.data) {
         // 전체 새로고침 대신 참여한 그룹을 로컬 상태에 추가
-        const joinedGroup = data.group
+        const joinedGroup = response.data.group
         setGroups(prevGroups => {
           // 중복 방지: 이미 같은 ID의 그룹이 있으면 추가하지 않음
           const existingGroup = prevGroups.find(g => g.id === joinedGroup.id)
@@ -256,7 +231,7 @@ export function GroupProvider({ children }: GroupProviderProps) {
         
         return { success: true, group: joinedGroup }
       } else {
-        return { success: false, error: data.error || '그룹 참여에 실패했습니다.' }
+        return { success: false, error: response.error || '그룹 참여에 실패했습니다.' }
       }
     } catch (error) {
       console.error('Join group error:', error)
@@ -266,18 +241,13 @@ export function GroupProvider({ children }: GroupProviderProps) {
 
   const leaveGroup = async (groupId: string) => {
     try {
-      const response = await fetch(`/api/groups/${groupId}/leave`, {
-        method: 'POST',
-        credentials: 'include',
-      })
-
-      const data = await response.json()
+      const response = await apiPost(`/api/groups/${groupId}/leave`)
 
       if (response.ok) {
         await refreshGroups() // 그룹 목록 새로고침
         return { success: true }
       } else {
-        return { success: false, error: data.error || '그룹 탈퇴에 실패했습니다.' }
+        return { success: false, error: response.error || '그룹 탈퇴에 실패했습니다.' }
       }
     } catch (error) {
       console.error('Leave group error:', error)

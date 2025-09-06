@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { User, emailStorage } from '@/lib/auth'
+import { apiGet, apiPost } from '@/lib/api-client'
 
 interface AuthContextType {
   user: User | null
@@ -53,20 +54,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const checkAuthStatus = async () => {
     try {
-      // 타임아웃 설정으로 무한 대기 방지
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5초 타임아웃
+      const response = await apiGet('/api/auth/me')
 
-      const response = await fetch('/api/auth/me', {
-        credentials: 'include',
-        signal: controller.signal,
-      })
-
-      clearTimeout(timeoutId)
-
-      if (response.ok) {
-        const userData = await response.json()
-        setUser(userData.user)
+      if (response.ok && response.data) {
+        setUser(response.data.user)
       } else {
         // 토큰이 유효하지 않은 모든 경우에 로그아웃 처리
         console.log('Token invalid or expired, logging out...')
@@ -96,19 +87,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async (email: string, password: string, rememberMe = false) => {
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, rememberMe }),
-        credentials: 'include',
-      })
+      const response = await apiPost('/api/auth/login', { email, password, rememberMe })
 
-      const data = await response.json()
-
-      if (response.ok) {
-        setUser(data.user)
+      if (response.ok && response.data) {
+        setUser(response.data.user)
 
         // 이메일 저장/삭제
         if (rememberMe) {
@@ -121,7 +103,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         return { success: true }
       } else {
-        return { success: false, error: data.error || '로그인에 실패했습니다.' }
+        return { success: false, error: response.error || '로그인에 실패했습니다.' }
       }
     } catch (error) {
       console.error('Login error:', error)
@@ -131,22 +113,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signup = async (email: string, password: string, nickname: string) => {
     try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, nickname }),
-        credentials: 'include',
-      })
+      const response = await apiPost('/api/auth/signup', { email, password, nickname })
 
-      const data = await response.json()
-
-      if (response.ok) {
-        setUser(data.user)
+      if (response.ok && response.data) {
+        setUser(response.data.user)
         return { success: true }
       } else {
-        return { success: false, error: data.error || '회원가입에 실패했습니다.' }
+        return { success: false, error: response.error || '회원가입에 실패했습니다.' }
       }
     } catch (error) {
       console.error('Signup error:', error)
@@ -156,10 +129,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      })
+      await apiPost('/api/auth/logout')
     } catch (error) {
       console.error('Logout error:', error)
     } finally {

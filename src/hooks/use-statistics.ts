@@ -7,6 +7,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { useGroup } from '@/contexts/group-context'
+import { apiGet } from '@/lib/api-client'
 
 // 통계 데이터 타입 정의
 export interface CategoryStatistics {
@@ -80,17 +81,13 @@ export function useStatistics(filters: StatisticsFilters = {}) {
         params.set('groupId', currentGroup.id)
       }
 
-      const response = await fetch(`/api/statistics?${params}`, {
-        credentials: 'include',
-      })
+      const response = await apiGet(`/api/statistics?${params}`)
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to fetch statistics')
+        throw new Error(response.error || 'Failed to fetch statistics')
       }
 
-      const data = await response.json()
-      return data.data
+      return response.data?.data
     },
     enabled: true,
     staleTime: 5 * 60 * 1000, // 5분간 캐시 유지

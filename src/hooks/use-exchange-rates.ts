@@ -112,6 +112,7 @@ export function useCurrencyConverter(baseCurrency = 'KRW') {
  */
 export function useAutoRefreshRates(baseCurrency = 'KRW', interval?: number) {
   const queryClient = useQueryClient()
+  const [isOnline, setIsOnline] = React.useState(navigator.onLine)
 
   // 브라우저 포커스 시 환율 업데이트
   React.useEffect(() => {

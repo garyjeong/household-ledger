@@ -1,5 +1,6 @@
-import useSWR, { mutate } from 'swr'
-import { CACHE_KEYS, CACHE_INVALIDATION_PATTERNS } from '@/lib/swr-config'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiGet, apiPost } from '@/lib/api-client'
+import { queryKeys } from '@/lib/query-client'
 
 interface BalanceData {
   totalBalance: number
@@ -15,7 +16,7 @@ interface UseBalanceOptions {
   // 포커스 시 재검증 여부
   revalidateOnFocus?: boolean
   // 에러 시 재시도 여부
-  shouldRetryOnError?: boolean
+  retry?: boolean
 }
 
 export function useBalance(
@@ -23,69 +24,72 @@ export function useBalance(
   ownerId: string,
   options: UseBalanceOptions = {}
 ) {
-  const cacheKey = CACHE_KEYS.BALANCE(ownerType, ownerId)
+  const queryClient = useQueryClient()
 
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: mutateSingle,
-  } = useSWR<BalanceData>(
-    // ownerId가 있을 때만 요청
-    ownerId ? cacheKey : null,
-    {
-      // 기본 설정 오버라이드
-      refreshInterval: options.refreshInterval,
-      revalidateOnFocus: options.revalidateOnFocus,
-      shouldRetryOnError: options.shouldRetryOnError,
+  const balanceQuery = useQuery({
+    queryKey: ['balance', ownerType, ownerId],
+    queryFn: async (): Promise<BalanceData> => {
+      const params = new URLSearchParams({
+        ownerType,
+        ownerId,
+      })
 
-      // 잔액 데이터는 실시간성이 중요하므로 오래된 데이터도 표시
-      revalidateIfStale: true,
+      const response = await apiGet(`/api/balance?${params}`)
 
-      // 잔액 조회 실패 시 재시도
-      errorRetryCount: 2,
-      errorRetryInterval: 2000,
-    }
-  )
+      if (!response.ok) {
+        throw new Error(response.error || 'Failed to fetch balance')
+      }
+
+      return response.data
+    },
+    enabled: !!ownerId,
+    staleTime: 30 * 1000, // 30초간 fresh
+    gcTime: 5 * 60 * 1000, // 5분간 캐시 유지
+    refetchInterval: options.refreshInterval,
+    refetchOnWindowFocus: options.revalidateOnFocus ?? true,
+    retry: options.retry ?? 2,
+    retryDelay: 2000,
+  })
 
   // 잔액 새로고침
   const refreshBalance = async () => {
-    await mutateSingle()
+    await balanceQuery.refetch()
   }
 
   // 관련 캐시 무효화 (거래 추가/수정 후 호출)
   const invalidateRelatedCache = async () => {
-    const keys = CACHE_INVALIDATION_PATTERNS.BALANCE_UPDATE(ownerType, ownerId)
-    await Promise.all(keys.map(key => mutate(key)))
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['balance', ownerType, ownerId] }),
+      queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+    ])
   }
 
   // 낙관적 업데이트 (거래 추가 시 즉시 잔액 반영)
   const optimisticUpdate = async (balanceChange: number) => {
-    if (!data) return
+    if (!balanceQuery.data) return
 
     const optimisticData: BalanceData = {
-      ...data,
-      totalBalance: data.totalBalance + balanceChange,
+      ...balanceQuery.data,
+      totalBalance: balanceQuery.data.totalBalance + balanceChange,
     }
 
-    // 즉시 UI 업데이트
-    await mutateSingle(optimisticData, false)
+    // 즉시 UI 업데이트 (서버 검증 없이)
+    queryClient.setQueryData(['balance', ownerType, ownerId], optimisticData)
 
     // 서버 동기화
     setTimeout(() => {
-      mutateSingle()
+      balanceQuery.refetch()
     }, 1000)
   }
 
   return {
     // 데이터
-    balance: data,
+    balance: balanceQuery.data,
 
     // 상태
-    isLoading,
-    isValidating,
-    error,
+    isLoading: balanceQuery.isLoading,
+    isValidating: balanceQuery.isFetching,
+    error: balanceQuery.error,
 
     // 액션
     refreshBalance,
@@ -93,12 +97,12 @@ export function useBalance(
     optimisticUpdate,
 
     // 유틸리티
-    isPositive: data ? data.totalBalance >= 0 : null,
-    formattedBalance: data
+    isPositive: balanceQuery.data ? balanceQuery.data.totalBalance >= 0 : null,
+    formattedBalance: balanceQuery.data
       ? new Intl.NumberFormat('ko-KR', {
           style: 'currency',
-          currency: data.currency || 'KRW',
-        }).format(data.totalBalance)
+          currency: balanceQuery.data.currency || 'KRW',
+        }).format(balanceQuery.data.totalBalance)
       : null,
   }
 }

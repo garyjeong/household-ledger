@@ -1,4 +1,4 @@
-import { showToast, ToastType } from '@/lib/adapters/context-bridge'
+import { useToast as useToastOriginal } from '@/components/error/ToastProvider'
 
 interface ToastOptions {
   title: string
@@ -12,17 +12,22 @@ interface ToastOptions {
 }
 
 export function useToast() {
-  const toast = ({ title, description, variant = 'default', duration, action }: ToastOptions) => {
-    const type: ToastType = variant === 'destructive' ? 'error' : 'success'
+  const { addToast, success, error, warning, info } = useToastOriginal()
 
-    showToast({
-      type,
-      title,
-      message: description,
-      duration,
-      action,
-    })
+  const toast = ({ title, description, variant = 'default', duration, action }: ToastOptions) => {
+    if (variant === 'destructive') {
+      error(description || '', title)
+    } else {
+      success(description || '', title)
+    }
   }
 
-  return { toast }
+  // 기존 API와의 호환성을 위해 모든 메소드 제공
+  return {
+    toast,
+    success: (message: string) => success(message),
+    error: (message: string) => error(message),
+    warning: (message: string) => warning(message),
+    info: (message: string) => info(message),
+  }
 }

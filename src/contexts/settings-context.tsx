@@ -7,6 +7,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/auth-context'
+import { apiGet, apiPut } from '@/lib/api-client'
 
 // 카테고리 기본 설정
 export interface CategoryDisplaySettings {
@@ -104,13 +105,10 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     }
 
     try {
-      const response = await fetch('/api/settings', {
-        credentials: 'include',
-      })
+      const response = await apiGet('/api/settings')
 
-      if (response.ok) {
-        const data = await response.json()
-        const userSettings = { ...DEFAULT_SETTINGS, ...data.settings }
+      if (response.ok && response.data) {
+        const userSettings = { ...DEFAULT_SETTINGS, ...response.data.settings }
         setSettings(userSettings)
       } else {
         // 설정이 없는 경우 기본값 사용
@@ -132,14 +130,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     setSettings(newSettings)
 
     try {
-      const response = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(updates),
-      })
+      const response = await apiPut('/api/settings', updates)
 
       if (!response.ok) {
         // 실패 시 이전 설정으로 롤백
