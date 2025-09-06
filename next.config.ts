@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 
+// Bundle analyzer 설정
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
+
 const nextConfig: NextConfig = {
   
   // 이미지 최적화 설정
@@ -31,6 +36,25 @@ const nextConfig: NextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   
+  // 성능 최적화 설정
+  compiler: {
+    // React 컴포넌트에서 불필요한 속성 제거
+    reactRemoveProperties: process.env.NODE_ENV === 'production',
+    // console.log 제거 (프로덕션)
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn']
+    } : false,
+  },
+
+  // 번들 최적화
+  experimental: {
+    // 번들 크기 최적화
+    optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react'],
+  },
+
+  // 성능 관련 설정
+  poweredByHeader: false, // X-Powered-By 헤더 제거 (보안)
+  
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

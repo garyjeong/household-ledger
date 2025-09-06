@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { verifyToken, findUserById, verifyCookieToken } from '@/lib/auth'
+import { findUserById, verifyCookieToken } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // 프로필 업데이트 스키마

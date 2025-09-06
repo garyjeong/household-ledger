@@ -113,7 +113,7 @@ model Category {
 
   @@unique([groupId, name, type], map: "ux_category_name")
   @@index([groupId], map: "idx_categories_group")
-  @@index([createdBy], map: "idx_categories_creator")
+  // @@index([createdBy]) 제거 - 실제 쿼리에서 사용되지 않음
   @@map("categories")
 }
 
@@ -171,9 +171,9 @@ model Transaction {
   attachments Attachment[]
 
   @@index([groupId, date], map: "idx_tx_group_date")
-  @@index([ownerUserId, date], map: "idx_tx_owner_date")
+  @@index([ownerUserId, date], map: "idx_tx_owner_date") 
   @@index([categoryId], map: "idx_tx_category")
-  @@index([tagId], map: "idx_tx_tag")
+  // @@index([tagId]) 제거 - 현재 API에서 tagId 필터링 미사용
   @@map("transactions")
 }
 
@@ -198,6 +198,11 @@ enum TransactionType {
   EXPENSE
   INCOME
   TRANSFER
+}
+
+enum OwnerType {
+  USER
+  GROUP
 }
 
 // =============================================
@@ -257,8 +262,9 @@ model RecurringRule {
   category Category? @relation(fields: [categoryId], references: [id])
 
   @@index([groupId, isActive], map: "idx_recurring_rules_group_active")
-  @@index([createdBy, isActive], map: "idx_recurring_rules_creator_active")
-  @@index([frequency, isActive], map: "idx_recurring_rules_frequency_active")
+  // 사용 빈도가 낮은 인덱스들 제거로 성능 최적화
+  // @@index([createdBy, isActive]) 제거
+  // @@index([frequency, isActive]) 제거
   @@map("recurring_rules")
 }
 

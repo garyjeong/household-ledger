@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import {
-  verifyToken,
-  extractTokenFromHeader,
-  verifyCategoryOwnership,
-  verifyCookieToken,
-} from '@/lib/auth'
+import { verifyToken, extractTokenFromHeader, verifyCategoryOwnership } from '@/lib/auth'
 import { updateCategorySchema, formatCategoryForResponse } from '@/lib/schemas/category'
 import { canEditCategory, canDeleteCategory, isDefaultCategory } from '@/lib/seed-categories'
 

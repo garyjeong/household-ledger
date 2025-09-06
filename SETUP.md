@@ -22,12 +22,12 @@
 # .env.local 설정
 cp .env.example .env.local
 
-# 데이터베이스
-DATABASE_URL="mysql://user:wjdwhdans@localhost:3307/household_ledger"
+# 데이터베이스 (2025.09.06 검증 완료)
+DATABASE_URL="mysql://root:wjdwhdans@localhost:3307/household_ledger"
 
-# JWT 인증 (프로젝트명 + 환경)
-JWT_SECRET="household-ledger-develop-jwt-secret-key-2025"
-JWT_REFRESH_SECRET="household-ledger-develop-refresh-token-secret-2025"
+# JWT 인증 (검증된 키)
+JWT_SECRET="your-super-secret-jwt-key-for-development-only-2024"
+JWT_REFRESH_SECRET="your-super-secret-refresh-key-for-development-only-2024"
 NEXTAUTH_SECRET="household-ledger-develop-nextauth-secret-2025"
 NEXTAUTH_URL="http://localhost:3001"
 
@@ -414,4 +414,3 @@ export function logSecurityEvent(event: SecurityEvent) {
 ---
 
 **🔐 보안은 모든 개발자의 책임입니다. 의심스러운 활동이나 취약점을 발견하면 즉시 보고해주세요.**
-

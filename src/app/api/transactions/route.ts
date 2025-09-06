@@ -57,7 +57,6 @@ export async function GET(request: NextRequest) {
     const { type, startDate, endDate, categoryId, search, page, limit } = validationResult.data
 
     // 🔄 페이지네이션 파라미터 처리 (레거시 + 커서 둘 다 지원)
-    const url = new URL(request.url)
     const cursor = url.searchParams.get('cursor')
     const direction = (url.searchParams.get('direction') as 'forward' | 'backward') || 'forward'
 
@@ -99,22 +98,22 @@ export async function GET(request: NextRequest) {
       const formattedTransactions = result.data.map(formatTransactionForResponse)
 
       return NextResponse.json({
-        success: true,
         transactions: formattedTransactions,
         pagination: {
-          ...result.pagination,
-          cursor: {
-            next: result.pagination.nextCursor,
-            prev: result.pagination.prevCursor,
-          },
-          performance: result.performance,
-        },
-        // 🎯 성능 정보 제공
-        meta: {
-          optimized: true,
-          paginationType: 'cursor',
-          queryTime: `${result.performance.queryTime}ms`,
-          recommendation: cursor ? undefined : 'cursor 파라미터 사용을 권장합니다',
+          hasMore: result.pagination.hasMore,
+          nextCursor: result.pagination.nextCursor,
+          prevCursor: result.pagination.prevCursor,
+          totalCount: result.pagination.totalCount,
+          // 개발 환경에서만 성능 정보 포함
+          ...(process.env.NODE_ENV === 'development' && {
+            performance: result.performance,
+            meta: {
+              optimized: true,
+              paginationType: 'cursor',
+              queryTime: `${result.performance.queryTime}ms`,
+              recommendation: cursor ? undefined : 'cursor 파라미터 사용을 권장합니다',
+            },
+          }),
         },
       })
     } else {
@@ -138,20 +137,23 @@ export async function GET(request: NextRequest) {
       const formattedTransactions = result.data.map(formatTransactionForResponse)
 
       return NextResponse.json({
-        success: true,
         transactions: formattedTransactions,
-        pagination: legacyResult.pagination,
-        // 성능 정보 및 마이그레이션 권장사항
-        meta: {
-          optimized: false,
-          paginationType: 'offset',
-          queryTime: `${result.performance.queryTime}ms`,
-          warning: '레거시 페이지네이션은 성능상 권장하지 않습니다',
-          recommendation: {
-            message: 'cursor 기반 페이지네이션으로 마이그레이션을 권장합니다',
-            example: '?cursor=xxxxx&limit=20',
-            benefits: ['일정한 성능', '실시간 데이터 변경에 안정적', '깊은 페이지에서도 빠름'],
-          },
+        pagination: {
+          ...legacyResult.pagination,
+          // 개발 환경에서만 성능 정보 포함
+          ...(process.env.NODE_ENV === 'development' && {
+            meta: {
+              optimized: false,
+              paginationType: 'offset',
+              queryTime: `${result.performance.queryTime}ms`,
+              warning: '레거시 페이지네이션은 성능상 권장하지 않습니다',
+              recommendation: {
+                message: 'cursor 기반 페이지네이션으로 마이그레이션을 권장합니다',
+                example: '?cursor=xxxxx&limit=20',
+                benefits: ['일정한 성능', '실시간 데이터 변경에 안정적', '깊은 페이지에서도 빠름'],
+              },
+            },
+          }),
         },
       })
     }

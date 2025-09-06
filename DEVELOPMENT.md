@@ -35,12 +35,18 @@ pnpm dev
 # .env.local 설정
 cp .env.example .env.local
 
-# 필수 환경변수
-DATABASE_URL="mysql://user:wjdwhdans@localhost:3307/household_ledger"
-JWT_SECRET="household-ledger-develop-jwt-secret-key-2025"
-JWT_REFRESH_SECRET="household-ledger-develop-refresh-token-secret-2025"
+# 필수 환경변수 (2025.09.06 검증 완료)
+DATABASE_URL="mysql://root:wjdwhdans@localhost:3307/household_ledger"
+JWT_SECRET="your-super-secret-jwt-key-for-development-only-2024"
+JWT_REFRESH_SECRET="your-super-secret-refresh-key-for-development-only-2024"
 NEXTAUTH_SECRET="household-ledger-develop-nextauth-secret-2025"
 NEXTAUTH_URL="http://localhost:3001"
+
+# 검증된 실행 명령어
+JWT_SECRET="your-super-secret-jwt-key-for-development-only-2024" \
+JWT_REFRESH_SECRET="your-super-secret-refresh-key-for-development-only-2024" \
+DATABASE_URL="mysql://root:wjdwhdans@localhost:3307/household_ledger" \
+pnpm dev
 ```
 
 ---
@@ -156,7 +162,7 @@ chore(deps): update dependencies
 
 ## 🏗 아키텍처 가이드
 
-### 프로젝트 구조
+### 프로젝트 구조 (v2.2.0 최적화)
 
 ```text
 src/
@@ -165,46 +171,93 @@ src/
 │   ├── api/               # API 라우트
 │   └── globals.css        # 전역 스타일
 ├── components/            # React 컴포넌트
-│   ├── ui/                # 기본 UI 컴포넌트
-│   ├── couple-ledger/     # 가계부 컴포넌트
-│   └── error/             # 에러 처리 컴포넌트
-├── hooks/                 # 커스텀 훅
+│   ├── ui/                # 기본 UI 컴포넌트 (Radix + Shadcn)
+│   ├── balance/           # 잔액 관련 컴포넌트
+│   ├── categories/        # 카테고리 관리 컴포넌트
+│   ├── error/             # 에러 처리 컴포넌트 (통합 토스트 시스템)
+│   ├── loading/           # 스켈레톤 로더 시스템
+│   ├── statistics/        # 통계 시각화 컴포넌트
+│   ├── transactions/      # 거래 관리 컴포넌트
+│   └── user/              # 사용자 프로필 컴포넌트
+├── contexts/              # React Context (인증, 그룹, 설정)
+├── hooks/                 # 커스텀 훅 (React Query 기반)
 ├── lib/                   # 유틸리티 및 설정
-├── services/              # 비즈니스 로직
+│   ├── api-client.ts     # 통합 API 클라이언트 ✨
+│   ├── query-client.ts   # React Query 설정 ✨
+│   └── schemas/          # Zod 검증 스키마
 └── types/                 # TypeScript 타입 정의
+
+# 🗑️ 제거된 구조 (2025.01.21)
+├── stores/               # ❌ Zustand 스토어 제거
+│   └── ledger-store.ts  # ❌ 500줄 미사용 코드
+├── lib/adapters/        # ❌ Context Bridge 제거
+│   └── context-bridge.ts # ❌ 265줄 미사용 코드
+├── components/ledger/   # ❌ 레거시 컴포넌트 제거
+│   ├── QuickAddBar.tsx  # ❌ 미사용 컴포넌트
+│   ├── PresetPanel.tsx  # ❌ 미사용 컴포넌트
+│   ├── InboxList.tsx    # ❌ 미사용 컴포넌트
+│   └── BulkInput.tsx    # ❌ 미사용 컴포넌트
+└── lib/swr-config.ts    # ❌ SWR 설정 제거
 ```
 
-### 컴포넌트 구조
+### 컴포넌트 구조 (v2.2.0 최적화)
 
 ```typescript
-// ✅ 함수형 컴포넌트 구조
+// ✅ React Query 기반 컴포넌트 구조 (2025.01.21 최적화)
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { apiGet, apiPost } from '@/lib/api-client'
+
 interface Props {
-  title: string
-  onSubmit?: () => void
+  userId: string
+  onSuccess?: () => void
 }
 
-export function MyComponent({ title, onSubmit }: Props) {
-  // 1. 상태 관리
-  const [loading, setLoading] = useState(false)
+export function TransactionForm({ userId, onSuccess }: Props) {
+  // 1. 서버 상태 (React Query)
+  const { data: categories, isLoading: categoriesLoading } = useQuery({
+    queryKey: ['categories', userId],
+    queryFn: () => apiGet(`/api/categories?userId=${userId}`),
+    staleTime: 10 * 60 * 1000, // 10분 캐시
+  })
 
-  // 2. 커스텀 훅
-  const { user } = useAuth()
+  // 2. 뮤테이션 (서버 상태 변경)
+  const createTransactionMutation = useMutation({
+    mutationFn: (data: TransactionData) =>
+      apiPost('/api/transactions', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      onSuccess?.()
+    },
+  })
 
-  // 3. 이벤트 핸들러
-  const handleSubmit = async () => {
-    setLoading(true)
-    await onSubmit?.()
-    setLoading(false)
+  // 3. 로컬 상태 (필요한 경우만)
+  const [formData, setFormData] = useState<TransactionData>({})
+
+  // 4. 이벤트 핸들러
+  const handleSubmit = async (data: TransactionData) => {
+    await createTransactionMutation.mutateAsync(data)
   }
 
-  // 4. 렌더링
+  // 5. 로딩 및 에러 처리
+  if (categoriesLoading) return <SkeletonLoader />
+  if (createTransactionMutation.error) return <ErrorDisplay />
+
+  // 6. 렌더링
   return (
-    <div className="p-4">
-      <h1>{title}</h1>
-      <button onClick={handleSubmit} disabled={loading}>
-        {loading ? '처리중...' : '제출'}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <select>
+        {categories?.data?.categories.map(cat => (
+          <option key={cat.id} value={cat.id}>{cat.name}</option>
+        ))}
+      </select>
+      <button
+        type="submit"
+        disabled={createTransactionMutation.isPending}
+        className="btn-primary"
+      >
+        {createTransactionMutation.isPending ? '저장중...' : '저장'}
       </button>
-    </div>
+    </form>
   )
 }
 ```
@@ -241,27 +294,92 @@ export async function POST(request: NextRequest) {
 }
 ```
 
-### 상태 관리 패턴
+### 통합 API 클라이언트 패턴 (v2.2.0 최적화)
 
 ```typescript
-// Context + Zustand 패턴
-const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  isLoading: false,
-  login: async (credentials) => {
-    set({ isLoading: true })
-    const user = await authService.login(credentials)
-    set({ user, isLoading: false })
-  },
-  logout: () => set({ user: null })
-}))
+// ✅ api-client.ts - 모든 API 호출 통합
+import { ApiResponse, ApiError } from '@/types'
 
-// React Context 래퍼
+// 통합된 API 클라이언트 사용 (2025.01.21 최적화)
+export async function apiGet<T>(url: string): Promise<ApiResponse<T>> {
+  const response = await fetch(url, {
+    method: 'GET',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+  })
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await response.text())
+  }
+
+  return { ok: true, status: response.status, data: await response.json() }
+}
+
+export async function apiPost<T>(url: string, data?: any): Promise<ApiResponse<T>> {
+  const response = await fetch(url, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: data ? JSON.stringify(data) : undefined,
+  })
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await response.text())
+  }
+
+  return { ok: true, status: response.status, data: await response.json() }
+}
+
+// ❌ 더 이상 직접 fetch 사용하지 않음
+// const response = await fetch('/api/data') // 사용 금지
+
+// ✅ 모든 곳에서 api-client 사용
+// const response = await apiGet('/api/data') // 권장
+```
+
+### 상태 관리 패턴 (v2.2.0 최적화)
+
+```typescript
+// React Query + Context 통합 패턴 (2025.01.21 최적화)
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { apiGet, apiPost } from '@/lib/api-client'
+
+// 서버 상태는 React Query로 관리
+export function useAuth() {
+  const queryClient = useQueryClient()
+
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: () => apiGet('/api/auth/me'),
+    retry: false,
+    staleTime: 5 * 60 * 1000, // 5분
+  })
+
+  const loginMutation = useMutation({
+    mutationFn: (credentials: LoginCredentials) =>
+      apiPost('/api/auth/login', credentials),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth'] })
+    },
+  })
+
+  return {
+    user: user?.data?.user,
+    isLoading,
+    login: loginMutation.mutateAsync,
+    logout: () => {
+      queryClient.removeQueries({ queryKey: ['auth'] })
+      window.location.href = '/login'
+    },
+  }
+}
+
+// Context 래퍼
 export function AuthProvider({ children }: { children: ReactNode }) {
   return (
-    <AuthContext.Provider value={useAuthStore()}>
+    <QueryClientProvider client={queryClient}>
       {children}
-    </AuthContext.Provider>
+    </QueryClientProvider>
   )
 }
 ```
@@ -377,23 +495,41 @@ pnpm e2e:report        # 리포트 확인
 로그인 성공 시 JWT 토큰을 쿠키에 저장하고 사용자 정보 반환
 ```
 
-### MCP 프로토콜 적용
+### MCP 프로토콜 적용 (v2.2.0 최적화)
 
 ```markdown
-# MCP 기반 작업 흐름
+# MCP 기반 작업 흐름 (2025.01.21 최적화)
 
 1. **모델 확인** → Prisma 스키마 검토 및 최적화
-2. **API 구현** → Next.js API Routes, Zod 검증, 보안 검증
-3. **컴포넌트 개발** → Radix UI 기반, 재사용성 우선
-4. **페이지 통합** → App Router, Server Actions 활용
-5. **테스트 작성** → Jest + Testing Library
+2. **API 구현** → Next.js API Routes, api-client.ts 통합, Zod 검증
+3. **상태 관리** → React Query 단일 패턴, 서버/클라이언트 상태 분리
+4. **컴포넌트 개발** → Radix UI 기반, 재사용성 우선, 스켈레톤 로딩
+5. **페이지 통합** → App Router, 통합 토스트 시스템
+6. **테스트 작성** → Jest + Testing Library
 
-## 보안 우선 원칙
+## 아키텍처 원칙 (v2.2.0)
+
+### ✅ 필수 준수 사항
+
+- **API 호출**: 모든 곳에서 api-client.ts 사용 (직접 fetch 금지)
+- **상태 관리**: React Query 단일 패턴 (SWR, Zustand 사용 금지)
+- **에러 처리**: 통합 토스트 시스템 (ToastProvider 사용)
+- **로딩 상태**: SkeletonLoader 컴포넌트 활용
+
+### 🛡️ 보안 우선 원칙
 
 - 모든 API 입력 Zod 스키마 검증
+- api-client.ts의 통합된 인증 헤더 처리
 - 소유권 및 그룹 멤버십 검증
 - XSS/CSRF 방지 패턴 적용
 - JWT 토큰 만료 및 갱신 관리
+
+### 🧹 코드 품질 기준
+
+- OOP 원칙 준수 (SRP, DIP, OCP)
+- DRY 패턴 적용으로 중복 코드 방지
+- 타입 안전성 강화 (any 타입 사용 금지)
+- 미사용 코드 즉시 제거
 ```
 
 ---
@@ -531,4 +667,3 @@ import Image from 'next/image'
 ---
 
 **📋 이 가이드는 팀의 개발 효율성과 코드 품질 향상을 위해 지속적으로 업데이트됩니다.**
-

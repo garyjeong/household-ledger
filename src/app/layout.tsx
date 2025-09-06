@@ -6,6 +6,7 @@ import { GroupProvider } from '@/contexts/group-context'
 import { AlertProvider } from '@/contexts/alert-context'
 import { SettingsProvider } from '@/contexts/settings-context'
 import { QueryProvider } from '@/components/providers/QueryProvider'
+import { ToastProvider } from '@/components/error/ToastProvider'
 
 import { WebVitalsReporter } from '@/components/performance/WebVitalsReporter'
 
@@ -29,13 +30,15 @@ export default function RootLayout({
     <html lang='ko'>
       <body className={`${jetbrainsMono.variable} antialiased font-sans`} suppressHydrationWarning>
         <QueryProvider>
-          <AlertProvider>
-            <AuthProvider>
-              <SettingsProvider>
-                <GroupProvider>{children}</GroupProvider>
-              </SettingsProvider>
-            </AuthProvider>
-          </AlertProvider>
+          <ToastProvider>
+            <AlertProvider>
+              <AuthProvider>
+                <SettingsProvider>
+                  <GroupProvider>{children}</GroupProvider>
+                </SettingsProvider>
+              </AuthProvider>
+            </AlertProvider>
+          </ToastProvider>
         </QueryProvider>
         <WebVitalsReporter />
       </body>

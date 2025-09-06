@@ -60,13 +60,17 @@ export async function POST(request: NextRequest) {
     // 응답 생성
     const response = NextResponse.json(
       {
-        success: true,
         user: {
           id: user.id,
           email: user.email,
           nickname: user.nickname,
           avatarUrl: user.avatarUrl,
         },
+        // 개발 환경에서만 성공 플래그 포함
+        ...(process.env.NODE_ENV === 'development' && {
+          success: true,
+          meta: { loginMethod: 'email_password', rememberMe },
+        }),
       },
       { status: 200 }
     )

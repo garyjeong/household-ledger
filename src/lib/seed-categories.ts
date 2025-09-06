@@ -24,7 +24,7 @@ export async function seedDefaultCategories() {
         const newCategory = await prisma.category.create({
           data: {
             groupId: null, // 기본 카테고리는 그룹에 속하지 않음
-            createdBy: BigInt(0), // 시스템 생성 (기본 카테고리)
+            createdBy: BigInt(1), // 첫 번째 사용자로 설정 (기본 카테고리)
             name: category.name,
             type: category.type,
             color: category.color,
@@ -61,11 +61,15 @@ export async function getAvailableCategories(
         ...(transactionType && { type: transactionType }),
       },
       // 그룹의 커스텀 카테고리
-      ...(groupId ? [{
-        groupId: BigInt(groupId),
-        isDefault: false,
-        ...(transactionType && { type: transactionType }),
-      }] : []),
+      ...(groupId
+        ? [
+            {
+              groupId: BigInt(groupId),
+              isDefault: false,
+              ...(transactionType && { type: transactionType }),
+            },
+          ]
+        : []),
     ]
 
     const categories = await prisma.category.findMany({
@@ -96,7 +100,11 @@ export function isDefaultCategory(category: any): boolean {
 /**
  * 카테고리 삭제 가능 여부 확인
  */
-export function canDeleteCategory(category: any, userId: string, userGroupId?: string | null): boolean {
+export function canDeleteCategory(
+  category: any,
+  userId: string,
+  userGroupId?: string | null
+): boolean {
   // 기본 카테고리는 삭제 불가
   if (isDefaultCategory(category)) {
     return false
@@ -114,7 +122,11 @@ export function canDeleteCategory(category: any, userId: string, userGroupId?: s
 /**
  * 카테고리 수정 가능 여부 확인
  */
-export function canEditCategory(category: any, userId: string, userGroupId?: string | null): boolean {
+export function canEditCategory(
+  category: any,
+  userId: string,
+  userGroupId?: string | null
+): boolean {
   // 기본 카테고리는 수정 불가
   if (isDefaultCategory(category)) {
     return false

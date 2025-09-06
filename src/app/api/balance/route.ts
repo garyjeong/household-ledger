@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { verifyToken } from '@/lib/auth'
 import { BalanceService } from '@/lib/services/balance-service'
-import { z } from 'zod'
+import { createSuccessResponse, ApiErrors } from '@/lib/api-response'
 
 // 잔액 조회 쿼리 스키마
 const balanceQuerySchema = z.object({
@@ -24,18 +25,12 @@ export async function GET(request: NextRequest) {
     const accessToken = request.cookies.get('accessToken')?.value
 
     if (!accessToken) {
-      return NextResponse.json(
-        { error: '인증이 필요합니다', code: 'AUTH_REQUIRED' },
-        { status: 401 }
-      )
+      return ApiErrors.unauthorized()
     }
 
     const user = await verifyToken(accessToken)
     if (!user) {
-      return NextResponse.json(
-        { error: '유효하지 않은 토큰입니다', code: 'INVALID_TOKEN' },
-        { status: 401 }
-      )
+      return ApiErrors.unauthorized('유효하지 않은 토큰입니다')
     }
 
     // 쿼리 파라미터 파싱
@@ -118,26 +113,27 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 응답 데이터 구성
-    const response = {
-      success: true,
+    // 응답 데이터 구성 (최적화)
+    const responseData = {
       balance: {
         current: currentBalance,
         projected: projectedBalance,
         currency: 'KRW',
-        lastCalculated: new Date().toISOString(),
       },
-      periodData,
-      monthlyTrend,
+      ...(periodData && { periodData }),
+      ...(monthlyTrend && { monthlyTrend }),
     }
 
-    return NextResponse.json(response)
+    return createSuccessResponse(responseData, {
+      devInfo: {
+        includeProjection,
+        projectionMonths,
+        lastCalculated: new Date().toISOString(),
+      },
+    })
   } catch (error: unknown) {
     console.error('Balance calculation error:', error)
-    return NextResponse.json(
-      { error: '잔액 계산 중 오류가 발생했습니다', code: 'INTERNAL_ERROR' },
-      { status: 500 }
-    )
+    return ApiErrors.serverError('잔액 계산 중 오류가 발생했습니다')
   }
 }
 
@@ -151,18 +147,12 @@ export async function POST(request: NextRequest) {
     const accessToken = request.cookies.get('accessToken')?.value
 
     if (!accessToken) {
-      return NextResponse.json(
-        { error: '인증이 필요합니다', code: 'AUTH_REQUIRED' },
-        { status: 401 }
-      )
+      return ApiErrors.unauthorized()
     }
 
     const user = await verifyToken(accessToken)
     if (!user) {
-      return NextResponse.json(
-        { error: '유효하지 않은 토큰입니다', code: 'INVALID_TOKEN' },
-        { status: 401 }
-      )
+      return ApiErrors.unauthorized('유효하지 않은 토큰입니다')
     }
 
     // 요청 본문 파싱
@@ -181,16 +171,12 @@ export async function POST(request: NextRequest) {
       period: finalPeriod,
     })
 
-    return NextResponse.json({
-      success: true,
+    return createSuccessResponse({
       period: finalPeriod,
       budgetStatus,
     })
   } catch (error: unknown) {
     console.error('Budget status error:', error)
-    return NextResponse.json(
-      { error: '예산 현황 조회 중 오류가 발생했습니다', code: 'INTERNAL_ERROR' },
-      { status: 500 }
-    )
+    return ApiErrors.serverError('예산 현황 조회 중 오류가 발생했습니다')
   }
 }

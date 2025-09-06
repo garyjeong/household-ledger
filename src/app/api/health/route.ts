@@ -78,7 +78,7 @@ function checkMemory(): HealthCheck {
   const memoryPercentage = (usedMemory / totalMemory) * 100
 
   return {
-    status: memoryPercentage < 80 ? 'up' : memoryPercentage < 90 ? 'degraded' : 'down',
+    status: memoryPercentage < 90 ? 'up' : memoryPercentage < 98 ? 'degraded' : 'down',
     lastChecked: new Date().toISOString(),
     details: {
       used: `${Math.round(usedMemory / 1024 / 1024)}MB`,
