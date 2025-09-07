@@ -565,52 +565,43 @@ export function PrivacySettings({
         </CardContent>
       </Card>
 
-      {/* 위험 구역 */}
-      <Card className='border-red-200'>
-        <CardHeader>
-          <div className='flex items-center justify-between'>
-            <CardTitle className='flex items-center gap-2 text-red-600'>
-              <AlertTriangle className='h-5 w-5' />
-              위험 구역
-            </CardTitle>
+      {/* 위험 구역 - 컴팩트 버전 */}
+      <div className='border border-red-200 bg-red-50/30 rounded-lg p-3'>
+        <div className='flex items-center justify-between'>
+          <div className='flex items-center gap-2'>
+            <AlertTriangle className='h-4 w-4 text-red-600' />
+            <span className='text-sm font-medium text-red-800'>위험 구역</span>
+          </div>
+          <div className='flex items-center gap-2'>
             <Button
               type='button'
               variant='ghost'
               size='sm'
               onClick={() => setShowDangerZone(!showDangerZone)}
-              className='gap-2'
+              className='h-7 px-2 text-xs text-red-700 hover:text-red-800'
             >
-              {showDangerZone ? <EyeOff className='h-4 w-4' /> : <Eye className='h-4 w-4' />}
+              {showDangerZone ? <EyeOff className='h-3 w-3' /> : <Eye className='h-3 w-3' />}
               {showDangerZone ? '숨기기' : '보기'}
             </Button>
+            {showDangerZone && (
+              <Button
+                type='button'
+                variant='destructive'
+                onClick={onDeleteAccount}
+                className='h-7 px-3 text-xs gap-1'
+              >
+                <UserX className='h-3 w-3' />
+                계정 삭제
+              </Button>
+            )}
           </div>
-        </CardHeader>
+        </div>
         {showDangerZone && (
-          <CardContent>
-            <div className='space-y-4 p-4 bg-red-50 rounded-lg'>
-              <div className='flex items-start gap-3'>
-                <AlertTriangle className='h-5 w-5 text-red-500 mt-0.5' />
-                <div className='flex-1'>
-                  <h4 className='font-medium text-red-900'>계정 삭제</h4>
-                  <p className='text-sm text-red-700 mb-3'>
-                    계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수
-                    없습니다.
-                  </p>
-                  <Button
-                    type='button'
-                    variant='destructive'
-                    onClick={onDeleteAccount}
-                    className='gap-2'
-                  >
-                    <UserX className='h-4 w-4' />
-                    계정 삭제
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
+          <p className='text-xs text-red-600 mt-2 ml-6'>
+            모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다
+          </p>
         )}
-      </Card>
+      </div>
 
       {/* 저장 버튼 */}
       <div className='flex justify-end'>

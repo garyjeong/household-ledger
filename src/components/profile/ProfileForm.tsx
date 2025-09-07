@@ -121,29 +121,29 @@ export function ProfileForm({ className }: ProfileFormProps) {
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
           <User className='h-5 w-5' />
-          기본 정보
+          프로필 수정
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
-          {/* 프로필 이미지 영역 */}
-          <div className='flex items-center gap-4'>
-            <div className='w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center'>
-              {profile.avatarUrl ? (
-                <img
-                  src={profile.avatarUrl}
-                  alt='프로필 이미지'
-                  className='w-full h-full rounded-full object-cover'
-                />
-              ) : (
-                <User className='h-10 w-10 text-blue-600' />
-              )}
-            </div>
-            <div className='flex-1'>
-              <h3 className='text-lg font-medium text-gray-900'>{profile.name}</h3>
-              <p className='text-sm text-gray-500'>
-                가입일: {new Date(profile.createdAt).toLocaleDateString('ko-KR')}
-              </p>
+          {/* 기본 정보 */}
+          <div className='bg-slate-50 rounded-lg p-4'>
+            <h3 className='text-sm font-medium text-slate-700 mb-3'>기본 정보</h3>
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-4 text-sm'>
+              <div>
+                <span className='text-slate-500'>이름</span>
+                <div className='font-medium text-slate-900'>{profile.name}</div>
+              </div>
+              <div>
+                <span className='text-slate-500'>이메일</span>
+                <div className='font-medium text-slate-900'>{profile.email}</div>
+              </div>
+              <div>
+                <span className='text-slate-500'>가입일</span>
+                <div className='font-medium text-slate-900'>
+                  {new Date(profile.createdAt).toLocaleDateString('ko-KR')}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -172,27 +172,6 @@ export function ProfileForm({ className }: ProfileFormProps) {
                 disabled={isLoading}
               />
               {errors.email && <p className='text-sm text-red-600'>{errors.email.message}</p>}
-            </div>
-          </div>
-
-          {/* 읽기 전용 정보 */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t'>
-            <div className='space-y-2'>
-              <Label className='text-sm text-gray-500'>사용자 ID</Label>
-              <div className='text-sm font-mono bg-gray-50 p-2 rounded'>{profile.id}</div>
-            </div>
-
-            <div className='space-y-2'>
-              <Label className='text-sm text-gray-500'>가입일</Label>
-              <div className='text-sm bg-gray-50 p-2 rounded'>
-                {new Date(profile.createdAt).toLocaleDateString('ko-KR', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </div>
             </div>
           </div>
 

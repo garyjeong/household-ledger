@@ -48,6 +48,51 @@ export async function seedDefaultCategories() {
  * 특정 사용자/그룹의 사용 가능한 카테고리 목록 조회
  * (기본 카테고리 + 해당 소유자의 커스텀 카테고리)
  */
+/**
+ * 특정 그룹에 기본 카테고리를 복사하여 생성
+ * 그룹 생성 시 자동으로 호출됨
+ */
+export async function createDefaultCategoriesForGroup(groupId: string, createdBy: string) {
+  try {
+    console.log(`🏠 그룹 ${groupId}에 기본 카테고리 생성 시작`)
+
+    const createdCategories = []
+
+    for (const category of defaultCategories) {
+      // 그룹에 같은 이름의 카테고리가 이미 존재하는지 확인
+      const existingCategory = await prisma.category.findFirst({
+        where: {
+          groupId: BigInt(groupId),
+          name: category.name,
+          type: category.type,
+        },
+      })
+
+      if (!existingCategory) {
+        const newCategory = await prisma.category.create({
+          data: {
+            groupId: BigInt(groupId),
+            createdBy: BigInt(createdBy),
+            name: category.name,
+            type: category.type,
+            color: category.color,
+            isDefault: false, // 그룹 카테고리는 기본 카테고리가 아님
+            budgetAmount: BigInt(0),
+          },
+        })
+        createdCategories.push(newCategory)
+        console.log(`✅ 그룹 카테고리 생성: ${category.name} (${category.type})`)
+      }
+    }
+
+    console.log(`🎉 그룹 ${groupId}에 기본 카테고리 생성 완료: ${createdCategories.length}개 생성`)
+    return createdCategories
+  } catch (error) {
+    console.error(`❌ 그룹 ${groupId} 카테고리 생성 중 오류:`, error)
+    throw error
+  }
+}
+
 export async function getAvailableCategories(
   groupId: string | null,
   transactionType?: 'EXPENSE' | 'INCOME' | 'TRANSFER'

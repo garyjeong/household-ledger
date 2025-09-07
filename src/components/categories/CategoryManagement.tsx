@@ -18,6 +18,7 @@ import {
   Settings,
   Check,
   MoreVertical,
+  Users,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -77,26 +78,31 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
   
 
 
-  // API hooks - currentGroup이 있을 때만 호출
-  const filters: CategoryFilters | null = React.useMemo(() => {
-    if (!currentGroup?.id) return null
-    
-    return {
-      groupId: currentGroup.id,
+  // API hooks - 기본 카테고리는 항상 로딩, 그룹 카테고리는 조건부 로딩
+  const filters: CategoryFilters | undefined = React.useMemo(() => {
+    const baseFilter = {
       ...(selectedTab !== 'all' && { type: selectedTab.toUpperCase() as 'INCOME' | 'EXPENSE' | 'TRANSFER' }),
     }
+    
+    // 그룹이 있으면 그룹 필터 추가, 없으면 기본 카테고리만 로딩
+    if (currentGroup?.id) {
+      return {
+        ...baseFilter,
+        groupId: currentGroup.id,
+      }
+    }
+    
+    // 그룹이 없어도 기본 카테고리는 로딩
+    return baseFilter
   }, [currentGroup?.id, selectedTab])
 
-  // currentGroup이 로드되기 전에는 API 호출하지 않음
-  const shouldFetchCategories = !!filters
-  const { data: categoriesData, isLoading, error, refetch } = useCategories(
-    shouldFetchCategories ? filters : null
-  )
+  // 필터가 정의되면 API 호출 (null이 아닌 undefined 사용)
+  const { data: categoriesData, isLoading, error, refetch } = useCategories(filters)
   const { deleteCategory: deleteCategoryFn, loading: deleteLoading, error: deleteError } = useDeleteCategory()
 
   // 카테고리 목록 필터링 및 정렬
   const filteredCategories = React.useMemo(() => {
-    if (!shouldFetchCategories || !categoriesData?.categories) return []
+    if (!categoriesData?.categories) return []
 
     // 검색 필터링
     let filtered = categoriesData.categories.filter((category: Category) =>
@@ -126,7 +132,7 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
     }
 
     return filtered
-  }, [shouldFetchCategories, categoriesData?.categories, searchQuery, sortOrder])
+  }, [categoriesData?.categories, searchQuery, sortOrder])
 
   // 새 카테고리 추가
   const handleAddCategory = () => {
@@ -395,17 +401,18 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
     )
   }
 
-  // 그룹이 없는 상태 처리
-  if (!currentGroup) {
-    return (
-      <div className='text-center py-6'>
-        <p className='text-gray-600 text-sm'>그룹에 가입하거나 생성한 후 카테고리를 관리할 수 있습니다.</p>
-        <p className='text-xs text-gray-500 mt-1'>
-          먼저 그룹 페이지에서 그룹을 생성하거나 초대 코드로 가입해주세요.
-        </p>
+  // 그룹 없을 때 알림 컴포넌트
+  const NoGroupAlert = () => (
+    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+      <div className="flex items-center gap-2 mb-2">
+        <Users className="h-4 w-4 text-blue-600" />
+        <h4 className="font-medium text-blue-900">그룹에 참여하지 않았습니다</h4>
       </div>
-    )
-  }
+      <p className="text-sm text-blue-700">
+        현재 기본 카테고리만 표시됩니다. 그룹을 생성하거나 참여하여 더 많은 기능을 사용해보세요.
+      </p>
+    </div>
+  )
 
   if (error) {
     return (
@@ -490,6 +497,9 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
           </div>
         </div>
       </div>
+
+      {/* 그룹 없을 때 알림 */}
+      {!currentGroup && <NoGroupAlert />}
 
       {/* 검색 및 필터 */}
       <div className='mb-4 space-y-3'>

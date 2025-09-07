@@ -185,26 +185,26 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
-            {/* 계정 관리 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className='flex items-center gap-2 text-red-600'>
-                  <Settings className='h-5 w-5' />
-                  위험 구역
-                </CardTitle>
-              </CardHeader>
-              <CardContent className='space-y-4'>
-                <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-                  <h4 className='font-medium text-red-900 mb-2'>계정 삭제</h4>
-                  <p className='text-sm text-red-700 mb-4'>
-                    계정을 삭제하면 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다.
-                  </p>
-                  <Button variant='destructive' size='sm' onClick={handleDeleteAccount}>
-                    계정 삭제
-                  </Button>
+            {/* 위험 구역 - 컴팩트 버전 */}
+            <div className='border border-red-200 bg-red-50/30 rounded-lg p-3'>
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center gap-2'>
+                  <Settings className='h-4 w-4 text-red-600' />
+                  <span className='text-sm font-medium text-red-800'>위험 구역</span>
                 </div>
-              </CardContent>
-            </Card>
+                <Button 
+                  variant='destructive' 
+                  size='sm' 
+                  onClick={handleDeleteAccount}
+                  className='h-7 px-3 text-xs'
+                >
+                  계정 삭제
+                </Button>
+              </div>
+              <p className='text-xs text-red-600 mt-1 ml-6'>
+                모든 데이터가 영구 삭제됩니다
+              </p>
+            </div>
           </div>
         )
 

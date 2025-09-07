@@ -3,7 +3,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { GroupWithMembers } from '@/lib/auth'
 import { useAuth } from './auth-context'
-import { apiGet, apiPost } from '@/lib/api-client'
+import { apiGet, apiPost, apiDelete } from '@/lib/api-client'
+import { clearCategoriesCache } from '@/hooks/use-categories'
 
 interface GroupContextType {
   groups: GroupWithMembers[]
@@ -21,6 +22,7 @@ interface GroupContextType {
     inviteCode: string
   ) => Promise<{ success: boolean; error?: string; group?: GroupWithMembers }>
   leaveGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>
+  deleteGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>
 }
 
 const GroupContext = createContext<GroupContextType | undefined>(undefined)
@@ -150,6 +152,8 @@ export function GroupProvider({ children }: GroupProviderProps) {
     if (!groupId) {
       setCurrentGroup(null)
       localStorage.removeItem(CURRENT_GROUP_KEY)
+      // 카테고리 캐시 클리어
+      clearCategoriesCache()
       return
     }
 
@@ -157,6 +161,8 @@ export function GroupProvider({ children }: GroupProviderProps) {
     if (group) {
       setCurrentGroup(group)
       localStorage.setItem(CURRENT_GROUP_KEY, groupId)
+      // 그룹 변경 시 카테고리 캐시 클리어
+      clearCategoriesCache()
     }
   }
 
@@ -179,6 +185,9 @@ export function GroupProvider({ children }: GroupProviderProps) {
         // 새로 생성된 그룹을 현재 그룹으로 설정
         setCurrentGroup(newGroup)
         localStorage.setItem(CURRENT_GROUP_KEY, newGroup.id)
+        
+        // 카테고리 캐시 클리어 (새 그룹의 카테고리 로딩을 위해)
+        clearCategoriesCache()
         
         return { success: true, group: newGroup }
       } else {
@@ -229,6 +238,9 @@ export function GroupProvider({ children }: GroupProviderProps) {
         setCurrentGroup(joinedGroup)
         localStorage.setItem(CURRENT_GROUP_KEY, joinedGroup.id)
         
+        // 카테고리 캐시 클리어 (참여한 그룹의 카테고리 로딩을 위해)
+        clearCategoriesCache()
+        
         return { success: true, group: joinedGroup }
       } else {
         return { success: false, error: response.error || '그룹 참여에 실패했습니다.' }
@@ -245,12 +257,41 @@ export function GroupProvider({ children }: GroupProviderProps) {
 
       if (response.ok) {
         await refreshGroups() // 그룹 목록 새로고침
+        // 카테고리 캐시 클리어 (그룹 탈퇴 후 카테고리 변경 반영)
+        clearCategoriesCache()
         return { success: true }
       } else {
         return { success: false, error: response.error || '그룹 탈퇴에 실패했습니다.' }
       }
     } catch (error) {
       console.error('Leave group error:', error)
+      return { success: false, error: '네트워크 오류가 발생했습니다.' }
+    }
+  }
+
+  const deleteGroup = async (groupId: string) => {
+    try {
+      const response = await apiDelete(`/api/groups/${groupId}`)
+
+      if (response.ok) {
+        // 삭제된 그룹이 현재 그룹이면 currentGroup을 null로 설정
+        if (currentGroup && currentGroup.id === groupId) {
+          setCurrentGroup(null)
+          localStorage.removeItem(CURRENT_GROUP_KEY)
+        }
+        
+        // 로컬 상태에서 삭제된 그룹 제거
+        setGroups(prevGroups => prevGroups.filter(g => g.id !== groupId))
+        
+        // 카테고리 캐시 클리어 (그룹 삭제 후 카테고리 변경 반영)
+        clearCategoriesCache()
+        
+        return { success: true }
+      } else {
+        return { success: false, error: response.error || '그룹 삭제에 실패했습니다.' }
+      }
+    } catch (error) {
+      console.error('Delete group error:', error)
       return { success: false, error: '네트워크 오류가 발생했습니다.' }
     }
   }
@@ -265,6 +306,7 @@ export function GroupProvider({ children }: GroupProviderProps) {
     generateInvite,
     joinGroupByCode,
     leaveGroup,
+    deleteGroup,
   }
 
   return <GroupContext.Provider value={value}>{children}</GroupContext.Provider>

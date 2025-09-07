@@ -65,23 +65,14 @@ export function QuickAddModal({
 
   // 현재 그룹 정보 가져오기
   const { currentGroup, isLoading: groupLoading } = useGroup()
+  
 
-  // 현재 그룹의 카테고리만 가져오기
-  const categoryFilters = useMemo(() => {
-    if (!currentGroup?.id) return null
-    
-    return {
-      ownerType: 'GROUP' as const,
-      ownerId: currentGroup.id,
-    }
-  }, [currentGroup?.id])
-
-  const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError, refetch: refetchCategories } = useCategories(
-    categoryFilters
-  )
+  // 카테고리 가져오기 (API에서 자동으로 사용자의 그룹 상황에 맞는 카테고리 반환)
+  const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError, refetch: refetchCategories } = useCategories({})
 
   // 카테고리 배열 추출
   const categories = categoriesData?.categories || []
+  
 
   // 폼 상태
   const [formData, setFormData] = useState<QuickAddForm>({

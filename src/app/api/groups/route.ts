@@ -66,6 +66,25 @@ export async function POST(request: NextRequest) {
 
     const { name } = validationResult.data
 
+    // 사용자가 이미 소유한 그룹이 있는지 확인
+    const existingOwnedGroup = await prisma.group.findFirst({
+      where: { ownerId: BigInt(payload.userId) },
+    })
+
+    if (existingOwnedGroup) {
+      return NextResponse.json(
+        {
+          error: '이미 소유한 그룹이 있습니다. 계정당 하나의 그룹만 생성할 수 있습니다.',
+          code: 'GROUP_LIMIT_EXCEEDED',
+          existingGroup: {
+            id: existingOwnedGroup.id.toString(),
+            name: existingOwnedGroup.name,
+          },
+        },
+        { status: 400 }
+      )
+    }
+
     // 그룹 생성
     const newGroup = await createGroup({
       name,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyToken, extractTokenFromHeader, verifyCategoryOwnership } from '@/lib/auth'
+import { verifyCookieToken } from '@/lib/auth'
 import { updateCategorySchema, formatCategoryForResponse } from '@/lib/schemas/category'
 import { canEditCategory, canDeleteCategory, isDefaultCategory } from '@/lib/seed-categories'
 
@@ -13,24 +13,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { id } = await params
     const categoryId = id
 
-    // 인증 확인
-    const authHeader = request.headers.get('authorization')
-    const token = extractTokenFromHeader(authHeader)
-
-    if (!token) {
+    // 토큰 검증
+    const accessToken = request.cookies.get('accessToken')?.value
+    if (!accessToken) {
       return NextResponse.json(
         { error: '인증이 필요합니다', code: 'AUTH_REQUIRED' },
         { status: 401 }
       )
     }
 
-    const user = await verifyToken(token)
-    if (!user) {
-      return NextResponse.json(
-        { error: '유효하지 않은 토큰입니다', code: 'INVALID_TOKEN' },
-        { status: 401 }
-      )
-    }
+    const user = await verifyCookieToken(accessToken)
 
     // 카테고리 존재 확인
     const existingCategory = await prisma.category.findUnique({
@@ -52,24 +44,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       )
     }
 
+    // 사용자의 그룹 정보 가져오기
+    const userData = await prisma.user.findUnique({
+      where: { id: BigInt(user.userId) },
+      select: { groupId: true },
+    })
+
+    const userGroupId = userData?.groupId?.toString() || null
+
     // 수정 권한 확인
-    if (!canEditCategory(existingCategory, user.userId)) {
+    if (!canEditCategory(existingCategory, user.userId, userGroupId)) {
       return NextResponse.json(
         { error: '카테고리를 수정할 권한이 없습니다', code: 'ACCESS_DENIED' },
-        { status: 403 }
-      )
-    }
-
-    // 소유권 검증
-    const ownershipResult = await verifyCategoryOwnership(
-      user.userId,
-      existingCategory.ownerType,
-      existingCategory.ownerId.toString()
-    )
-
-    if (!ownershipResult.isValid) {
-      return NextResponse.json(
-        { error: ownershipResult.error || '접근 권한이 없습니다', code: 'ACCESS_DENIED' },
         { status: 403 }
       )
     }
@@ -98,8 +84,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     ) {
       const duplicateCategory = await prisma.category.findFirst({
         where: {
-          ownerType: existingCategory.ownerType,
-          ownerId: existingCategory.ownerId,
+          groupId: existingCategory.groupId,
           name: updateData.name || existingCategory.name,
           type: updateData.type || existingCategory.type,
           id: { not: BigInt(categoryId) }, // 현재 카테고리 제외
@@ -145,24 +130,16 @@ export async function DELETE(
     const { id } = await params
     const categoryId = id
 
-    // 인증 확인
-    const authHeader = request.headers.get('authorization')
-    const token = extractTokenFromHeader(authHeader)
-
-    if (!token) {
+    // 토큰 검증
+    const accessToken = request.cookies.get('accessToken')?.value
+    if (!accessToken) {
       return NextResponse.json(
         { error: '인증이 필요합니다', code: 'AUTH_REQUIRED' },
         { status: 401 }
       )
     }
 
-    const user = await verifyToken(token)
-    if (!user) {
-      return NextResponse.json(
-        { error: '유효하지 않은 토큰입니다', code: 'INVALID_TOKEN' },
-        { status: 401 }
-      )
-    }
+    const user = await verifyCookieToken(accessToken)
 
     // 카테고리 존재 확인
     const existingCategory = await prisma.category.findUnique({
@@ -184,24 +161,18 @@ export async function DELETE(
       )
     }
 
+    // 사용자의 그룹 정보 가져오기
+    const userData = await prisma.user.findUnique({
+      where: { id: BigInt(user.userId) },
+      select: { groupId: true },
+    })
+
+    const userGroupId = userData?.groupId?.toString() || null
+
     // 삭제 권한 확인
-    if (!canDeleteCategory(existingCategory, user.userId)) {
+    if (!canDeleteCategory(existingCategory, user.userId, userGroupId)) {
       return NextResponse.json(
         { error: '카테고리를 삭제할 권한이 없습니다', code: 'ACCESS_DENIED' },
-        { status: 403 }
-      )
-    }
-
-    // 소유권 검증
-    const ownershipResult = await verifyCategoryOwnership(
-      user.userId,
-      existingCategory.ownerType,
-      existingCategory.ownerId.toString()
-    )
-
-    if (!ownershipResult.isValid) {
-      return NextResponse.json(
-        { error: ownershipResult.error || '접근 권한이 없습니다', code: 'ACCESS_DENIED' },
         { status: 403 }
       )
     }
@@ -247,24 +218,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { id } = await params
     const categoryId = id
 
-    // 인증 확인
-    const authHeader = request.headers.get('authorization')
-    const token = extractTokenFromHeader(authHeader)
-
-    if (!token) {
+    // 토큰 검증
+    const accessToken = request.cookies.get('accessToken')?.value
+    if (!accessToken) {
       return NextResponse.json(
         { error: '인증이 필요합니다', code: 'AUTH_REQUIRED' },
         { status: 401 }
       )
     }
 
-    const user = await verifyToken(token)
-    if (!user) {
-      return NextResponse.json(
-        { error: '유효하지 않은 토큰입니다', code: 'INVALID_TOKEN' },
-        { status: 401 }
-      )
-    }
+    const user = await verifyCookieToken(accessToken)
 
     // 카테고리 존재 확인
     const category = await prisma.category.findUnique({
@@ -281,17 +244,29 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // 기본 카테고리는 모든 사용자가 조회 가능
     if (!isDefaultCategory(category)) {
       // 커스텀 카테고리는 소유권 검증
-      const ownershipResult = await verifyCategoryOwnership(
-        user.userId,
-        category.ownerType,
-        category.ownerId.toString()
-      )
+      const userData = await prisma.user.findUnique({
+        where: { id: BigInt(user.userId) },
+        select: { groupId: true },
+      })
 
-      if (!ownershipResult.isValid) {
-        return NextResponse.json(
-          { error: ownershipResult.error || '접근 권한이 없습니다', code: 'ACCESS_DENIED' },
-          { status: 403 }
-        )
+      const userGroupId = userData?.groupId?.toString() || null
+
+      // 그룹 카테고리인 경우 같은 그룹 멤버인지 확인
+      if (category.groupId) {
+        if (!userGroupId || category.groupId.toString() !== userGroupId) {
+          return NextResponse.json(
+            { error: '접근 권한이 없습니다', code: 'ACCESS_DENIED' },
+            { status: 403 }
+          )
+        }
+      } else {
+        // 개인 카테고리인 경우 생성자인지 확인
+        if (category.createdBy.toString() !== user.userId) {
+          return NextResponse.json(
+            { error: '접근 권한이 없습니다', code: 'ACCESS_DENIED' },
+            { status: 403 }
+          )
+        }
       }
     }
 

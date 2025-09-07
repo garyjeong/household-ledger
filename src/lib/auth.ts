@@ -437,6 +437,7 @@ export async function findGroupById(
 export async function createGroup(data: CreateGroupData): Promise<GroupWithMembers> {
   const { prisma } = await import('@/lib/prisma')
   const { safeConsole } = await import('@/lib/security-utils')
+  const { createDefaultCategoriesForGroup } = await import('@/lib/seed-categories')
 
   try {
     // 트랜잭션을 사용하여 그룹과 소유자 멤버십을 동시에 생성
@@ -465,6 +466,21 @@ export async function createGroup(data: CreateGroupData): Promise<GroupWithMembe
       return { newGroup, updatedUser }
     })
 
+    // 그룹 생성 완료 후 기본 카테고리 자동 생성
+    try {
+      await createDefaultCategoriesForGroup(result.newGroup.id.toString(), data.ownerId)
+      safeConsole.log('그룹 기본 카테고리 생성 성공', {
+        groupId: result.newGroup.id.toString(),
+        groupName: result.newGroup.name,
+      })
+    } catch (categoryError) {
+      safeConsole.error('그룹 카테고리 생성 실패 (비치명적)', categoryError, {
+        groupId: result.newGroup.id.toString(),
+        groupName: result.newGroup.name,
+      })
+      // 카테고리 생성 실패는 그룹 생성을 롤백하지 않음 (나중에 수동으로 생성 가능)
+    }
+
     // GroupWithMembers 타입에 맞게 members 배열 포함해서 반환
     return {
       id: result.newGroup.id.toString(),
@@ -482,14 +498,14 @@ export async function createGroup(data: CreateGroupData): Promise<GroupWithMembe
             id: result.updatedUser.id.toString(),
             email: result.updatedUser.email,
             name: result.updatedUser.name,
-          }
-        }
+          },
+        },
       ],
       owner: {
         id: result.updatedUser.id.toString(),
         email: result.updatedUser.email,
         name: result.updatedUser.name,
-      }
+      },
     }
   } catch (error) {
     safeConsole.error('그룹 생성 실패 (DB)', error, {
