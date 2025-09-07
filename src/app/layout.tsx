@@ -7,6 +7,7 @@ import { AlertProvider } from '@/contexts/alert-context'
 import { SettingsProvider } from '@/contexts/settings-context'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { ToastProvider } from '@/components/error/ToastProvider'
+import { DatabaseConnectionChecker } from '@/components/database/DatabaseConnectionChecker'
 
 import { WebVitalsReporter } from '@/components/performance/WebVitalsReporter'
 
@@ -29,17 +30,19 @@ export default function RootLayout({
   return (
     <html lang='ko'>
       <body className={`${jetbrainsMono.variable} antialiased font-sans`} suppressHydrationWarning>
-        <QueryProvider>
-          <ToastProvider>
-            <AlertProvider>
-              <AuthProvider>
-                <SettingsProvider>
-                  <GroupProvider>{children}</GroupProvider>
-                </SettingsProvider>
-              </AuthProvider>
-            </AlertProvider>
-          </ToastProvider>
-        </QueryProvider>
+        <DatabaseConnectionChecker>
+          <QueryProvider>
+            <ToastProvider>
+              <AlertProvider>
+                <AuthProvider>
+                  <SettingsProvider>
+                    <GroupProvider>{children}</GroupProvider>
+                  </SettingsProvider>
+                </AuthProvider>
+              </AlertProvider>
+            </ToastProvider>
+          </QueryProvider>
+        </DatabaseConnectionChecker>
         <WebVitalsReporter />
       </body>
     </html>
