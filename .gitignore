@@ -47,6 +47,7 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+tsconfig.tsbuildinfo
 next-env.d.ts
 
 # IDE
@@ -128,3 +129,9 @@ docker-data/
 
 # Vooster AI configuration and sensitive data
 .vooster/
+
+# Security sensitive files
+cookies.txt
+*.cookie
+*cookies*
+session.txt
