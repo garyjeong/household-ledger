@@ -125,3 +125,6 @@ docker-data/
 # Backup files
 *.backup
 *.bak
+
+# Vooster AI configuration and sensitive data
+.vooster/
