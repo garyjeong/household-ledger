@@ -135,3 +135,9 @@ cookies.txt
 *.cookie
 *cookies*
 session.txt
+
+# Development tools and cache directories
+.playwright-mcp/
+.swc/
+.husky/
+.cursor/
