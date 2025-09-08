@@ -24,6 +24,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { useGroup } from '@/contexts/group-context'
 import { QuickAddModal } from './QuickAddModal'
 import { useToast } from '@/hooks/use-toast'
+import { LogoutConfirmDialog } from '@/components/ui/logout-confirm-dialog'
 
 interface DesktopSidebarProps {
   onQuickAddClick: () => void
@@ -96,6 +97,7 @@ const sidebarMenu = [
  */
 export function DesktopSidebar({ onQuickAddClick, className = '' }: DesktopSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const { currentPage } = useNavigation()
   const pathname = usePathname()
   const { logout, user } = useAuth()
@@ -111,20 +113,29 @@ export function DesktopSidebar({ onQuickAddClick, className = '' }: DesktopSideb
 
   // 로그아웃 처리
   const handleLogout = () => {
-    const confirmed = window.confirm('정말 로그아웃하시겠습니까?')
-    if (confirmed) {
-      logout()
-    }
+    setShowLogoutDialog(true)
+  }
+
+  // 로그아웃 확인
+  const handleLogoutConfirm = () => {
+    setShowLogoutDialog(false)
+    logout()
+  }
+
+  // 로그아웃 취소
+  const handleLogoutCancel = () => {
+    setShowLogoutDialog(false)
   }
 
   return (
-    <aside
-      className={`
-        fixed left-0 top-0 z-10 h-full transition-all duration-300 bg-white border-r border-gray-200
-        ${isCollapsed ? 'w-20' : 'w-64'}
-        ${className}
-      `}
-    >
+    <>
+      <aside
+        className={`
+          fixed left-0 top-0 z-10 h-full transition-all duration-300 bg-white border-r border-gray-200
+          ${isCollapsed ? 'w-20' : 'w-64'}
+          ${className}
+        `}
+      >
       <div className='h-full flex flex-col'>
         {/* 헤더 */}
         <div className='p-4 border-b border-gray-200'>
@@ -269,7 +280,15 @@ export function DesktopSidebar({ onQuickAddClick, className = '' }: DesktopSideb
           </div>
         </div>
       </div>
-    </aside>
+      </aside>
+
+      {/* 로그아웃 확인 모달 */}
+      <LogoutConfirmDialog
+        isOpen={showLogoutDialog}
+        onClose={handleLogoutCancel}
+        onConfirm={handleLogoutConfirm}
+      />
+    </>
   )
 }
 

@@ -117,6 +117,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (response.ok && response.data) {
         setUser(response.data.user)
+        
+        // 회원가입 성공 시에도 이메일 캐시에 저장 (자동으로 기억하기)
+        emailStorage.save(email)
+        setRememberedEmail(email)
+        
         return { success: true }
       } else {
         return { success: false, error: response.error || '회원가입에 실패했습니다.' }

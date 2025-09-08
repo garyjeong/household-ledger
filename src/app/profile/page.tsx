@@ -21,8 +21,6 @@ import {
   Calendar,
   Smartphone,
   UserPlus,
-  Copy,
-  Check,
   Share,
 } from 'lucide-react'
 import { ResponsiveLayout } from '@/components/couple-ledger/DesktopSidebar'
@@ -44,31 +42,35 @@ export default function ProfilePage() {
   const { toast } = useToast()
 
   const [activeTab, setActiveTab] = useState<TabType>('profile')
-  const [inviteData, setInviteData] = useState<{ code: string; url: string } | null>(null)
-  const [isGeneratingInvite, setIsGeneratingInvite] = useState(false)
-  const [copiedItem, setCopiedItem] = useState<'code' | 'url' | null>(null)
+  const [isCopyingInvite, setIsCopyingInvite] = useState(false)
   const [joinCode, setJoinCode] = useState('')
   const [isJoining, setIsJoining] = useState(false)
 
-  // 초대 코드 생성
-  const handleGenerateInvite = async () => {
+  // 초대 코드 복사
+  const handleCopyInvite = async () => {
     if (!currentGroup) return
 
-    setIsGeneratingInvite(true)
+    setIsCopyingInvite(true)
     try {
       const result = await generateInvite(currentGroup.id)
       if (result.success && result.inviteCode && result.inviteUrl) {
-        setInviteData({
-          code: result.inviteCode,
-          url: result.inviteUrl,
-        })
-        toast({
-          title: '초대 코드가 생성되었습니다',
-          description: '가족에게 초대 코드를 공유해주세요.',
-        })
+        // 자동으로 클립보드에 초대 코드 저장
+        try {
+          await navigator.clipboard.writeText(result.inviteCode)
+          toast({
+            title: '초대 코드가 생성되었습니다',
+            description: '초대 코드가 클립보드에 복사되었습니다. 가족에게 공유해주세요!',
+          })
+        } catch (clipboardError) {
+          // 클립보드 접근 실패 시 알림
+          toast({
+            title: '초대 코드가 생성되었습니다',
+            description: `초대 코드: ${result.inviteCode} (수동으로 복사해서 공유해주세요)`,
+          })
+        }
       } else {
         toast({
-          title: '초대 코드 생성 실패',
+          title: '초대 코드 복사 실패',
           description: result.error || '잠시 후 다시 시도해주세요.',
           variant: 'destructive',
         })
@@ -80,28 +82,10 @@ export default function ProfilePage() {
         variant: 'destructive',
       })
     } finally {
-      setIsGeneratingInvite(false)
+      setIsCopyingInvite(false)
     }
   }
 
-  // 클립보드 복사 함수
-  const copyToClipboard = async (text: string, type: 'code' | 'url') => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopiedItem(type)
-      toast({
-        title: '복사되었습니다',
-        description: type === 'code' ? '초대 코드가 복사되었습니다.' : '초대 링크가 복사되었습니다.',
-      })
-      setTimeout(() => setCopiedItem(null), 2000)
-    } catch (error) {
-      toast({
-        title: '복사 실패',
-        description: '클립보드 복사에 실패했습니다.',
-        variant: 'destructive',
-      })
-    }
-  }
 
   // 코드로 그룹 참여
   const handleJoinGroup = async () => {
@@ -248,49 +232,21 @@ export default function ProfilePage() {
                             가족 초대하기
                           </h4>
                           <Button
-                            onClick={handleGenerateInvite}
-                            disabled={isGeneratingInvite}
+                            onClick={handleCopyInvite}
+                            disabled={isCopyingInvite}
                             size='sm'
                             variant='outline'
                           >
-                            {isGeneratingInvite ? '생성 중...' : '초대 코드 생성'}
+                            {isCopyingInvite ? '복사 중...' : '초대 코드 복사'}
                           </Button>
                         </div>
 
-                        {inviteData ? (
-                          <div className='space-y-3'>
-                            <div>
-                              <label className='text-sm font-medium text-gray-700 block mb-1'>
-                                초대 코드
-                              </label>
-                              <div className='flex items-center gap-2'>
-                                <code className='flex-1 bg-white border rounded px-3 py-2 text-sm font-mono'>
-                                  {inviteData.code}
-                                </code>
-                                <Button
-                                  onClick={() => copyToClipboard(inviteData.code, 'code')}
-                                  size='sm'
-                                  variant='outline'
-                                  className='px-3'
-                                >
-                                  {copiedItem === 'code' ? (
-                                    <Check className='h-4 w-4' />
-                                  ) : (
-                                    <Copy className='h-4 w-4' />
-                                  )}
-                                </Button>
-                              </div>
-                            </div>
-
-                            <p className='text-xs text-gray-500'>
-                              초대 코드는 24시간 후 만료됩니다. 가족에게 코드를 공유해주세요!
-                            </p>
-                          </div>
-                        ) : (
-                          <p className='text-sm text-gray-500'>
-                            초대 코드를 생성하여 가족을 그룹에 초대하세요.
-                          </p>
-                        )}
+                        <p className='text-sm text-gray-500'>
+                          버튼을 클릭하면 초대 코드가 자동으로 클립보드에 복사됩니다. 가족에게 코드를 공유해주세요!
+                        </p>
+                        <p className='text-xs text-gray-400 mt-2'>
+                          💡 초대 코드는 24시간 후 자동으로 만료됩니다.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -387,13 +343,9 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
-            {/* 위험 구역 - 컴팩트 버전 */}
+            {/* 계정 삭제 섹션 */}
             <div className='border border-red-200 bg-red-50/30 rounded-lg p-3'>
               <div className='flex items-center justify-between'>
-                <div className='flex items-center gap-2'>
-                  <Settings className='h-4 w-4 text-red-600' />
-                  <span className='text-sm font-medium text-red-800'>위험 구역</span>
-                </div>
                 <Button 
                   variant='destructive' 
                   size='sm' 
@@ -403,7 +355,7 @@ export default function ProfilePage() {
                   계정 삭제
                 </Button>
               </div>
-              <p className='text-xs text-red-600 mt-1 ml-6'>
+              <p className='text-xs text-red-600 mt-1'>
                 모든 데이터가 영구 삭제됩니다
               </p>
             </div>

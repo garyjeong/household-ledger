@@ -8,11 +8,13 @@ import { z } from 'zod'
 import Link from 'next/link'
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, AtSign } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
+import { emailStorage } from '@/lib/auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -62,6 +64,8 @@ function SignupPageContent() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [suggestedDomains, setSuggestedDomains] = useState<string[]>([])
+  const [recentUsernames, setRecentUsernames] = useState<string[]>([])
 
   const emailFromUrl = searchParams.get('email') || ''
   const isEmailFromUrl = Boolean(emailFromUrl)
@@ -113,6 +117,12 @@ function SignupPageContent() {
       router.push('/')
     }
   }, [isAuthenticated, router])
+
+  // 캐시된 데이터 로드
+  useEffect(() => {
+    setSuggestedDomains(emailStorage.getSuggestedDomains())
+    setRecentUsernames(emailStorage.getRecentUsernames())
+  }, [])
 
   // 비밀번호 강도 계산
   const calculatePasswordStrength = (password: string): number => {
@@ -263,12 +273,17 @@ function SignupPageContent() {
                         <SelectValue placeholder='선택하기' />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value='naver.com'>naver.com</SelectItem>
-                        <SelectItem value='gmail.com'>gmail.com</SelectItem>
-                        <SelectItem value='daum.net'>daum.net</SelectItem>
-                        <SelectItem value='kakao.com'>kakao.com</SelectItem>
-                        <SelectItem value='outlook.com'>outlook.com</SelectItem>
-                        <SelectItem value='yahoo.com'>yahoo.com</SelectItem>
+                        {/* 최근 사용한 도메인 우선 표시 */}
+                        {suggestedDomains.map(domain => (
+                          <SelectItem key={domain} value={domain}>
+                            {domain}
+                            {emailStorage.getRecentDomains().includes(domain) && (
+                              <Badge variant='secondary' className='ml-2 text-xs'>
+                                최근 사용
+                              </Badge>
+                            )}
+                          </SelectItem>
+                        ))}
                         <SelectItem value='custom'>기타 (직접입력)</SelectItem>
                       </SelectContent>
                     </Select>

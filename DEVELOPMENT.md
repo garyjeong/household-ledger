@@ -616,7 +616,7 @@ DATABASE_URL=mysql://user:wjdwhdans@localhost:3307/household_ledger
 
 # 프로덕션 환경
 NEXT_PUBLIC_APP_ENV=production
-DATABASE_URL=mysql://user:password@production-host:3306/household_ledger
+DATABASE_URL=mysql://user:password@production-host:3307/household_ledger
 ```
 
 ### 성능 최적화

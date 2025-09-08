@@ -883,12 +883,35 @@ export function formatDate(date: Date, options?: Intl.DateTimeFormatOptions): st
   return date.toLocaleDateString('ko-KR', options)
 }
 
-// 이메일 저장/불러오기 (localStorage 사용)
+// 이메일 저장/불러오기 (localStorage 사용) - 향상된 캐싱 시스템
+interface EmailCacheData {
+  lastEmail: string | null
+  recentUsernames: string[]
+  recentDomains: string[]
+}
+
+const EMAIL_CACHE_KEY = 'emailCache'
+const MAX_RECENT_ITEMS = 5
+
 export const emailStorage = {
+  // 기존 호환성을 위한 기본 저장/불러오기
   save: (email: string) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('rememberedEmail', email)
+    if (typeof window === 'undefined' || !email) return
+
+    const [username, domain] = email.split('@')
+    if (!username || !domain) return
+
+    // 전체 이메일 저장 (기존 키 유지)
+    localStorage.setItem('rememberedEmail', email)
+
+    // 향상된 캐시 데이터 저장
+    const existingCache = emailStorage.loadCache()
+    const updatedCache: EmailCacheData = {
+      lastEmail: email,
+      recentUsernames: emailStorage.updateRecentList(existingCache.recentUsernames, username),
+      recentDomains: emailStorage.updateRecentList(existingCache.recentDomains, domain),
     }
+    localStorage.setItem(EMAIL_CACHE_KEY, JSON.stringify(updatedCache))
   },
 
   load: (): string | null => {
@@ -901,6 +924,88 @@ export const emailStorage = {
   clear: () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('rememberedEmail')
+      localStorage.removeItem(EMAIL_CACHE_KEY)
+    }
+  },
+
+  // 향상된 캐시 기능들
+  loadCache: (): EmailCacheData => {
+    if (typeof window === 'undefined') {
+      return { lastEmail: null, recentUsernames: [], recentDomains: [] }
+    }
+
+    try {
+      const cached = localStorage.getItem(EMAIL_CACHE_KEY)
+      if (cached) {
+        return JSON.parse(cached)
+      }
+    } catch (error) {
+      console.error('Failed to parse email cache:', error)
+    }
+
+    return { lastEmail: null, recentUsernames: [], recentDomains: [] }
+  },
+
+  // 최근 사용한 사용자명 목록 가져오기
+  getRecentUsernames: (): string[] => {
+    return emailStorage.loadCache().recentUsernames
+  },
+
+  // 최근 사용한 도메인 목록 가져오기
+  getRecentDomains: (): string[] => {
+    return emailStorage.loadCache().recentDomains
+  },
+
+  // 도메인 제안 (기본 도메인 + 최근 사용한 도메인)
+  getSuggestedDomains: (): string[] => {
+    const commonDomains = [
+      'gmail.com',
+      'naver.com',
+      'daum.net',
+      'kakao.com',
+      'outlook.com',
+      'yahoo.com',
+    ]
+    const recentDomains = emailStorage.getRecentDomains()
+
+    // 중복 제거하면서 최근 사용한 도메인을 앞에 배치
+    const uniqueDomains = new Set([...recentDomains, ...commonDomains])
+    return Array.from(uniqueDomains)
+  },
+
+  // 리스트 업데이트 헬퍼 함수 (최근 사용한 항목을 맨 앞으로)
+  updateRecentList: (currentList: string[], newItem: string): string[] => {
+    const filtered = currentList.filter(item => item !== newItem)
+    return [newItem, ...filtered].slice(0, MAX_RECENT_ITEMS)
+  },
+
+  // 사용자명 자동완성 제안
+  suggestUsername: (partial: string): string[] => {
+    const recentUsernames = emailStorage.getRecentUsernames()
+    if (!partial) return recentUsernames
+
+    return recentUsernames.filter(username =>
+      username.toLowerCase().startsWith(partial.toLowerCase())
+    )
+  },
+
+  // 도메인 자동완성 제안
+  suggestDomain: (partial: string): string[] => {
+    const suggestedDomains = emailStorage.getSuggestedDomains()
+    if (!partial) return suggestedDomains
+
+    return suggestedDomains.filter(domain => domain.toLowerCase().includes(partial.toLowerCase()))
+  },
+
+  // 캐시 통계 (디버깅용)
+  getCacheStats: () => {
+    const cache = emailStorage.loadCache()
+    return {
+      lastEmail: cache.lastEmail,
+      usernameCount: cache.recentUsernames.length,
+      domainCount: cache.recentDomains.length,
+      recentUsernames: cache.recentUsernames,
+      recentDomains: cache.recentDomains,
     }
   },
 }
