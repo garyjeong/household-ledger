@@ -20,7 +20,6 @@ import {
   Target,
   ArrowUpDown,
   Download,
-  RefreshCw,
   DollarSign,
   Wallet,
   Calculator,
@@ -135,15 +134,6 @@ export default function StatisticsPage() {
             </div>
 
             <div className='flex items-center gap-2'>
-              <Button
-                variant='outline'
-                onClick={() => refetch()}
-                className='gap-2 border-slate-300 text-slate-700 hover:bg-slate-50'
-                disabled={isLoading}
-              >
-                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                새로고침
-              </Button>
               <Button onClick={handleExportData} className='gap-2 bg-blue-600 hover:bg-blue-700'>
                 <Download className='h-4 w-4' />
                 내보내기

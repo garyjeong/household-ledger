@@ -37,7 +37,7 @@ import { useToast } from '@/hooks/use-toast'
 type TabType = 'profile' | 'security' | 'account'
 
 export default function ProfilePage() {
-  const { currentGroup, generateInvite } = useGroup()
+  const { currentGroup, generateInvite, refreshGroups } = useGroup()
   const { data: profile, isLoading: profileLoading } = useProfile()
   const { toast } = useToast()
 
@@ -112,12 +112,13 @@ export default function ProfilePage() {
 
       if (response.ok && result.success) {
         toast({
-          title: '그룹 참여 성공!',
-          description: `${result.group?.name} 그룹에 참여했습니다.`,
+          title: '🎉 그룹 참여 성공!',
+          description: `${result.group?.name} 그룹에 참여했습니다. 이제 가족과 함께 가계부를 관리할 수 있어요!`,
+          duration: 5000,
         })
         setJoinCode('')
-        // 페이지 새로고침으로 그룹 정보 업데이트
-        window.location.reload()
+        // 그룹 정보 실시간 업데이트
+        await refreshGroups()
       } else {
         toast({
           title: '그룹 참여 실패',
@@ -202,7 +203,7 @@ export default function ProfilePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {currentGroup ? (
+                {currentGroup && (currentGroup.memberCount || 0) > 1 ? (
                   <div className='space-y-4'>
                     <div className='flex items-center justify-between'>
                       <div>
@@ -213,6 +214,21 @@ export default function ProfilePage() {
                       </div>
                       <Badge className='bg-green-100 text-green-700'>연결됨</Badge>
                     </div>
+
+                    {/* 새 그룹 멤버 환영 메시지 */}
+                    {(currentGroup.memberCount || 0) > 1 && (
+                      <div className='bg-blue-50 rounded-lg p-4 border border-blue-200'>
+                        <div className='flex items-center gap-2 mb-2'>
+                          <span className='text-blue-600 text-lg'>🎉</span>
+                          <h4 className='font-medium text-blue-900'>가족 가계부에 오신 것을 환영해요!</h4>
+                        </div>
+                        <div className='text-sm text-blue-700 space-y-1'>
+                          <p>• 모든 가족 구성원의 수입/지출 내역이 실시간으로 공유됩니다</p>
+                          <p>• 거래 추가 시 누가 입력했는지 자동으로 기록됩니다</p>
+                          <p>• 월별 통계에서 가족 전체의 가계 현황을 확인할 수 있어요</p>
+                        </div>
+                      </div>
+                    )}
 
                     <div className='pt-4 border-t space-y-4'>
                       <div className='space-y-2'>
@@ -254,11 +270,14 @@ export default function ProfilePage() {
                   <div className='text-center py-8'>
                     <Heart className='h-12 w-12 text-gray-400 mx-auto mb-4' />
                     <h3 className='text-lg font-medium text-gray-900 mb-2'>
-                      개인 가계부를 사용 중입니다
+                      {currentGroup ? '개인 가계부를 사용 중입니다' : '가족 그룹에 참여해보세요'}
                     </h3>
                     <p className='text-gray-600 mb-6'>
-                      현재 개인 가계부로 사용하고 있습니다.<br />
-                      가족 초대 코드를 입력해 함께 관리할 수 있습니다.
+                      {currentGroup 
+                        ? '현재 혼자 가계부를 사용하고 있습니다.'
+                        : '가족과 함께 가계부를 관리할 수 있습니다.'
+                      }<br />
+                      가족 초대 코드를 입력해 함께 관리를 시작하세요.
                     </p>
 
                     {/* 가족 그룹 참여 섹션 */}
@@ -345,19 +364,19 @@ export default function ProfilePage() {
 
             {/* 계정 삭제 섹션 */}
             <div className='border border-red-200 bg-red-50/30 rounded-lg p-3'>
-              <div className='flex items-center justify-between'>
+              <div className='flex items-center justify-between gap-4'>
                 <Button 
                   variant='destructive' 
                   size='sm' 
                   onClick={handleDeleteAccount}
-                  className='h-7 px-3 text-xs'
+                  className='h-7 px-3 text-xs flex-shrink-0'
                 >
                   계정 삭제
                 </Button>
+                <p className='text-xs text-red-600'>
+                  모든 데이터가 영구 삭제됩니다
+                </p>
               </div>
-              <p className='text-xs text-red-600 mt-1'>
-                모든 데이터가 영구 삭제됩니다
-              </p>
             </div>
           </div>
         )

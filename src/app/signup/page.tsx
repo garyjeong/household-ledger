@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import Link from 'next/link'
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, AtSign } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, AtSign, Users } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { emailStorage } from '@/lib/auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -37,6 +37,18 @@ const signupSchema = z
       .string()
       .min(2, '닉네임은 최소 2자 이상이어야 합니다.')
       .max(20, '닉네임은 최대 20자까지 가능합니다.'),
+    inviteCode: z
+      .string()
+      .optional()
+      .refine(
+        (code) => {
+          if (!code || code.trim() === '') return true
+          return /^[A-Z0-9]{10,12}$/.test(code.trim())
+        },
+        {
+          message: '초대 코드는 10-12자리 대문자와 숫자로 구성되어야 합니다.',
+        }
+      ),
   })
   .refine(data => data.password === data.confirmPassword, {
     message: '비밀번호가 일치하지 않습니다.',
@@ -60,7 +72,7 @@ type SignupFormData = z.infer<typeof signupSchema>
 function SignupPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { signup, isAuthenticated } = useAuth()
+  const { signup, isAuthenticated, isLoading: authLoading } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -95,6 +107,7 @@ function SignupPageContent() {
       password: '',
       confirmPassword: '',
       nickname: '',
+      inviteCode: '',
     },
   })
 
@@ -113,10 +126,10 @@ function SignupPageContent() {
 
   // 이미 로그인된 경우 홈으로 리다이렉트
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!authLoading && isAuthenticated) {
       router.push('/')
     }
-  }, [isAuthenticated, router])
+  }, [authLoading, isAuthenticated, router])
 
   // 캐시된 데이터 로드
   useEffect(() => {
@@ -182,10 +195,22 @@ function SignupPageContent() {
         return
       }
 
-      const result = await signup(fullEmail, data.password, data.nickname)
+      const result = await signup(fullEmail, data.password, data.nickname, data.inviteCode)
 
       if (result.success) {
-        router.push('/')
+        // 그룹 참여 성공 메시지가 있으면 표시
+        if (result.message) {
+          // 그룹 참여 성공 피드백을 위한 지연
+          setError('root', { 
+            message: result.message,
+            type: 'success' // 성공 메시지임을 표시
+          })
+          setTimeout(() => {
+            router.push('/')
+          }, 2000)
+        } else {
+          router.push('/')
+        }
       } else {
         setError('root', { message: result.error || '회원가입에 실패했습니다.' })
       }
@@ -366,6 +391,7 @@ function SignupPageContent() {
                   <button
                     type='button'
                     onClick={() => setShowPassword(!showPassword)}
+                    tabIndex={-1}
                     className='absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-slate-400 hover:text-slate-900 cursor-pointer transition-all duration-200 hover:scale-110 flex items-center justify-center'
                   >
                     {showPassword ? <EyeOff className='h-4 w-4' /> : <Eye className='h-4 w-4' />}
@@ -454,6 +480,7 @@ function SignupPageContent() {
                   <button
                     type='button'
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    tabIndex={-1}
                     className='absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-slate-400 hover:text-slate-900 cursor-pointer transition-all duration-200 hover:scale-110 flex items-center justify-center'
                   >
                     {showConfirmPassword ? <EyeOff className='h-4 w-4' /> : <Eye className='h-4 w-4' />}
@@ -467,11 +494,62 @@ function SignupPageContent() {
                 )}
               </div>
 
+              {/* 가족 초대 코드 입력 (선택사항) */}
+              <div className='space-y-2 group'>
+                <Label htmlFor='inviteCode' className='text-slate-900 font-medium text-sm'>
+                  가족 초대 코드 <span className='text-slate-500 text-xs font-normal'>(선택사항)</span>
+                </Label>
+                <div className='relative'>
+                  <Users className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 transition-colors group-focus-within:text-slate-900' />
+                  <Input
+                    id='inviteCode'
+                    type='text'
+                    placeholder='ABC123DEF456'
+                    maxLength={12}
+                    className='pl-10 h-10 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:ring-slate-300/30 transition-all duration-200 rounded-lg uppercase text-center font-mono tracking-wider'
+                    {...register('inviteCode', {
+                      setValueAs: (value) => value?.toUpperCase().trim() || ''
+                    })}
+                  />
+                </div>
+                <div className='text-xs text-slate-600 space-y-2 bg-blue-50 rounded-lg p-3'>
+                  <p className='font-medium text-blue-800 flex items-center gap-2'>
+                    <Users className='h-3 w-3' />
+                    가족과 함께 사용하시나요?
+                  </p>
+                  <p className='text-blue-700'>
+                    가족으로부터 받은 초대 코드가 있으면 입력하세요. 
+                    입력하지 않으면 개인 가계부로 시작됩니다.
+                  </p>
+                  <p className='text-blue-600 text-xs'>
+                    💡 나중에 가족 그룹에 참여할 수도 있습니다.
+                  </p>
+                </div>
+                {errors.inviteCode && (
+                  <p className='text-sm text-red-600 flex items-center gap-2 animate-fade-in'>
+                    <span className='w-1 h-1 bg-red-600 rounded-full'></span>
+                    {errors.inviteCode.message}
+                  </p>
+                )}
+              </div>
+
               {/* Error Message */}
               {errors.root && (
-                <div className='p-3 bg-red-50 border border-red-200 rounded-lg animate-fade-in'>
-                  <p className='text-sm text-red-700 flex items-center gap-2'>
-                    <span className='w-2 h-2 bg-red-500 rounded-full'></span>
+                <div className={`p-3 rounded-lg animate-fade-in ${
+                  errors.root.type === 'success' 
+                    ? 'bg-green-50 border border-green-200' 
+                    : 'bg-red-50 border border-red-200'
+                }`}>
+                  <p className={`text-sm flex items-center gap-2 ${
+                    errors.root.type === 'success' 
+                      ? 'text-green-700' 
+                      : 'text-red-700'
+                  }`}>
+                    <span className={`w-2 h-2 rounded-full ${
+                      errors.root.type === 'success' 
+                        ? 'bg-green-500' 
+                        : 'bg-red-500'
+                    }`}></span>
                     {errors.root.message}
                   </p>
                 </div>

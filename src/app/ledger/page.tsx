@@ -118,8 +118,6 @@ export default function LedgerPage() {
       if (response.ok) {
         setIsTransactionDialogOpen(false)
         setPrefilledCategory('')
-        // 페이지 새로고침 또는 거래 목록 갱신
-        window.location.reload()
       } else {
         showError(response.error || '거래 추가에 실패했습니다.')
       }

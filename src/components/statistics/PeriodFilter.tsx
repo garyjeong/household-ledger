@@ -6,7 +6,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Calendar, CalendarDays, Clock, Filter, RefreshCw, X } from 'lucide-react'
+import { Calendar, CalendarDays, Clock, Filter, X } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -166,7 +166,7 @@ export function PeriodFilter({
                 onClick={handleReset}
                 className='gap-1 text-gray-500 hover:text-gray-700'
               >
-                <RefreshCw className='h-3 w-3' />
+                <X className='h-3 w-3' />
                 초기화
               </Button>
             </div>

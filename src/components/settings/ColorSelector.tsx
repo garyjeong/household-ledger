@@ -6,7 +6,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Palette, Check, RefreshCw, Pipette } from 'lucide-react'
+import { Palette, Check, Pipette } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -189,7 +189,7 @@ export function ColorSelector({
           <div className='flex items-center gap-2'>
             <Badge variant='outline'>{getStyleName(colorStyle)} 팔레트</Badge>
             <Button variant='ghost' size='sm' onClick={handleRandomColor} className='gap-1'>
-              <RefreshCw className='h-4 w-4' />
+              <Pipette className='h-4 w-4' />
               랜덤
             </Button>
           </div>

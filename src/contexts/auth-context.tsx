@@ -17,8 +17,9 @@ interface AuthContextType {
   signup: (
     email: string,
     password: string,
-    nickname: string
-  ) => Promise<{ success: boolean; error?: string }>
+    nickname: string,
+    inviteCode?: string
+  ) => Promise<{ success: boolean; error?: string; message?: string }>
   logout: () => void
   rememberedEmail: string | null
   clearRememberedEmail: () => void
@@ -111,9 +112,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }
 
-  const signup = async (email: string, password: string, nickname: string) => {
+  const signup = async (email: string, password: string, nickname: string, inviteCode?: string) => {
     try {
-      const response = await apiPost('/api/auth/signup', { email, password, nickname })
+      const response = await apiPost('/api/auth/signup', { email, password, nickname, inviteCode })
 
       if (response.ok && response.data) {
         setUser(response.data.user)
@@ -121,8 +122,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // 회원가입 성공 시에도 이메일 캐시에 저장 (자동으로 기억하기)
         emailStorage.save(email)
         setRememberedEmail(email)
-        
-        return { success: true }
+
+        return { 
+          success: true, 
+          message: response.data.message // 그룹 참여 성공 메시지 포함
+        }
       } else {
         return { success: false, error: response.error || '회원가입에 실패했습니다.' }
       }

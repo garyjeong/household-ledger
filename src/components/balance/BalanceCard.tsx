@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Wallet, Eye, EyeOff, RefreshCw, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react'
+import { Wallet, Eye, EyeOff, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -26,7 +26,6 @@ export function BalanceCard({
   // 상태 관리
   const [balanceData, setBalanceData] = useState<BalanceResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
   const [showBalance, setShowBalance] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -59,18 +58,7 @@ export function BalanceCard({
       setError(error instanceof Error ? error.message : '잔액을 불러오는데 실패했습니다')
     } finally {
       setIsLoading(false)
-      setIsRefreshing(false)
     }
-  }
-
-  // 잔액 새로고침
-  const handleRefresh = async () => {
-    setIsRefreshing(true)
-    await loadBalance(false)
-    toast({
-      title: '잔액 새로고침 완료',
-      description: '최신 잔액 정보를 불러왔습니다.',
-    })
   }
 
   // 초기 로드
@@ -159,15 +147,6 @@ export function BalanceCard({
               className='h-8 w-8 p-0'
             >
               {showBalance ? <EyeOff className='h-4 w-4' /> : <Eye className='h-4 w-4' />}
-            </Button>
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className='h-8 w-8 p-0'
-            >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </div>

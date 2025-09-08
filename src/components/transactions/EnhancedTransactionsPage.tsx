@@ -11,10 +11,10 @@ import {
   Filter,
   Plus,
   Download,
-  RefreshCw,
   Globe,
   TrendingUp,
   TrendingDown,
+  RefreshCw,
 } from 'lucide-react'
 import { PaginationState } from '@tanstack/react-table'
 import { ResponsiveLayout } from '@/components/couple-ledger/DesktopSidebar'
@@ -172,15 +172,6 @@ export function EnhancedTransactionsPage() {
                 <Button variant='outline' className='gap-2 border-slate-300 text-slate-700 hover:bg-slate-50'>
                   <Download className='h-4 w-4' />
                   내보내기
-                </Button>
-                <Button
-                  variant='outline'
-                  className='gap-2 border-slate-300 text-slate-700 hover:bg-slate-50'
-                  onClick={() => refetchTransactions()}
-                  disabled={transactionsLoading}
-                >
-                  <RefreshCw className={`h-4 w-4 ${transactionsLoading ? 'animate-spin' : ''}`} />
-                  새로고침
                 </Button>
               </div>
             </div>

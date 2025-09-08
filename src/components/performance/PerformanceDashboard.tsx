@@ -8,7 +8,6 @@ import {
   Clock,
   Zap,
   Eye,
-  RefreshCw,
   AlertTriangle,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -167,10 +166,6 @@ const PerformanceDashboard = memo(function PerformanceDashboard() {
           <p className='text-slate-600 mt-1'>Web Vitals 및 성능 지표 실시간 모니터링</p>
         </div>
         <div className='flex gap-2'>
-          <Button variant='outline' size='sm' onClick={loadVitalsData} disabled={isLoading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            새로고침
-          </Button>
           <Button variant='outline' size='sm' onClick={clearData}>
             데이터 초기화
           </Button>

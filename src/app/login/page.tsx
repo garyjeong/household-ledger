@@ -79,7 +79,7 @@ type LoginFormData = {
 function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { login, isAuthenticated, rememberedEmail, clearRememberedEmail } = useAuth()
+  const { login, isAuthenticated, rememberedEmail, clearRememberedEmail, isLoading: authLoading } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [suggestedDomains, setSuggestedDomains] = useState<string[]>([])
@@ -130,10 +130,10 @@ function LoginPageContent() {
 
   // 이미 로그인된 경우 홈으로 리다이렉트
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!authLoading && isAuthenticated) {
       router.push('/')
     }
-  }, [isAuthenticated, router])
+  }, [authLoading, isAuthenticated, router])
 
   // 캐시된 데이터 로드
   useEffect(() => {

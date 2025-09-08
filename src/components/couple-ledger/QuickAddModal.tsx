@@ -271,40 +271,23 @@ export function QuickAddModal({
                     </p>
                     <div className='flex gap-2 justify-center'>
                       {categoriesError.includes('401') || categoriesError.includes('인증') ? (
-                        <>
-                          <Button
-                            variant='outline'
-                            onClick={() => window.location.reload()}
-                            className='gap-2'
-                          >
-                            새로고침
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              handleClose()
-                              window.location.href = '/login'
-                            }}
-                            className='gap-2'
-                          >
-                            다시 로그인
-                          </Button>
-                        </>
+                        <Button
+                          onClick={() => {
+                            handleClose()
+                            window.location.href = '/login'
+                          }}
+                          className='gap-2'
+                        >
+                          다시 로그인
+                        </Button>
                       ) : (
-                        <>
-                          <Button
-                            variant='outline'
-                            onClick={() => refetchCategories()}
-                            className='gap-2'
-                          >
-                            다시 시도
-                          </Button>
-                          <Button
-                            onClick={() => window.location.reload()}
-                            className='gap-2'
-                          >
-                            새로고침
-                          </Button>
-                        </>
+                        <Button
+                          variant='outline'
+                          onClick={() => refetchCategories()}
+                          className='gap-2'
+                        >
+                          다시 시도
+                        </Button>
                       )}
                     </div>
                   </div>

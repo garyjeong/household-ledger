@@ -277,6 +277,12 @@ export function middleware(request: NextRequest) {
 
     // 2. 공개 경로 확인
     if (isPublicPath(pathname) || isPublicApiPath(pathname)) {
+      const tokenValidation = validateToken(request)
+      // 이미 로그인된 사용자가 공개 페이지에 접근 시 메인 페이지로 리다이렉트
+      if (tokenValidation.isValid && isPublicPath(pathname)) {
+        return NextResponse.redirect(new URL('/', request.url))
+      }
+
       // 공개 경로에 대한 기본 헤더 설정
       const response = NextResponse.next()
       response.headers.set('X-Request-ID', context.requestId)
