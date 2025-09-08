@@ -42,7 +42,7 @@ JWT_REFRESH_SECRET="your-super-secret-refresh-key-for-development-only-2024"
 NEXTAUTH_SECRET="household-ledger-develop-nextauth-secret-2025"
 NEXTAUTH_URL="http://localhost:3001"
 
-# 검증된 실행 명령어
+# 검증된 실행 명령어 (2025.01.09 최신)
 JWT_SECRET="your-super-secret-jwt-key-for-development-only-2024" \
 JWT_REFRESH_SECRET="your-super-secret-refresh-key-for-development-only-2024" \
 DATABASE_URL="mysql://root:wjdwhdans@localhost:3307/household_ledger" \
@@ -162,7 +162,7 @@ chore(deps): update dependencies
 
 ## 🏗 아키텍처 가이드
 
-### 프로젝트 구조 (v2.2.0 최적화)
+### 프로젝트 구조 (v2.2.2 최적화)
 
 ```text
 src/
@@ -200,10 +200,10 @@ src/
 └── lib/swr-config.ts    # ❌ SWR 설정 제거
 ```
 
-### 컴포넌트 구조 (v2.2.0 최적화)
+### 컴포넌트 구조 (v2.2.2 최적화)
 
 ```typescript
-// ✅ React Query 기반 컴포넌트 구조 (2025.01.21 최적화)
+// ✅ React Query 기반 컴포넌트 구조 (2025.01.09 최신)
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { apiGet, apiPost } from '@/lib/api-client'
 
@@ -294,13 +294,13 @@ export async function POST(request: NextRequest) {
 }
 ```
 
-### 통합 API 클라이언트 패턴 (v2.2.0 최적화)
+### 통합 API 클라이언트 패턴 (v2.2.2 최적화)
 
 ```typescript
 // ✅ api-client.ts - 모든 API 호출 통합
 import { ApiResponse, ApiError } from '@/types'
 
-// 통합된 API 클라이언트 사용 (2025.01.21 최적화)
+// 통합된 API 클라이언트 사용 (2025.01.09 최신)
 export async function apiGet<T>(url: string): Promise<ApiResponse<T>> {
   const response = await fetch(url, {
     method: 'GET',
@@ -337,10 +337,10 @@ export async function apiPost<T>(url: string, data?: any): Promise<ApiResponse<T
 // const response = await apiGet('/api/data') // 권장
 ```
 
-### 상태 관리 패턴 (v2.2.0 최적화)
+### 상태 관리 패턴 (v2.2.2 최적화)
 
 ```typescript
-// React Query + Context 통합 패턴 (2025.01.21 최적화)
+// React Query + Context 통합 패턴 (2025.01.09 최신)
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPost } from '@/lib/api-client'
 
@@ -498,7 +498,7 @@ pnpm e2e:report        # 리포트 확인
 ### MCP 프로토콜 적용 (v2.2.0 최적화)
 
 ```markdown
-# MCP 기반 작업 흐름 (2025.01.21 최적화)
+# MCP 기반 작업 흐름 (2025.01.09 최신)
 
 1. **모델 확인** → Prisma 스키마 검토 및 최적화
 2. **API 구현** → Next.js API Routes, api-client.ts 통합, Zod 검증
@@ -507,7 +507,14 @@ pnpm e2e:report        # 리포트 확인
 5. **페이지 통합** → App Router, 통합 토스트 시스템
 6. **테스트 작성** → Jest + Testing Library
 
-## 아키텍처 원칙 (v2.2.0)
+## 아키텍처 원칙 (v2.2.2)
+
+### 🎯 2025.01.09 추가된 핵심 기능
+
+- **회원가입 시 그룹 참여**: `signup/page.tsx`에서 초대 코드 입력으로 즉시 가족 그룹 연결
+- **그룹 전환 지원**: 개인 그룹 사용자도 가족 그룹 참여 후 데이터 통합
+- **인증 플로우 개선**: 미들웨어 및 클라이언트 리다이렉트 로직 강화로 루프 방지
+- **UI 일관성 향상**: 불필요한 새로고침 버튼 제거, 프로필 페이지 UI 정리
 
 ### ✅ 필수 준수 사항
 

@@ -43,8 +43,6 @@ export default function ProfilePage() {
 
   const [activeTab, setActiveTab] = useState<TabType>('profile')
   const [isCopyingInvite, setIsCopyingInvite] = useState(false)
-  const [joinCode, setJoinCode] = useState('')
-  const [isJoining, setIsJoining] = useState(false)
 
   // 초대 코드 복사
   const handleCopyInvite = async () => {
@@ -86,66 +84,15 @@ export default function ProfilePage() {
     }
   }
 
-
-  // 코드로 그룹 참여
-  const handleJoinGroup = async () => {
-    if (!joinCode.trim()) {
-      toast({
-        title: '초대 코드를 입력해주세요',
-        description: '가족으로부터 받은 초대 코드를 입력하세요.',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    setIsJoining(true)
-    try {
-      const response = await fetch('/api/groups/join', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ inviteCode: joinCode.trim() }),
-      })
-
-      const result = await response.json()
-
-      if (response.ok && result.success) {
-        toast({
-          title: '🎉 그룹 참여 성공!',
-          description: `${result.group?.name} 그룹에 참여했습니다. 이제 가족과 함께 가계부를 관리할 수 있어요!`,
-          duration: 5000,
-        })
-        setJoinCode('')
-        // 그룹 정보 실시간 업데이트
-        await refreshGroups()
-      } else {
-        toast({
-          title: '그룹 참여 실패',
-          description: result.error || '유효하지 않은 초대 코드이거나 만료되었습니다.',
-          variant: 'destructive',
-        })
-      }
-    } catch (error) {
-      toast({
-        title: '오류가 발생했습니다',
-        description: '네트워크 연결을 확인해주세요.',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsJoining(false)
-    }
-  }
-
   // 계정 삭제 (추후 구현)
   const handleDeleteAccount = () => {
     const confirmed = window.confirm(
-      '정말로 계정을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없으며, 모든 가계부 데이터가 영구적으로 삭제됩니다.'
+      '정말로 계정을 삭제하시겠습니까?\\n\\n이 작업은 되돌릴 수 없으며, 모든 가계부 데이터가 영구적으로 삭제됩니다.'
     )
 
     if (confirmed) {
       const doubleConfirmed = window.confirm(
-        '마지막 확인입니다.\n\n계정을 삭제하면:\n• 모든 거래 내역이 삭제됩니다\n• 그룹에서 자동으로 탈퇴됩니다\n• 데이터 복구가 불가능합니다\n\n정말 계속하시겠습니까?'
+        '마지막 확인입니다.\\n\\n계정을 삭제하면:\\n• 모든 거래 내역이 삭제됩니다\\n• 그룹에서 자동으로 탈퇴됩니다\\n• 데이터 복구가 불가능합니다\\n\\n정말 계속하시겠습니까?'
       )
 
       if (doubleConfirmed) {
@@ -270,55 +217,13 @@ export default function ProfilePage() {
                   <div className='text-center py-8'>
                     <Heart className='h-12 w-12 text-gray-400 mx-auto mb-4' />
                     <h3 className='text-lg font-medium text-gray-900 mb-2'>
-                      {currentGroup ? '개인 가계부를 사용 중입니다' : '가족 그룹에 참여해보세요'}
+                      {currentGroup ? '개인 가계부를 사용 중입니다' : '가족 그룹을 만들어보세요'}
                     </h3>
-                    <p className='text-gray-600 mb-6'>
-                      {currentGroup 
-                        ? '현재 혼자 가계부를 사용하고 있습니다.'
-                        : '가족과 함께 가계부를 관리할 수 있습니다.'
-                      }<br />
-                      가족 초대 코드를 입력해 함께 관리를 시작하세요.
+                    <p className='text-gray-600'>
+                      {currentGroup
+                        ? '현재 혼자 가계부를 사용하고 있습니다. 가족을 초대하여 함께 가계부를 관리해보세요.'
+                        : '가족과 함께 가계부를 관리할 수 있습니다.'}
                     </p>
-
-                    {/* 가족 그룹 참여 섹션 */}
-                    <div className='max-w-md mx-auto'>
-                      <div className='bg-blue-50 p-4 rounded-lg border border-blue-200'>
-                        <div className='flex items-center gap-2 mb-3'>
-                          <UserPlus className='h-5 w-5 text-blue-600' />
-                          <h4 className='font-medium text-blue-900'>가족 그룹 참여하기</h4>
-                        </div>
-                        
-                        <div className='space-y-3'>
-                          <div>
-                            <label className='block text-sm font-medium text-blue-700 mb-1'>
-                              초대 코드 입력
-                            </label>
-                            <input
-                              type='text'
-                              value={joinCode}
-                              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                              placeholder='ABC123DEF456'
-                              maxLength={12}
-                              className='w-full px-3 py-2 border border-blue-300 rounded-md text-center font-mono text-sm uppercase tracking-wider placeholder:text-blue-400'
-                              disabled={isJoining}
-                            />
-                          </div>
-                          
-                          <Button
-                            onClick={handleJoinGroup}
-                            disabled={!joinCode.trim() || isJoining}
-                            className='w-full'
-                            size='sm'
-                          >
-                            {isJoining ? '참여 중...' : '그룹 참여하기'}
-                          </Button>
-                          
-                          <p className='text-xs text-blue-600'>
-                            가족으로부터 받은 12자리 초대 코드를 입력하세요.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 )}
               </CardContent>
