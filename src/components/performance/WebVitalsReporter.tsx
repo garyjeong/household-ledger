@@ -122,9 +122,9 @@ function showPerformanceSummary() {
       vitals.forEach((vital: WebVitalsData & { timestamp: number }) => {
         const emoji =
           vital.rating === 'good' ? '✅' : vital.rating === 'needs-improvement' ? '⚠️' : '❌'
-        console.log(
-          `${emoji} ${vital.name}: ${vital.value}${vital.name === 'CLS' ? '' : 'ms'} (${vital.rating})`
-        )
+        // console.log(
+        //   `${emoji} ${vital.name}: ${vital.value}${vital.name === 'CLS' ? '' : 'ms'} (${vital.rating})`
+        // )
       })
       console.groupEnd()
     }

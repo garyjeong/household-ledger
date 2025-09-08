@@ -176,9 +176,10 @@ export function createSafeErrorLog(
  */
 export const safeConsole = {
   log: (message: string, data?: any) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log(message, data ? sanitizeObject(data) : '')
-    }
+    // 개발 환경에서도 로그 출력 비활성화
+    // if (process.env.NODE_ENV === 'development') {
+    //   console.log(message, data ? sanitizeObject(data) : '')
+    // }
   },
 
   warn: (message: string, data?: any) => {
@@ -215,9 +216,9 @@ export function logApiCall(
       error
     )
   } else if (process.env.NODE_ENV === 'development') {
-    safeConsole.log(
-      `[API Success] ${method} ${sanitizedURL} ${status ? `(${status})` : ''} ${duration ? `(${duration}ms)` : ''}`
-    )
+    // safeConsole.log(
+    //   `[API Success] ${method} ${sanitizedURL} ${status ? `(${status})` : ''} ${duration ? `(${duration}ms)` : ''}`
+    // )
   }
 }
 

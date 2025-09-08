@@ -32,11 +32,11 @@ export async function seedDefaultCategories() {
           },
         })
         createdCategories.push(newCategory)
-        console.log(`기본 카테고리 생성: ${category.name} (${category.type})`)
+        // console.log(`기본 카테고리 생성: ${category.name} (${category.type})`)
       }
     }
 
-    console.log(`기본 카테고리 시드 완료: ${createdCategories.length}개 생성`)
+    // console.log(`기본 카테고리 시드 완료: ${createdCategories.length}개 생성`)
     return createdCategories
   } catch (error) {
     console.error('기본 카테고리 시드 중 오류:', error)
@@ -54,7 +54,7 @@ export async function seedDefaultCategories() {
  */
 export async function createDefaultCategoriesForGroup(groupId: string, createdBy: string) {
   try {
-    console.log(`🏠 그룹 ${groupId}에 기본 카테고리 생성 시작`)
+    // console.log(`🏠 그룹 ${groupId}에 기본 카테고리 생성 시작`)
 
     const createdCategories = []
 
@@ -81,11 +81,11 @@ export async function createDefaultCategoriesForGroup(groupId: string, createdBy
           },
         })
         createdCategories.push(newCategory)
-        console.log(`✅ 그룹 카테고리 생성: ${category.name} (${category.type})`)
+        // console.log(`✅ 그룹 카테고리 생성: ${category.name} (${category.type})`)
       }
     }
 
-    console.log(`🎉 그룹 ${groupId}에 기본 카테고리 생성 완료: ${createdCategories.length}개 생성`)
+    // console.log(`🎉 그룹 ${groupId}에 기본 카테고리 생성 완료: ${createdCategories.length}개 생성`)
     return createdCategories
   } catch (error) {
     console.error(`❌ 그룹 ${groupId} 카테고리 생성 중 오류:`, error)

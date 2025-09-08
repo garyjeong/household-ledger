@@ -38,7 +38,7 @@ async function refreshAccessToken(): Promise<boolean> {
       })
 
       if (response.ok) {
-        safeConsole.log('✅ Access Token 갱신 성공')
+        // safeConsole.log('✅ Access Token 갱신 성공')
         return true
       } else {
         safeConsole.warn('❌ Refresh Token 만료 또는 무효', { status: response.status })

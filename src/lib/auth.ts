@@ -244,24 +244,75 @@ export async function findUserById(id: string): Promise<User | null> {
 
 export async function createUser(userData: SignupData): Promise<User> {
   const { prisma } = await import('@/lib/prisma')
+  const { safeConsole } = await import('@/lib/security-utils')
+  const { createDefaultCategoriesForGroup } = await import('@/lib/seed-categories')
 
   const hashedPassword = await hashPassword(userData.password)
 
-  const user = await prisma.user.create({
-    data: {
-      email: userData.email,
-      passwordHash: hashedPassword,
-      nickname: userData.nickname,
-      avatarUrl: null,
-    },
-  })
+  try {
+    // 트랜잭션으로 사용자 생성과 개인 그룹 생성을 동시에 처리
+    const result = await prisma.$transaction(async tx => {
+      // 1. 사용자 생성
+      const user = await tx.user.create({
+        data: {
+          email: userData.email,
+          passwordHash: hashedPassword,
+          nickname: userData.nickname,
+          avatarUrl: null,
+        },
+      })
 
-  return {
-    id: user.id.toString(),
-    email: user.email,
-    nickname: user.nickname,
-    avatarUrl: user.avatarUrl || undefined,
-    createdAt: user.createdAt,
+      // 2. 개인 그룹 생성 ("{닉네임}의 가계부" 형태)
+      const personalGroup = await tx.group.create({
+        data: {
+          name: `${userData.nickname}의 가계부`,
+          ownerId: user.id,
+        },
+      })
+
+      // 3. 사용자를 개인 그룹에 연결
+      const updatedUser = await tx.user.update({
+        where: { id: user.id },
+        data: { groupId: personalGroup.id },
+      })
+
+      // safeConsole.log('사용자 생성 및 개인 그룹 생성 성공', {
+      //   userId: user.id.toString(),
+      //   groupId: personalGroup.id.toString(),
+      //   nickname: userData.nickname,
+      // })
+
+      return { user: updatedUser, group: personalGroup }
+    })
+
+    // 4. 개인 그룹에 기본 카테고리 생성
+    try {
+      await createDefaultCategoriesForGroup(result.group.id.toString(), result.user.id.toString())
+      // safeConsole.log('개인 그룹 기본 카테고리 생성 성공', {
+      //   userId: result.user.id.toString(),
+      //   groupId: result.group.id.toString(),
+      // })
+    } catch (categoryError) {
+      safeConsole.error('개인 그룹 카테고리 생성 실패 (비치명적)', categoryError, {
+        userId: result.user.id.toString(),
+        groupId: result.group.id.toString(),
+      })
+      // 카테고리 생성 실패는 사용자 생성을 롤백하지 않음
+    }
+
+    return {
+      id: result.user.id.toString(),
+      email: result.user.email,
+      nickname: result.user.nickname,
+      avatarUrl: result.user.avatarUrl || undefined,
+      createdAt: result.user.createdAt,
+    }
+  } catch (error) {
+    safeConsole.error('사용자 생성 실패', error, {
+      email: userData.email,
+      nickname: userData.nickname,
+    })
+    throw new Error('회원가입 중 오류가 발생했습니다.')
   }
 }
 
@@ -457,11 +508,11 @@ export async function createGroup(data: CreateGroupData): Promise<GroupWithMembe
       })
 
       // 성공 로깅
-      safeConsole.log('그룹 생성 성공 (DB)', {
-        groupId: newGroup.id.toString(),
-        groupName: newGroup.name,
-        ownerId: data.ownerId,
-      })
+      // safeConsole.log('그룹 생성 성공 (DB)', {
+      //   groupId: newGroup.id.toString(),
+      //   groupName: newGroup.name,
+      //   ownerId: data.ownerId,
+      // })
 
       return { newGroup, updatedUser }
     })
@@ -469,10 +520,10 @@ export async function createGroup(data: CreateGroupData): Promise<GroupWithMembe
     // 그룹 생성 완료 후 기본 카테고리 자동 생성
     try {
       await createDefaultCategoriesForGroup(result.newGroup.id.toString(), data.ownerId)
-      safeConsole.log('그룹 기본 카테고리 생성 성공', {
-        groupId: result.newGroup.id.toString(),
-        groupName: result.newGroup.name,
-      })
+      // safeConsole.log('그룹 기본 카테고리 생성 성공', {
+      //   groupId: result.newGroup.id.toString(),
+      //   groupName: result.newGroup.name,
+      // })
     } catch (categoryError) {
       safeConsole.error('그룹 카테고리 생성 실패 (비치명적)', categoryError, {
         groupId: result.newGroup.id.toString(),
@@ -600,40 +651,73 @@ export async function joinGroup(groupId: string, userId: string): Promise<boolea
   try {
     // 트랜잭션으로 데이터 무결성 보장
     const result = await prisma.$transaction(async tx => {
-      // 1. 사용자 존재 및 그룹 상태 확인
+      // 1. 사용자 존재 및 현재 그룹 상태 확인
       const user = await tx.user.findUnique({
         where: { id: BigInt(userId) },
+        include: { ownedGroups: true },
       })
 
       if (!user) {
         throw new Error('사용자를 찾을 수 없습니다')
       }
 
-      if (user.groupId) {
-        throw new Error('이미 다른 그룹에 속해있습니다')
-      }
-
-      // 2. 그룹 존재 확인
-      const group = await tx.group.findUnique({
+      // 2. 참여하려는 그룹 존재 확인
+      const targetGroup = await tx.group.findUnique({
         where: { id: BigInt(groupId) },
       })
 
-      if (!group) {
+      if (!targetGroup) {
         throw new Error('그룹을 찾을 수 없습니다')
       }
 
-      // 3. 그룹 참여 (User.groupId 업데이트)
+      // 3. 기존 그룹이 있는 경우 처리
+      if (user.groupId) {
+        const currentGroupId = user.groupId.toString()
+
+        // 기존 개인 그룹 삭제 (소유자인 경우에만)
+        const isOwnerOfCurrentGroup = user.ownedGroups.some(
+          group => group.id.toString() === currentGroupId
+        )
+
+        if (isOwnerOfCurrentGroup) {
+          // 그룹의 다른 멤버가 있는지 확인
+          const groupMemberCount = await tx.user.count({
+            where: { groupId: user.groupId },
+          })
+
+          // 소유자만 있는 그룹이면 삭제 (카테고리, 거래내역 등도 CASCADE로 삭제됨)
+          if (groupMemberCount === 1) {
+            await tx.group.delete({
+              where: { id: user.groupId },
+            })
+            // safeConsole.log('기존 개인 그룹 삭제됨', {
+            //   deletedGroupId: currentGroupId,
+            //   userId,
+            // })
+          } else {
+            // 다른 멤버가 있으면 그룹 소유권을 다른 멤버에게 이양
+            // (향후 구현 가능, 현재는 단순히 그룹에서 탈퇴)
+            // safeConsole.log('그룹에 다른 멤버가 있어 삭제하지 않음', {
+            //   groupId: currentGroupId,
+            //   memberCount: groupMemberCount,
+            // })
+          }
+        }
+      }
+
+      // 4. 새 그룹 참여 (User.groupId 업데이트)
       await tx.user.update({
         where: { id: BigInt(userId) },
         data: { groupId: BigInt(groupId) },
       })
 
-      // 4. 성공 로깅
-      safeConsole.log('그룹 참여 성공', {
-        groupId,
-        userId,
-        groupName: group.name,
-      })
+      // 5. 성공 로깅
+      // safeConsole.log('그룹 참여 성공', {
+      //   userId,
+      //   newGroupId: groupId,
+      //   groupName: targetGroup.name,
+      //   previousGroupDeleted: user.groupId ? true : false,
+      // })
 
       return true
     })
@@ -651,33 +735,95 @@ export async function joinGroup(groupId: string, userId: string): Promise<boolea
 
 export async function leaveGroup(groupId: string, userId: string): Promise<boolean> {
   const { prisma } = await import('@/lib/prisma')
+  const { safeConsole } = await import('@/lib/security-utils')
+  const { createDefaultCategoriesForGroup } = await import('@/lib/seed-categories')
 
   try {
-    // 사용자 정보 및 그룹 소유권 확인
-    const user = await prisma.user.findUnique({
-      where: { id: BigInt(userId) },
-      include: { ownedGroups: true },
+    // 트랜잭션으로 그룹 탈퇴와 새 개인 그룹 생성을 동시에 처리
+    const result = await prisma.$transaction(async tx => {
+      // 1. 사용자 정보 및 그룹 소유권 확인
+      const user = await tx.user.findUnique({
+        where: { id: BigInt(userId) },
+        include: { ownedGroups: true },
+      })
+
+      if (!user || user.groupId?.toString() !== groupId) {
+        throw new Error('그룹 멤버가 아닙니다')
+      }
+
+      // 2. 소유자는 탈퇴할 수 없음 (다른 멤버가 있는 경우)
+      const isOwner = user.ownedGroups.some(group => group.id.toString() === groupId)
+      if (isOwner) {
+        // 그룹의 다른 멤버가 있는지 확인
+        const groupMemberCount = await tx.user.count({
+          where: { groupId: BigInt(groupId) },
+        })
+
+        if (groupMemberCount > 1) {
+          throw new Error('그룹 소유자는 다른 멤버가 있을 때 탈퇴할 수 없습니다')
+        }
+        // 소유자만 있는 그룹이면 탈퇴 허용 (아래에서 그룹 삭제됨)
+      }
+
+      // 3. 새 개인 그룹 생성
+      const newPersonalGroup = await tx.group.create({
+        data: {
+          name: `${user.nickname}의 가계부`,
+          ownerId: user.id,
+        },
+      })
+
+      // 4. 사용자를 새 개인 그룹으로 이동
+      await tx.user.update({
+        where: { id: BigInt(userId) },
+        data: { groupId: newPersonalGroup.id },
+      })
+
+      // 5. 기존 그룹이 비어있게 되면 삭제 (소유자였던 경우)
+      if (isOwner) {
+        await tx.group.delete({
+          where: { id: BigInt(groupId) },
+        })
+        // safeConsole.log('기존 그룹 삭제됨 (소유자 탈퇴)', {
+        //   deletedGroupId: groupId,
+        //   userId: user.id.toString(),
+        // })
+      }
+
+      // safeConsole.log('그룹 탈퇴 및 새 개인 그룹 생성 성공', {
+      //   userId: user.id.toString(),
+      //   leftGroupId: groupId,
+      //   newGroupId: newPersonalGroup.id.toString(),
+      //   nickname: user.nickname,
+      // })
+
+      return { newGroup: newPersonalGroup, user }
     })
 
-    if (!user || user.groupId?.toString() !== groupId) {
-      return false // 그룹 멤버가 아님
+    // 6. 새 개인 그룹에 기본 카테고리 생성
+    try {
+      await createDefaultCategoriesForGroup(
+        result.newGroup.id.toString(),
+        result.user.id.toString()
+      )
+      // safeConsole.log('새 개인 그룹 기본 카테고리 생성 성공', {
+      //   userId: result.user.id.toString(),
+      //   groupId: result.newGroup.id.toString(),
+      // })
+    } catch (categoryError) {
+      safeConsole.error('새 개인 그룹 카테고리 생성 실패 (비치명적)', categoryError, {
+        userId: result.user.id.toString(),
+        groupId: result.newGroup.id.toString(),
+      })
     }
-
-    // 소유자는 탈퇴할 수 없음
-    const isOwner = user.ownedGroups.some(group => group.id.toString() === groupId)
-    if (isOwner) {
-      return false
-    }
-
-    // 그룹 탈퇴 (User.groupId를 null로 설정)
-    await prisma.user.update({
-      where: { id: BigInt(userId) },
-      data: { groupId: null },
-    })
 
     return true
   } catch (error) {
-    safeConsole.error('Error leaving group', error)
+    safeConsole.error('그룹 탈퇴 실패', error, {
+      groupId,
+      userId,
+      operation: 'leaveGroup',
+    })
     return false
   }
 }
@@ -892,7 +1038,7 @@ export async function cleanupExpiredInviteCodes(): Promise<number> {
       },
     })
 
-    safeConsole.log(`Cleaned up ${result.count} expired invite codes`)
+    // safeConsole.log(`Cleaned up ${result.count} expired invite codes`)
     return result.count
   } catch (error) {
     safeConsole.error('Error cleaning up expired invite codes', error)

@@ -174,15 +174,15 @@ export class PrismaCursorPagination {
         },
       }
 
-      // 성능 로깅
-      safeConsole.log('커서 페이지네이션 조회 완료', {
-        userId,
-        queryTime,
-        itemsReturned: data.length,
-        hasNext,
-        hasPrev,
-        cursorUsed: !!cursor,
-      })
+      // 성능 로깅 - 비활성화
+      // safeConsole.log('커서 페이지네이션 조회 완료', {
+      //   userId,
+      //   queryTime,
+      //   itemsReturned: data.length,
+      //   hasNext,
+      //   hasPrev,
+      //   cursorUsed: !!cursor,
+      // })
 
       return result
     } catch (error) {

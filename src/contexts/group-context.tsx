@@ -12,17 +12,10 @@ interface GroupContextType {
   isLoading: boolean
   refreshGroups: () => Promise<void>
   switchGroup: (groupId: string | null) => void
-  createGroup: (
-    name: string
-  ) => Promise<{ success: boolean; error?: string; group?: GroupWithMembers }>
   generateInvite: (
     groupId: string
   ) => Promise<{ success: boolean; error?: string; inviteUrl?: string; inviteCode?: string }>
-  joinGroupByCode: (
-    inviteCode: string
-  ) => Promise<{ success: boolean; error?: string; group?: GroupWithMembers }>
   leaveGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>
-  deleteGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>
 }
 
 const GroupContext = createContext<GroupContextType | undefined>(undefined)
@@ -166,38 +159,6 @@ export function GroupProvider({ children }: GroupProviderProps) {
     }
   }
 
-  const createGroup = async (name: string) => {
-    try {
-      const response = await apiPost('/api/groups', { name })
-
-      if (response.ok && response.data) {
-        // 전체 새로고침 대신 새 그룹을 로컬 상태에 추가
-        const newGroup = response.data.group
-        setGroups(prevGroups => {
-          // 중복 방지: 이미 같은 ID의 그룹이 있으면 추가하지 않음
-          const existingGroup = prevGroups.find(g => g.id === newGroup.id)
-          if (existingGroup) {
-            return prevGroups
-          }
-          return [...prevGroups, newGroup]
-        })
-        
-        // 새로 생성된 그룹을 현재 그룹으로 설정
-        setCurrentGroup(newGroup)
-        localStorage.setItem(CURRENT_GROUP_KEY, newGroup.id)
-        
-        // 카테고리 캐시 클리어 (새 그룹의 카테고리 로딩을 위해)
-        clearCategoriesCache()
-        
-        return { success: true, group: newGroup }
-      } else {
-        return { success: false, error: response.error || '그룹 생성에 실패했습니다.' }
-      }
-    } catch (error) {
-      console.error('Create group error:', error)
-      return { success: false, error: '네트워크 오류가 발생했습니다.' }
-    }
-  }
 
   const generateInvite = async (groupId: string) => {
     try {
@@ -218,38 +179,6 @@ export function GroupProvider({ children }: GroupProviderProps) {
     }
   }
 
-  const joinGroupByCode = async (inviteCode: string) => {
-    try {
-      const response = await apiPost('/api/groups/join', { inviteCode })
-
-      if (response.ok && response.data) {
-        // 전체 새로고침 대신 참여한 그룹을 로컬 상태에 추가
-        const joinedGroup = response.data.group
-        setGroups(prevGroups => {
-          // 중복 방지: 이미 같은 ID의 그룹이 있으면 추가하지 않음
-          const existingGroup = prevGroups.find(g => g.id === joinedGroup.id)
-          if (existingGroup) {
-            return prevGroups
-          }
-          return [...prevGroups, joinedGroup]
-        })
-        
-        // 참여한 그룹을 현재 그룹으로 설정
-        setCurrentGroup(joinedGroup)
-        localStorage.setItem(CURRENT_GROUP_KEY, joinedGroup.id)
-        
-        // 카테고리 캐시 클리어 (참여한 그룹의 카테고리 로딩을 위해)
-        clearCategoriesCache()
-        
-        return { success: true, group: joinedGroup }
-      } else {
-        return { success: false, error: response.error || '그룹 참여에 실패했습니다.' }
-      }
-    } catch (error) {
-      console.error('Join group error:', error)
-      return { success: false, error: '네트워크 오류가 발생했습니다.' }
-    }
-  }
 
   const leaveGroup = async (groupId: string) => {
     try {
@@ -269,32 +198,6 @@ export function GroupProvider({ children }: GroupProviderProps) {
     }
   }
 
-  const deleteGroup = async (groupId: string) => {
-    try {
-      const response = await apiDelete(`/api/groups/${groupId}`)
-
-      if (response.ok) {
-        // 삭제된 그룹이 현재 그룹이면 currentGroup을 null로 설정
-        if (currentGroup && currentGroup.id === groupId) {
-          setCurrentGroup(null)
-          localStorage.removeItem(CURRENT_GROUP_KEY)
-        }
-        
-        // 로컬 상태에서 삭제된 그룹 제거
-        setGroups(prevGroups => prevGroups.filter(g => g.id !== groupId))
-        
-        // 카테고리 캐시 클리어 (그룹 삭제 후 카테고리 변경 반영)
-        clearCategoriesCache()
-        
-        return { success: true }
-      } else {
-        return { success: false, error: response.error || '그룹 삭제에 실패했습니다.' }
-      }
-    } catch (error) {
-      console.error('Delete group error:', error)
-      return { success: false, error: '네트워크 오류가 발생했습니다.' }
-    }
-  }
 
   const value: GroupContextType = {
     groups,
@@ -302,11 +205,8 @@ export function GroupProvider({ children }: GroupProviderProps) {
     isLoading,
     refreshGroups,
     switchGroup,
-    createGroup,
     generateInvite,
-    joinGroupByCode,
     leaveGroup,
-    deleteGroup,
   }
 
   return <GroupContext.Provider value={value}>{children}</GroupContext.Provider>

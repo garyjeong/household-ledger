@@ -91,12 +91,12 @@ export async function POST(request: NextRequest) {
       ownerId: payload.userId,
     })
 
-    // 성공 로깅
-    safeConsole.log('그룹 생성 성공', {
-      groupId: newGroup.id,
-      groupName: newGroup.name,
-      ownerId: payload.userId,
-    })
+    // 성공 로깅 - 비활성화
+    // safeConsole.log('그룹 생성 성공', {
+    //   groupId: newGroup.id,
+    //   groupName: newGroup.name,
+    //   ownerId: payload.userId,
+    // })
 
     return NextResponse.json(
       {

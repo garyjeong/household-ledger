@@ -203,14 +203,14 @@ export async function getOptimizedMonthlyStats(
       dailyTrend,
     }
 
-    // 성능 로깅
-    safeConsole.log('최적화된 월별 통계 조회 완료', {
-      userId,
-      month: `${year}-${month}`,
-      queryCount: 3, // 기존 8개 → 3개로 축소 (1개 Union + 2개 병렬)
-      categoriesFound: categoryStats.length,
-      daysWithData: dailyTrend.length,
-    })
+    // 성능 로깅 - 비활성화
+    // safeConsole.log('최적화된 월별 통계 조회 완료', {
+    //   userId,
+    //   month: `${year}-${month}`,
+    //   queryCount: 3, // 기존 8개 → 3개로 축소 (1개 Union + 2개 병렬)
+    //   categoriesFound: categoryStats.length,
+    //   daysWithData: dailyTrend.length,
+    // })
 
     return result
   } catch (error) {

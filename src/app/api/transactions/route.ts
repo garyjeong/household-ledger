@@ -302,14 +302,14 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      // 4. 로깅 (성공)
-      safeConsole.log('거래 생성 성공', {
-        transactionId: transaction.id.toString(),
-        type: transaction.type,
-        amount: transaction.amount.toString(),
-        userId: user.userId,
-        groupId: transactionData.groupId,
-      })
+      // 4. 로깅 (성공) - 비활성화
+      // safeConsole.log('거래 생성 성공', {
+      //   transactionId: transaction.id.toString(),
+      //   type: transaction.type,
+      //   amount: transaction.amount.toString(),
+      //   userId: user.userId,
+      //   groupId: transactionData.groupId,
+      // })
 
       return transaction
     })

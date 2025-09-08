@@ -236,10 +236,10 @@ function createSecurityResponse(
       loginUrl.searchParams.set('returnUrl', pathname)
       loginUrl.searchParams.set('reason', 'auth_required')
 
-      safeConsole.log('로그인 리다이렉트', {
-        ...context,
-        redirectTo: loginUrl.toString(),
-      })
+      // safeConsole.log('로그인 리다이렉트', {
+      //   ...context,
+      //   redirectTo: loginUrl.toString(),
+      // })
 
       return NextResponse.redirect(loginUrl)
 
@@ -281,10 +281,10 @@ export function middleware(request: NextRequest) {
       const response = NextResponse.next()
       response.headers.set('X-Request-ID', context.requestId)
 
-      // 공개 경로 접근 로깅 (개발 환경에서만)
-      if (process.env.NODE_ENV === 'development') {
-        safeConsole.log('공개 경로 접근', context)
-      }
+      // 공개 경로 접근 로깅 비활성화
+      // if (process.env.NODE_ENV === 'development') {
+      //   safeConsole.log('공개 경로 접근', context)
+      // }
 
       return response
     }
@@ -307,12 +307,12 @@ export function middleware(request: NextRequest) {
         })
       }
 
-      // 인증 성공 로깅
-      safeConsole.log('인증된 요청', {
-        ...context,
-        userId: tokenValidation.userId,
-        tokenType: tokenValidation.tokenType,
-      })
+      // 인증 성공 로깅 (필요시에만)
+      // safeConsole.log('인증된 요청', {
+      //   ...context,
+      //   userId: tokenValidation.userId,
+      //   tokenType: tokenValidation.tokenType,
+      // })
     }
 
     // 4. 관리자 경로 확인 (향후 확장)

@@ -58,7 +58,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 
   try {
     const registration = await navigator.serviceWorker.register('/sw.js')
-    console.log('Service Worker 등록 성공:', registration)
+    // console.log('Service Worker 등록 성공:', registration)
     return registration
   } catch (error) {
     console.error('Service Worker 등록 실패:', error)
@@ -81,7 +81,7 @@ export async function createPushSubscription(
       applicationServerKey: applicationServerKey.buffer as ArrayBuffer,
     })
 
-    console.log('푸시 구독 생성 성공:', subscription)
+    // console.log('푸시 구독 생성 성공:', subscription)
     return subscription
   } catch (error) {
     console.error('푸시 구독 생성 실패:', error)
@@ -110,7 +110,7 @@ export async function getPushSubscription(
 export async function unsubscribePush(subscription: PushSubscription): Promise<boolean> {
   try {
     const result = await subscription.unsubscribe()
-    console.log('푸시 구독 해제:', result)
+    // console.log('푸시 구독 해제:', result)
     return result
   } catch (error) {
     console.error('푸시 구독 해제 실패:', error)
@@ -197,7 +197,7 @@ export async function disablePushNotifications(): Promise<void> {
       await unsubscribePush(subscription)
     }
 
-    console.log('푸시 알림이 완전히 해제되었습니다')
+    // console.log('푸시 알림이 완전히 해제되었습니다')
   } catch (error) {
     console.error('푸시 알림 해제 실패:', error)
     throw new Error('푸시 알림 해제에 실패했습니다')

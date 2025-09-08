@@ -60,7 +60,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(response.data.user)
       } else {
         // 토큰이 유효하지 않은 모든 경우에 로그아웃 처리
-        console.log('Token invalid or expired, logging out...')
+        // console.log('Token invalid or expired, logging out...')
         setUser(null)
         
         // 로그인 페이지가 아닌 경우에만 리다이렉트

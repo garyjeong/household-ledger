@@ -20,6 +20,10 @@ import {
   Heart,
   Calendar,
   Smartphone,
+  UserPlus,
+  Copy,
+  Check,
+  Share,
 } from 'lucide-react'
 import { ResponsiveLayout } from '@/components/couple-ledger/DesktopSidebar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -30,14 +34,123 @@ import { ProfileForm } from '@/components/profile/ProfileForm'
 import { PasswordChangeForm } from '@/components/profile/PasswordChangeForm'
 import { useProfile } from '@/hooks/use-profile'
 import { useGroup } from '@/contexts/group-context'
+import { useToast } from '@/hooks/use-toast'
 
 type TabType = 'profile' | 'security' | 'account'
 
 export default function ProfilePage() {
-  const { currentGroup } = useGroup()
+  const { currentGroup, generateInvite } = useGroup()
   const { data: profile, isLoading: profileLoading } = useProfile()
+  const { toast } = useToast()
 
   const [activeTab, setActiveTab] = useState<TabType>('profile')
+  const [inviteData, setInviteData] = useState<{ code: string; url: string } | null>(null)
+  const [isGeneratingInvite, setIsGeneratingInvite] = useState(false)
+  const [copiedItem, setCopiedItem] = useState<'code' | 'url' | null>(null)
+  const [joinCode, setJoinCode] = useState('')
+  const [isJoining, setIsJoining] = useState(false)
+
+  // 초대 코드 생성
+  const handleGenerateInvite = async () => {
+    if (!currentGroup) return
+
+    setIsGeneratingInvite(true)
+    try {
+      const result = await generateInvite(currentGroup.id)
+      if (result.success && result.inviteCode && result.inviteUrl) {
+        setInviteData({
+          code: result.inviteCode,
+          url: result.inviteUrl,
+        })
+        toast({
+          title: '초대 코드가 생성되었습니다',
+          description: '가족에게 초대 코드를 공유해주세요.',
+        })
+      } else {
+        toast({
+          title: '초대 코드 생성 실패',
+          description: result.error || '잠시 후 다시 시도해주세요.',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      toast({
+        title: '오류가 발생했습니다',
+        description: '네트워크 연결을 확인해주세요.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsGeneratingInvite(false)
+    }
+  }
+
+  // 클립보드 복사 함수
+  const copyToClipboard = async (text: string, type: 'code' | 'url') => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedItem(type)
+      toast({
+        title: '복사되었습니다',
+        description: type === 'code' ? '초대 코드가 복사되었습니다.' : '초대 링크가 복사되었습니다.',
+      })
+      setTimeout(() => setCopiedItem(null), 2000)
+    } catch (error) {
+      toast({
+        title: '복사 실패',
+        description: '클립보드 복사에 실패했습니다.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  // 코드로 그룹 참여
+  const handleJoinGroup = async () => {
+    if (!joinCode.trim()) {
+      toast({
+        title: '초대 코드를 입력해주세요',
+        description: '가족으로부터 받은 초대 코드를 입력하세요.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsJoining(true)
+    try {
+      const response = await fetch('/api/groups/join', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ inviteCode: joinCode.trim() }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        toast({
+          title: '그룹 참여 성공!',
+          description: `${result.group?.name} 그룹에 참여했습니다.`,
+        })
+        setJoinCode('')
+        // 페이지 새로고침으로 그룹 정보 업데이트
+        window.location.reload()
+      } else {
+        toast({
+          title: '그룹 참여 실패',
+          description: result.error || '유효하지 않은 초대 코드이거나 만료되었습니다.',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      toast({
+        title: '오류가 발생했습니다',
+        description: '네트워크 연결을 확인해주세요.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsJoining(false)
+    }
+  }
 
   // 계정 삭제 (추후 구현)
   const handleDeleteAccount = () => {
@@ -117,31 +230,120 @@ export default function ProfilePage() {
                       <Badge className='bg-green-100 text-green-700'>연결됨</Badge>
                     </div>
 
-                    <div className='pt-4 border-t'>
-                      <p className='text-sm text-gray-600'>
-                        • 그룹 멤버와 가계부를 공유하고 있습니다
-                      </p>
-                      <p className='text-sm text-gray-600'>
-                        • 모든 거래 내역이 실시간으로 동기화됩니다
-                      </p>
-                      <p className='text-sm text-gray-600 mt-2'>
-                        • 그룹 관리는 좌측 메뉴의 <strong>"그룹 관리"</strong>에서 가능합니다
-                      </p>
+                    <div className='pt-4 border-t space-y-4'>
+                      <div className='space-y-2'>
+                        <p className='text-sm text-gray-600'>
+                          • 그룹 멤버와 가계부를 공유하고 있습니다
+                        </p>
+                        <p className='text-sm text-gray-600'>
+                          • 모든 거래 내역이 실시간으로 동기화됩니다
+                        </p>
+                      </div>
+
+                      {/* 가족 초대 섹션 */}
+                      <div className='bg-gray-50 rounded-lg p-4'>
+                        <div className='flex items-center justify-between mb-3'>
+                          <h4 className='font-medium text-gray-900 flex items-center gap-2'>
+                            <UserPlus className='h-4 w-4' />
+                            가족 초대하기
+                          </h4>
+                          <Button
+                            onClick={handleGenerateInvite}
+                            disabled={isGeneratingInvite}
+                            size='sm'
+                            variant='outline'
+                          >
+                            {isGeneratingInvite ? '생성 중...' : '초대 코드 생성'}
+                          </Button>
+                        </div>
+
+                        {inviteData ? (
+                          <div className='space-y-3'>
+                            <div>
+                              <label className='text-sm font-medium text-gray-700 block mb-1'>
+                                초대 코드
+                              </label>
+                              <div className='flex items-center gap-2'>
+                                <code className='flex-1 bg-white border rounded px-3 py-2 text-sm font-mono'>
+                                  {inviteData.code}
+                                </code>
+                                <Button
+                                  onClick={() => copyToClipboard(inviteData.code, 'code')}
+                                  size='sm'
+                                  variant='outline'
+                                  className='px-3'
+                                >
+                                  {copiedItem === 'code' ? (
+                                    <Check className='h-4 w-4' />
+                                  ) : (
+                                    <Copy className='h-4 w-4' />
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+
+                            <p className='text-xs text-gray-500'>
+                              초대 코드는 24시간 후 만료됩니다. 가족에게 코드를 공유해주세요!
+                            </p>
+                          </div>
+                        ) : (
+                          <p className='text-sm text-gray-500'>
+                            초대 코드를 생성하여 가족을 그룹에 초대하세요.
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ) : (
                   <div className='text-center py-8'>
                     <Heart className='h-12 w-12 text-gray-400 mx-auto mb-4' />
                     <h3 className='text-lg font-medium text-gray-900 mb-2'>
-                      아직 그룹에 연결되지 않았습니다
+                      개인 가계부를 사용 중입니다
                     </h3>
-                    <p className='text-gray-600 mb-4'>가족과 함께 가계부를 관리해보세요</p>
-                    <Link href='/groups'>
-                      <Button className='gap-2'>
-                        <Users className='h-4 w-4' />
-                        그룹 관리 페이지로 이동
-                      </Button>
-                    </Link>
+                    <p className='text-gray-600 mb-6'>
+                      현재 개인 가계부로 사용하고 있습니다.<br />
+                      가족 초대 코드를 입력해 함께 관리할 수 있습니다.
+                    </p>
+
+                    {/* 가족 그룹 참여 섹션 */}
+                    <div className='max-w-md mx-auto'>
+                      <div className='bg-blue-50 p-4 rounded-lg border border-blue-200'>
+                        <div className='flex items-center gap-2 mb-3'>
+                          <UserPlus className='h-5 w-5 text-blue-600' />
+                          <h4 className='font-medium text-blue-900'>가족 그룹 참여하기</h4>
+                        </div>
+                        
+                        <div className='space-y-3'>
+                          <div>
+                            <label className='block text-sm font-medium text-blue-700 mb-1'>
+                              초대 코드 입력
+                            </label>
+                            <input
+                              type='text'
+                              value={joinCode}
+                              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                              placeholder='ABC123DEF456'
+                              maxLength={12}
+                              className='w-full px-3 py-2 border border-blue-300 rounded-md text-center font-mono text-sm uppercase tracking-wider placeholder:text-blue-400'
+                              disabled={isJoining}
+                            />
+                          </div>
+                          
+                          <Button
+                            onClick={handleJoinGroup}
+                            disabled={!joinCode.trim() || isJoining}
+                            className='w-full'
+                            size='sm'
+                          >
+                            {isJoining ? '참여 중...' : '그룹 참여하기'}
+                          </Button>
+                          
+                          <p className='text-xs text-blue-600'>
+                            가족으로부터 받은 12자리 초대 코드를 입력하세요.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </CardContent>

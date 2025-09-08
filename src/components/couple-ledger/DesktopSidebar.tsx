@@ -73,14 +73,6 @@ const sidebarMenu = [
         badge: null,
       },
       {
-        id: 'groups',
-        label: '그룹 관리',
-        href: '/groups',
-        icon: Users,
-        description: '가족 그룹 생성 및 관리',
-        badge: null,
-      },
-      {
         id: 'categories',
         label: '카테고리',
         href: '/categories',
@@ -329,7 +321,7 @@ export function ResponsiveLayout({
   ) => {
     try {
       // TODO: 실제 거래 저장 API 호출 구현
-      console.log('거래 저장 API 구현 필요:', transaction)
+      // console.log('거래 저장 API 구현 필요:', transaction)
 
       toast({
         title: '성공',

@@ -121,15 +121,15 @@ export async function GET(request: NextRequest) {
       },
     }
 
-    // 성공 로깅
-    safeConsole.log('월별 통계 조회 성공', {
-      userId: user.userId,
-      period: `${year}-${month}`,
-      queryTime,
-      categoriesFound: optimizedStats.categoryStats.length,
-      transactionCount: optimizedStats.transactionCount,
-      performance: 'optimized',
-    })
+    // 성공 로깅 - 비활성화
+    // safeConsole.log('월별 통계 조회 성공', {
+    //   userId: user.userId,
+    //   period: `${year}-${month}`,
+    //   queryTime,
+    //   categoriesFound: optimizedStats.categoryStats.length,
+    //   transactionCount: optimizedStats.transactionCount,
+    //   performance: 'optimized',
+    // })
 
     return NextResponse.json(response)
   } catch (error) {

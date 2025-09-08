@@ -105,7 +105,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    console.log('🗑️ 그룹 삭제 API 호출됨')
+    // console.log('🗑️ 그룹 삭제 API 호출됨')
 
     // 토큰 검증
     const accessToken = request.cookies.get('accessToken')?.value
@@ -119,7 +119,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const user = await verifyCookieToken(accessToken)
     const { groupId } = await params
 
-    console.log('👤 사용자 검증 성공:', user.userId, '그룹 ID:', groupId)
+    // console.log('👤 사용자 검증 성공:', user.userId, '그룹 ID:', groupId)
 
     // 그룹 존재 여부 및 소유권 확인
     const group = await prisma.group.findUnique({
@@ -155,9 +155,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    console.log(
-      `🔍 삭제할 그룹 정보: ${group.name} (카테고리: ${group._count.categories}개, 거래: ${group._count.transactions}개, 멤버: ${group.members.length}명)`
-    )
+    // console.log(
+    //   `🔍 삭제할 그룹 정보: ${group.name} (카테고리: ${group._count.categories}개, 거래: ${group._count.transactions}개, 멤버: ${group.members.length}명)`
+    // )
 
     // 트랜잭션으로 안전하게 삭제
     await prisma.$transaction(async tx => {
@@ -167,7 +167,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
           where: { groupId: BigInt(groupId) },
           data: { groupId: null },
         })
-        console.log('✅ 그룹 멤버들의 groupId 제거 완료')
+        // console.log('✅ 그룹 멤버들의 groupId 제거 완료')
       }
 
       // 2. 그룹 관련 카테고리 삭제 (기본 카테고리 제외)
@@ -177,25 +177,25 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
           isDefault: false, // 기본 카테고리는 삭제하지 않음
         },
       })
-      console.log(`✅ 그룹 카테고리 ${deletedCategories.count}개 삭제 완료`)
+      // console.log(`✅ 그룹 카테고리 ${deletedCategories.count}개 삭제 완료`)
 
       // 3. 그룹 관련 거래를 개인 거래로 전환 (삭제하지 않고 보존)
       const updatedTransactions = await tx.transaction.updateMany({
         where: { groupId: BigInt(groupId) },
         data: { groupId: null },
       })
-      console.log(`✅ 그룹 거래 ${updatedTransactions.count}개를 개인 거래로 전환 완료`)
+      // console.log(`✅ 그룹 거래 ${updatedTransactions.count}개를 개인 거래로 전환 완료`)
 
       // 4. 그룹 삭제 (초대 코드는 CASCADE로 자동 삭제됨)
       await tx.group.delete({
         where: { id: BigInt(groupId) },
       })
-      console.log('✅ 그룹 삭제 완료')
+      // console.log('✅ 그룹 삭제 완료')
     })
 
     // 카테고리 캐시 클리어는 클라이언트 측에서 처리됩니다
 
-    console.log('🎉 그룹 삭제 성공:', group.name)
+    // console.log('🎉 그룹 삭제 성공:', group.name)
 
     return NextResponse.json({
       success: true,

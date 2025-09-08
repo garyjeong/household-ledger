@@ -10,36 +10,36 @@ import { formatCategoryForResponse, createCategorySchema } from '@/lib/schemas/c
  */
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 Categories API 호출됨')
+    // console.log('🔍 Categories API 호출됨')
 
     // 토큰 검증
     const accessToken = request.cookies.get('accessToken')?.value
     if (!accessToken) {
-      console.log('❌ 액세스 토큰이 없습니다')
+      // console.log('❌ 액세스 토큰이 없습니다')
       return NextResponse.json(
         { error: '인증이 필요합니다', code: 'AUTH_REQUIRED' },
         { status: 401 }
       )
     }
 
-    console.log('🔐 토큰 검증 시작')
+    // console.log('🔐 토큰 검증 시작')
     const user = await verifyCookieToken(accessToken)
     if (!user) {
-      console.log('❌ 토큰 검증 실패')
+      // console.log('❌ 토큰 검증 실패')
       return NextResponse.json(
         { error: '유효하지 않은 토큰입니다', code: 'INVALID_TOKEN' },
         { status: 401 }
       )
     }
-    console.log('👤 사용자 검증 성공:', user.userId)
+    // console.log('👤 사용자 검증 성공:', user.userId)
 
     // 사용자의 그룹 정보 가져오기
-    console.log('📊 사용자 데이터 조회 시작')
+    // console.log('📊 사용자 데이터 조회 시작')
     const userData = await prisma.user.findUnique({
       where: { id: BigInt(user.userId) },
       select: { groupId: true },
     })
-    console.log('📊 사용자 데이터 조회 완료:', userData)
+    // console.log('📊 사용자 데이터 조회 완료:', userData)
 
     const groupId = userData?.groupId?.toString() || null
 
@@ -51,17 +51,17 @@ export async function GET(request: NextRequest) {
         ? (typeParam.toUpperCase() as 'EXPENSE' | 'INCOME' | 'TRANSFER')
         : undefined
 
-    console.log('🔍 그룹 ID:', groupId, '거래 타입 필터:', transactionType)
+    // console.log('🔍 그룹 ID:', groupId, '거래 타입 필터:', transactionType)
 
     // 사용 가능한 카테고리 조회 (기본 + 그룹 커스텀)
-    console.log('📂 카테고리 조회 시작')
+    // console.log('📂 카테고리 조회 시작')
     const categories = await getAvailableCategories(groupId, transactionType)
-    console.log('📂 카테고리 조회 완료:', categories.length, '개')
+    // console.log('📂 카테고리 조회 완료:', categories.length, '개')
 
     // 응답 형식에 맞게 변환
     const formattedCategories = categories.map(category => formatCategoryForResponse(category))
 
-    console.log('✅ 카테고리 조회 성공:', formattedCategories.length, '개')
+    // console.log('✅ 카테고리 조회 성공:', formattedCategories.length, '개')
 
     return NextResponse.json({
       categories: formattedCategories,
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    console.log('🔧 카테고리 생성 API 호출됨')
+    // console.log('🔧 카테고리 생성 API 호출됨')
 
     // 토큰 검증
     const accessToken = request.cookies.get('accessToken')?.value
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await verifyCookieToken(accessToken)
-    console.log('👤 사용자 검증 성공:', user.userId)
+    // console.log('👤 사용자 검증 성공:', user.userId)
 
     // 사용자의 그룹 정보 가져오기
     const userData = await prisma.user.findUnique({
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
     const { name, type, color, groupId } = validationResult.data
 
     // 그룹 카테고리를 생성하려는 경우, 사용자가 해당 그룹에 속해있는지 확인
-    let targetGroupId: BigInt | null = null
+    let targetGroupId: bigint | null = null
     if (groupId !== undefined && groupId !== null) {
       if (userGroupId && userGroupId.toString() === groupId.toString()) {
         targetGroupId = BigInt(groupId)
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
       targetGroupId = userGroupId
     }
 
-    console.log('🎯 대상 그룹 ID:', targetGroupId?.toString() || 'null')
+    // console.log('🎯 대상 그룹 ID:', targetGroupId?.toString() || 'null')
 
     // 중복 이름 검사 (같은 그룹 내에서 같은 타입의 카테고리명 중복 불가)
     const duplicateCategory = await prisma.category.findFirst({
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    console.log('✅ 카테고리 생성 성공:', newCategory.id.toString())
+    // console.log('✅ 카테고리 생성 성공:', newCategory.id.toString())
 
     return NextResponse.json(
       {
