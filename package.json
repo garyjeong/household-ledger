@@ -39,7 +39,8 @@
     "test:responsive": "playwright test tests/responsive-ui.test.ts",
     "analyze": "ANALYZE=true next build",
     "lighthouse": "lighthouse http://localhost:3001 --output=json --output-path=./lighthouse-report.json",
-    "prepare": "husky"
+    "prepare": "husky",
+    "mcp:prisma": "prisma mcp"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
