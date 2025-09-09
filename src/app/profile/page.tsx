@@ -10,7 +10,7 @@
 
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   User,
@@ -22,6 +22,9 @@ import {
   Smartphone,
   UserPlus,
   Share,
+  Clipboard,
+  ClipboardCheck,
+  RefreshCw,
 } from 'lucide-react'
 import { ResponsiveLayout } from '@/components/couple-ledger/DesktopSidebar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -33,55 +36,75 @@ import { PasswordChangeForm } from '@/components/profile/PasswordChangeForm'
 import { useProfile } from '@/hooks/use-profile'
 import { useGroup } from '@/contexts/group-context'
 import { useToast } from '@/hooks/use-toast'
+import { Input } from '@/components/ui/input'
 
 type TabType = 'profile' | 'security' | 'account'
 
 export default function ProfilePage() {
-  const { currentGroup, generateInvite, refreshGroups } = useGroup()
+  const { currentGroup, generateInvite, getInviteCode, refreshGroups } = useGroup()
   const { data: profile, isLoading: profileLoading } = useProfile()
   const { toast } = useToast()
 
   const [activeTab, setActiveTab] = useState<TabType>('profile')
-  const [isCopyingInvite, setIsCopyingInvite] = useState(false)
+  const [inviteCode, setInviteCode] = useState<string | null>(null)
+  const [inviteExpiresAt, setInviteExpiresAt] = useState<string | null>(null)
+  const [isGeneratingInvite, setIsGeneratingInvite] = useState(false)
+  const [isCopied, setIsCopied] = useState(false)
 
-  // 초대 코드 복사
-  const handleCopyInvite = async () => {
+  // '계정 관리' 탭이 활성화되면 초대 코드 조회
+  useEffect(() => {
+    if (activeTab === 'account' && currentGroup) {
+      fetchInviteCode()
+    }
+  }, [activeTab, currentGroup])
+
+  // 초대 코드 조회 함수
+  const fetchInviteCode = async () => {
+    if (!currentGroup) return
+    const result = await getInviteCode(currentGroup.id)
+    if (result.success) {
+      setInviteCode(result.inviteCode || null)
+      setInviteExpiresAt(result.expiresAt || null)
+    }
+  }
+
+  // 새로운 초대 코드 생성
+  const handleGenerateInvite = async () => {
     if (!currentGroup) return
 
-    setIsCopyingInvite(true)
+    setIsGeneratingInvite(true)
     try {
       const result = await generateInvite(currentGroup.id)
-      if (result.success && result.inviteCode && result.inviteUrl) {
-        // 자동으로 클립보드에 초대 코드 저장
-        try {
-          await navigator.clipboard.writeText(result.inviteCode)
-          toast({
-            title: '초대 코드가 생성되었습니다',
-            description: '초대 코드가 클립보드에 복사되었습니다. 가족에게 공유해주세요!',
-          })
-        } catch (clipboardError) {
-          // 클립보드 접근 실패 시 알림
-          toast({
-            title: '초대 코드가 생성되었습니다',
-            description: `초대 코드: ${result.inviteCode} (수동으로 복사해서 공유해주세요)`,
-          })
-        }
+      if (result.success && result.inviteCode) {
+        setInviteCode(result.inviteCode)
+        setInviteExpiresAt(result.expiresAt || null)
+        toast({
+          title: '새로운 초대 코드가 생성되었습니다',
+          description: '코드를 복사하여 가족에게 공유해주세요!',
+        })
       } else {
         toast({
-          title: '초대 코드 복사 실패',
+          title: '초대 코드 생성 실패',
           description: result.error || '잠시 후 다시 시도해주세요.',
           variant: 'destructive',
         })
       }
-    } catch (error) {
-      toast({
-        title: '오류가 발생했습니다',
-        description: '네트워크 연결을 확인해주세요.',
-        variant: 'destructive',
-      })
     } finally {
-      setIsCopyingInvite(false)
+      setIsGeneratingInvite(false)
     }
+  }
+
+  // 클립보드에 코드 복사
+  const handleCopyCode = () => {
+    if (!inviteCode) return
+    navigator.clipboard.writeText(inviteCode).then(() => {
+      setIsCopied(true)
+      toast({
+        title: '초대 코드가 복사되었습니다',
+        description: '가족에게 코드를 공유해주세요!',
+      })
+      setTimeout(() => setIsCopied(false), 2000)
+    })
   }
 
   // 계정 삭제 (추후 구현)
@@ -150,24 +173,28 @@ export default function ProfilePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {currentGroup && (currentGroup.memberCount || 0) > 1 ? (
+                {currentGroup ? (
                   <div className='space-y-4'>
                     <div className='flex items-center justify-between'>
                       <div>
                         <h3 className='font-medium text-gray-900'>{currentGroup.name}</h3>
                         <p className='text-sm text-gray-500'>
-                          멤버: {currentGroup.memberCount || 0}명
+                          멤버: {currentGroup.memberCount || 1}명
                         </p>
                       </div>
-                      <Badge className='bg-green-100 text-green-700'>연결됨</Badge>
+                      <Badge className='bg-green-100 text-green-700'>
+                        {(currentGroup.memberCount || 1) > 1 ? '연결됨' : '개인'}
+                      </Badge>
                     </div>
 
-                    {/* 새 그룹 멤버 환영 메시지 */}
+                    {/* 새 그룹 멤버 환영 메시지 (조건부 렌더링 유지) */}
                     {(currentGroup.memberCount || 0) > 1 && (
                       <div className='bg-blue-50 rounded-lg p-4 border border-blue-200'>
                         <div className='flex items-center gap-2 mb-2'>
                           <span className='text-blue-600 text-lg'>🎉</span>
-                          <h4 className='font-medium text-blue-900'>가족 가계부에 오신 것을 환영해요!</h4>
+                          <h4 className='font-medium text-blue-900'>
+                            가족 가계부에 오신 것을 환영해요!
+                          </h4>
                         </div>
                         <div className='text-sm text-blue-700 space-y-1'>
                           <p>• 모든 가족 구성원의 수입/지출 내역이 실시간으로 공유됩니다</p>
@@ -178,38 +205,69 @@ export default function ProfilePage() {
                     )}
 
                     <div className='pt-4 border-t space-y-4'>
-                      <div className='space-y-2'>
-                        <p className='text-sm text-gray-600'>
-                          • 그룹 멤버와 가계부를 공유하고 있습니다
-                        </p>
-                        <p className='text-sm text-gray-600'>
-                          • 모든 거래 내역이 실시간으로 동기화됩니다
-                        </p>
-                      </div>
-
                       {/* 가족 초대 섹션 */}
                       <div className='bg-gray-50 rounded-lg p-4'>
                         <div className='flex items-center justify-between mb-3'>
                           <h4 className='font-medium text-gray-900 flex items-center gap-2'>
                             <UserPlus className='h-4 w-4' />
-                            가족 초대하기
+                            가족 초대 코드
                           </h4>
-                          <Button
-                            onClick={handleCopyInvite}
-                            disabled={isCopyingInvite}
-                            size='sm'
-                            variant='outline'
-                          >
-                            {isCopyingInvite ? '복사 중...' : '초대 코드 복사'}
-                          </Button>
                         </div>
 
-                        <p className='text-sm text-gray-500'>
-                          버튼을 클릭하면 초대 코드가 자동으로 클립보드에 복사됩니다. 가족에게 코드를 공유해주세요!
-                        </p>
-                        <p className='text-xs text-gray-400 mt-2'>
-                          💡 초대 코드는 24시간 후 자동으로 만료됩니다.
-                        </p>
+                        {inviteCode ? (
+                          <div className='space-y-3'>
+                            <div className='flex items-center gap-2 bg-white border rounded-md p-2'>
+                              <Input
+                                readOnly
+                                value={inviteCode}
+                                className='flex-1 border-none focus:ring-0 h-auto p-0 text-lg font-mono tracking-wider'
+                              />
+                              <Button
+                                onClick={handleCopyCode}
+                                size='icon'
+                                variant='ghost'
+                                className='h-8 w-8'
+                              >
+                                {isCopied ? (
+                                  <ClipboardCheck className='h-4 w-4 text-green-600' />
+                                ) : (
+                                  <Clipboard className='h-4 w-4' />
+                                )}
+                              </Button>
+                            </div>
+                            <div className='flex items-center justify-between text-xs text-gray-500'>
+                              <span>
+                                {inviteExpiresAt
+                                  ? `만료일: ${new Date(
+                                      inviteExpiresAt
+                                    ).toLocaleString()}`
+                                  : '24시간 내 만료'}
+                              </span>
+                              <Button
+                                onClick={handleGenerateInvite}
+                                disabled={isGeneratingInvite}
+                                size='sm'
+                                variant='link'
+                                className='h-auto p-0 text-xs'
+                              >
+                                <RefreshCw className='h-3 w-3 mr-1' />
+                                {isGeneratingInvite ? '생성 중...' : '코드 재생성'}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className='text-center py-4'>
+                            <p className='text-sm text-gray-600 mb-4'>
+                              초대 코드를 생성하여 가족을 초대하세요.
+                            </p>
+                            <Button
+                              onClick={handleGenerateInvite}
+                              disabled={isGeneratingInvite}
+                            >
+                              {isGeneratingInvite ? '생성 중...' : '초대 코드 생성하기'}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -217,13 +275,9 @@ export default function ProfilePage() {
                   <div className='text-center py-8'>
                     <Heart className='h-12 w-12 text-gray-400 mx-auto mb-4' />
                     <h3 className='text-lg font-medium text-gray-900 mb-2'>
-                      {currentGroup ? '개인 가계부를 사용 중입니다' : '가족 그룹을 만들어보세요'}
+                      가족 그룹 정보를 불러오는 중...
                     </h3>
-                    <p className='text-gray-600'>
-                      {currentGroup
-                        ? '현재 혼자 가계부를 사용하고 있습니다. 가족을 초대하여 함께 가계부를 관리해보세요.'
-                        : '가족과 함께 가계부를 관리할 수 있습니다.'}
-                    </p>
+                    <p className='text-gray-600'>잠시만 기다려주세요.</p>
                   </div>
                 )}
               </CardContent>

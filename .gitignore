@@ -51,7 +51,6 @@ tsconfig.tsbuildinfo
 next-env.d.ts
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -86,6 +85,7 @@ coverage/
 # Jest
 coverage/
 jest-coverage/
+playwright-report/
 
 # Temporary folders
 tmp/
@@ -141,3 +141,6 @@ session.txt
 .swc/
 .husky/
 .cursor/
+.claude/
+.pids/
+.logs/

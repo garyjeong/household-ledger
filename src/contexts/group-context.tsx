@@ -14,7 +14,10 @@ interface GroupContextType {
   switchGroup: (groupId: string | null) => void
   generateInvite: (
     groupId: string
-  ) => Promise<{ success: boolean; error?: string; inviteUrl?: string; inviteCode?: string }>
+  ) => Promise<{ success: boolean; error?: string; inviteUrl?: string; inviteCode?: string; expiresAt?: string }>
+  getInviteCode: (
+    groupId: string
+  ) => Promise<{ success: boolean; error?: string; inviteCode?: string | null; expiresAt?: string }>
   leaveGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>
 }
 
@@ -159,6 +162,24 @@ export function GroupProvider({ children }: GroupProviderProps) {
     }
   }
 
+  const getInviteCode = async (groupId: string) => {
+    try {
+      const response = await apiGet(`/api/groups/${groupId}/invite`)
+      if (response.ok && response.data) {
+        return {
+          success: true,
+          inviteCode: response.data.inviteCode,
+          expiresAt: response.data.expiresAt,
+        }
+      } else {
+        return { success: false, error: response.error || '초대 코드 조회에 실패했습니다.', inviteCode: null }
+      }
+    } catch (error) {
+      console.error('Get invite code error:', error)
+      return { success: false, error: '네트워크 오류가 발생했습니다.', inviteCode: null }
+    }
+  }
+
 
   const generateInvite = async (groupId: string) => {
     try {
@@ -169,6 +190,7 @@ export function GroupProvider({ children }: GroupProviderProps) {
           success: true,
           inviteUrl: response.data.inviteUrl,
           inviteCode: response.data.inviteCode,
+          expiresAt: response.data.expiresAt,
         }
       } else {
         return { success: false, error: response.error || '초대 링크 생성에 실패했습니다.' }
@@ -206,6 +228,7 @@ export function GroupProvider({ children }: GroupProviderProps) {
     refreshGroups,
     switchGroup,
     generateInvite,
+    getInviteCode,
     leaveGroup,
   }
 
