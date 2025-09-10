@@ -149,6 +149,7 @@ export interface PaginatedResponse<T> {
 export interface QuickAddForm {
   amount: string
   categoryId: string
+  type: 'EXPENSE' | 'INCOME'
   payMethod: PayMethod
   date: string
   person: Person

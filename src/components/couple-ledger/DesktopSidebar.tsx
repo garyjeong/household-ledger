@@ -25,6 +25,8 @@ import { useGroup } from '@/contexts/group-context'
 import { QuickAddModal } from './QuickAddModal'
 import { useToast } from '@/hooks/use-toast'
 import { LogoutConfirmDialog } from '@/components/ui/logout-confirm-dialog'
+import { useQuickAddTransaction } from '@/hooks/use-transactions'
+import { useCategories } from '@/hooks/use-categories'
 
 interface DesktopSidebarProps {
   onQuickAddClick: () => void
@@ -323,6 +325,9 @@ export function ResponsiveLayout({
 }) {
   const { toast } = useToast()
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
+  const quickAddMutation = useQuickAddTransaction()
+  const { currentGroup } = useGroup()
+  const { categories } = useCategories(currentGroup ? { groupId: currentGroup.id } : null)
 
   // 빠른입력 모달 열기
   const handleQuickAddClick = () => {
@@ -334,30 +339,41 @@ export function ResponsiveLayout({
     setIsQuickAddOpen(false)
   }
 
-  // 거래 저장 핸들러
+  // 거래 저장 핸들러 - 빠른 입력 API 호출
   const handleSaveTransaction = async (
-    transaction: any // 실제 Transaction 타입 사용
+    transaction: any // QuickAddModal에서 받은 데이터
   ) => {
     try {
-      // TODO: 실제 거래 저장 API 호출 구현
-      // console.log('거래 저장 API 구현 필요:', transaction)
+      if (!currentGroup) {
+        throw new Error('그룹 정보가 필요합니다')
+      }
 
-      toast({
-        title: '성공',
-        description: '거래가 성공적으로 저장되었습니다.',
-      })
+      // categoryId로 categoryName 찾기
+      const category = categories.find(cat => cat.id === transaction.categoryId)
+      if (!category) {
+        throw new Error('카테고리를 찾을 수 없습니다')
+      }
 
-      // 모달 닫기
+      // QuickAddModal 데이터를 빠른 입력 API 형식으로 변환
+      const quickAddData = {
+        type: (transaction.type || 'EXPENSE') as 'EXPENSE' | 'INCOME', // 사용자가 선택한 타입
+        amount: Number(transaction.amount),
+        categoryName: category.name, // categoryId → categoryName 변환
+        memo: transaction.memo || '',
+        date: transaction.date,
+      }
+
+      // 빠른 입력 API 호출
+      await quickAddMutation.mutateAsync(quickAddData)
+
+      // 모달 닫기 (성공 시 useQuickAddTransaction hook에서 자동으로 토스트 표시)
       setIsQuickAddOpen(false)
 
       return Promise.resolve()
     } catch (error) {
       console.error('거래 저장 실패:', error)
-      toast({
-        title: '오류',
-        description: '거래 저장에 실패했습니다.',
-        variant: 'destructive',
-      })
+      // 에러도 useQuickAddTransaction hook에서 처리
+      setIsQuickAddOpen(false)
       throw error
     }
   }

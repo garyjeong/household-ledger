@@ -70,14 +70,16 @@ export function QuickAddModal({
   // 카테고리 가져오기 (API에서 자동으로 사용자의 그룹 상황에 맞는 카테고리 반환)
   const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError, refetch: refetchCategories } = useCategories({})
 
-  // 카테고리 배열 추출
-  const categories = categoriesData?.categories || []
+  // 카테고리 배열 추출 및 타입별 필터링
+  const allCategories = categoriesData?.categories || []
+  const categories = allCategories.filter(cat => cat.type === formData.type)
   
 
   // 폼 상태
   const [formData, setFormData] = useState<QuickAddForm>({
     amount: '',
     categoryId: '',
+    type: 'EXPENSE', // 기본값: 지출
     date: new Date().toISOString().split('T')[0],
     memo: '',
     payMethod: 'cash',
@@ -111,6 +113,7 @@ export function QuickAddModal({
     setFormData({
       amount: '',
       categoryId: '',
+      type: 'EXPENSE', // 기본값: 지출
       date: new Date().toISOString().split('T')[0],
       memo: '',
       payMethod: 'cash',
@@ -142,13 +145,10 @@ export function QuickAddModal({
         categoryId: formData.categoryId,
         date: formData.date,
         memo: formData.memo,
-        type: 'expense' as const,
+        type: formData.type, // 사용자가 선택한 타입
         person: formData.person,
         payMethod: formData.payMethod,
         tags: formData.tags,
-        userId: '', // 실제 구현에서는 현재 사용자 ID
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
       }
 
       await onSave(transactionData)
@@ -246,6 +246,47 @@ export function QuickAddModal({
                 </div>
               </div>
             </div>
+
+          {/* 거래 타입 선택 섹션 */}
+          <div className='space-y-4'>
+            <div className='flex items-center gap-2'>
+              <div className='flex items-center justify-center w-8 h-8 bg-purple-100 rounded-lg'>
+                <span className='text-lg'>{formData.type === 'EXPENSE' ? '💸' : '💰'}</span>
+              </div>
+              <h3 className='text-base font-bold text-slate-900'>거래 타입</h3>
+            </div>
+
+            <div className='flex bg-slate-100 rounded-lg p-1'>
+              <Button
+                type='button'
+                variant={formData.type === 'EXPENSE' ? 'default' : 'ghost'}
+                className={`flex-1 h-10 ${
+                  formData.type === 'EXPENSE' 
+                    ? 'bg-red-500 hover:bg-red-600 text-white' 
+                    : 'hover:bg-slate-200'
+                }`}
+                onClick={() => {
+                  setFormData(prev => ({ ...prev, type: 'EXPENSE', categoryId: '' }))
+                }}
+              >
+                💸 지출
+              </Button>
+              <Button
+                type='button'
+                variant={formData.type === 'INCOME' ? 'default' : 'ghost'}
+                className={`flex-1 h-10 ${
+                  formData.type === 'INCOME' 
+                    ? 'bg-green-500 hover:bg-green-600 text-white' 
+                    : 'hover:bg-slate-200'
+                }`}
+                onClick={() => {
+                  setFormData(prev => ({ ...prev, type: 'INCOME', categoryId: '' }))
+                }}
+              >
+                💰 수입
+              </Button>
+            </div>
+          </div>
 
           {/* 카테고리 선택 섹션 */}
           <div className='space-y-4'>

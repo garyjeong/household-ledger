@@ -403,7 +403,7 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
 
   // 그룹 없을 때 알림 컴포넌트
   const NoGroupAlert = () => (
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
       <div className="flex items-center gap-2 mb-2">
         <Users className="h-4 w-4 text-blue-600" />
         <h4 className="font-medium text-blue-900">그룹에 참여하지 않았습니다</h4>
@@ -426,10 +426,10 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
   }
 
   return (
-    <div className={className}>
+    <div className={`space-y-4 ${className || ''}`}>
       {/* 헤더 */}
-      <div className='sticky top-0 z-20 bg-white pb-4 mb-4 border-b border-gray-100'>
-        <div className='pt-4 flex items-center justify-between'>
+      <div className='sticky top-0 z-20 bg-white mb-2'>
+        <div className='pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white border border-slate-200 rounded-lg p-4 shadow-sm'>
           <div>
             <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>카테고리 관리</h1>
             <p className='text-slate-600 mt-1'>
@@ -498,11 +498,13 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
         </div>
       </div>
 
-      {/* 그룹 없을 때 알림 */}
-      {!currentGroup && <NoGroupAlert />}
+      {/* 메인 콘텐츠 */}
+      <div className='space-y-6'>
+        {/* 그룹 없을 때 알림 */}
+        {!currentGroup && <NoGroupAlert />}
 
-      {/* 검색 및 필터 */}
-      <div className='mb-4 space-y-3'>
+        {/* 검색 및 필터 */}
+        <div className='space-y-3'>
         {/* 상단: 검색과 정렬 */}
         <div className='flex items-center justify-between'>
           {/* 좌측: 검색 */}
@@ -534,7 +536,7 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
 
       {/* 탭과 카운트 */}
       <Tabs value={selectedTab} onValueChange={value => setSelectedTab(value as any)}>
-        <div className='flex items-center justify-between mb-4'>
+        <div className='flex items-center justify-between'>
           {/* 좌측: 카테고리 수 표시 */}
           {!isLoading && filteredCategories.length > 0 && (
             <div className='text-sm text-gray-600 font-medium'>
@@ -563,7 +565,7 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
               <h3 className='text-base font-medium text-gray-900 mb-2'>
                 {searchQuery ? '검색 결과가 없습니다' : '카테고리가 없습니다'}
               </h3>
-              <p className='text-sm text-gray-600 mb-4'>
+              <p className='text-sm text-gray-600'>
                 {searchQuery ? '다른 검색어로 시도해보세요' : '새로운 카테고리를 추가해보세요'}
               </p>
               {!searchQuery && (
@@ -598,7 +600,7 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
         isLoading={deleteLoading}
       />
 
-
+      </div>
     </div>
   )
 }

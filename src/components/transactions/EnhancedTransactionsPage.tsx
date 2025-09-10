@@ -25,15 +25,12 @@ import { Badge } from '@/components/ui/badge'
 import {
   useTransactions,
   useDeleteTransaction,
-  useCreateTransaction,
-  useUpdateTransaction,
 } from '@/hooks/use-transactions'
 import { useExchangeRates } from '@/hooks/use-exchange-rates'
 import { formatCurrency } from '@/lib/currency-api'
 import { useGroup } from '@/contexts/group-context'
 import { useAlert } from '@/contexts/alert-context'
 import { TransactionsTable } from './TransactionsTable'
-import { TransactionForm } from './TransactionForm'
 
 interface TransactionFilters {
   search: string
@@ -56,8 +53,6 @@ const initialFilters: TransactionFilters = {
  */
 export function EnhancedTransactionsPage() {
   const [filters, setFilters] = useState<TransactionFilters>(initialFilters)
-  const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false)
-  const [editingTransaction, setEditingTransaction] = useState<any>(null)
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 20,
@@ -79,8 +74,6 @@ export function EnhancedTransactionsPage() {
   })
 
   const { data: exchangeRates, isLoading: ratesLoading } = useExchangeRates()
-  const createTransactionMutation = useCreateTransaction()
-  const updateTransactionMutation = useUpdateTransaction()
   const deleteTransactionMutation = useDeleteTransaction()
 
   const transactions = transactionsData?.transactions || []
@@ -91,37 +84,10 @@ export function EnhancedTransactionsPage() {
     setFilters(prev => ({ ...prev, [key]: value }))
   }
 
-  // 거래 생성
-  const handleCreateTransaction = async (data: any) => {
-    await createTransactionMutation.mutateAsync(data)
-  }
-
-  // 거래 수정
-  const handleUpdateTransaction = async (data: any) => {
-    if (!editingTransaction) return
-    await updateTransactionMutation.mutateAsync({
-      id: editingTransaction.id,
-      data,
-    })
-    setEditingTransaction(null)
-  }
-
   // 거래 삭제
   const handleDeleteTransaction = async (id: string) => {
     if (!confirm('이 거래를 삭제하시겠습니까?')) return
     await deleteTransactionMutation.mutateAsync(id)
-  }
-
-  // 편집 모달 열기
-  const handleEditTransaction = (transaction: any) => {
-    setEditingTransaction(transaction)
-    setIsTransactionFormOpen(true)
-  }
-
-  // 새 거래 추가 모달 열기
-  const handleAddTransaction = () => {
-    setEditingTransaction(null)
-    setIsTransactionFormOpen(true)
   }
 
   // 페이지네이션 변경 핸들러
@@ -144,10 +110,10 @@ export function EnhancedTransactionsPage() {
   return (
     <>
       <ResponsiveLayout>
-        <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
-          {/* 헤더 */}
-          <div className='sticky top-0 z-20 bg-white pb-6 mb-6 border-b border-gray-100'>
-            <div className='pt-6 flex flex-col md:flex-row md:items-center justify-between gap-4'>
+        <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 space-y-4'>
+          {/* 헤더 - 월별 대시보드와 동일한 스타일 적용 */}
+          <div className='sticky top-0 z-20 bg-white mb-2'>
+            <div className='pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white border border-slate-200 rounded-lg p-4 shadow-sm'>
               <div>
                 <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>거래내역</h1>
                 <p className='text-slate-600 mt-1'>모든 수입과 지출을 확인하세요</p>
@@ -160,15 +126,6 @@ export function EnhancedTransactionsPage() {
               </div>
 
               <div className='flex gap-2'>
-                <Button
-                  variant='outline'
-                  className='gap-2 border-slate-300 text-slate-700 hover:bg-slate-50'
-                  onClick={handleAddTransaction}
-                  disabled={createTransactionMutation.isPending}
-                >
-                  <Plus className='h-4 w-4' />
-                  거래 추가
-                </Button>
                 <Button variant='outline' className='gap-2 border-slate-300 text-slate-700 hover:bg-slate-50'>
                   <Download className='h-4 w-4' />
                   내보내기
@@ -177,8 +134,10 @@ export function EnhancedTransactionsPage() {
             </div>
           </div>
 
-          {/* 통계 카드 */}
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
+          {/* 메인 콘텐츠 */}
+          <div className='space-y-6'>
+            {/* 통계 카드 */}
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
             <Card>
               <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
                 <CardTitle className='text-sm font-medium'>총 수입</CardTitle>
@@ -232,8 +191,8 @@ export function EnhancedTransactionsPage() {
             </Card>
           </div>
 
-          {/* 필터 영역 */}
-          <Card className='mb-6'>
+            {/* 필터 영역 */}
+            <Card>
             <CardHeader>
               <CardTitle className='text-lg flex items-center gap-2'>
                 <Filter className='h-5 w-5' />
@@ -310,24 +269,12 @@ export function EnhancedTransactionsPage() {
                 : undefined
             }
             onPaginationChange={handlePaginationChange}
-            onEdit={handleEditTransaction}
+            onEdit={undefined}
             onDelete={handleDeleteTransaction}
           />
+          </div>
         </div>
       </ResponsiveLayout>
-
-      {/* 거래 추가/수정 모달 */}
-      <TransactionForm
-        isOpen={isTransactionFormOpen}
-        onClose={() => {
-          setIsTransactionFormOpen(false)
-          setEditingTransaction(null)
-        }}
-        onSubmit={editingTransaction ? handleUpdateTransaction : handleCreateTransaction}
-        initialData={editingTransaction}
-        categories={[]} // 실제 카테고리 데이터 연동 필요
-        isEdit={!!editingTransaction}
-      />
     </>
   )
 }

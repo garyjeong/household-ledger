@@ -398,18 +398,22 @@ export default function ProfilePage() {
 
   return (
     <ResponsiveLayout>
-      <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
+      <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 space-y-4'>
         {/* 헤더 */}
-        <div className='sticky top-0 z-20 bg-white pb-6 mb-6 border-b border-gray-100'>
-          <div className='pt-6'>
-            <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>내 정보</h1>
-            <p className='text-slate-600 mt-1'>프로필 및 설정 관리</p>
+        <div className='sticky top-0 z-20 bg-white mb-2'>
+          <div className='pt-4 bg-white border border-slate-200 rounded-lg p-4 shadow-sm'>
+            <div>
+              <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>내 정보</h1>
+              <p className='text-slate-600 mt-1'>프로필 및 설정 관리</p>
+            </div>
           </div>
         </div>
 
-        {/* 탭 네비게이션 */}
-        <Tabs value={activeTab} onValueChange={value => setActiveTab(value as TabType)}>
-          <TabsList className='mb-6'>
+        {/* 메인 콘텐츠 */}
+        <div className='space-y-6'>
+          {/* 탭 네비게이션 */}
+          <Tabs value={activeTab} onValueChange={value => setActiveTab(value as TabType)}>
+            <TabsList>
             {tabs.map(tab => {
               const Icon = tab.icon
               return (
@@ -430,6 +434,7 @@ export default function ProfilePage() {
             </TabsContent>
           ))}
         </Tabs>
+        </div>
       </div>
     </ResponsiveLayout>
   )

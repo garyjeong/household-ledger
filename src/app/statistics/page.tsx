@@ -124,10 +124,10 @@ export default function StatisticsPage() {
 
   return (
     <ResponsiveLayout>
-      <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
+      <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 space-y-4'>
         {/* 헤더 */}
-        <div className='sticky top-0 z-20 bg-white pb-6 mb-6 border-b border-gray-100'>
-          <div className='pt-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4'>
+        <div className='sticky top-0 z-20 bg-white mb-2'>
+          <div className='pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white border border-slate-200 rounded-lg p-4 shadow-sm'>
             <div>
               <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>통계 분석</h1>
               <p className='text-slate-600 mt-1'>카테고리별 수입·지출 통계 및 트렌드 분석</p>
@@ -142,11 +142,13 @@ export default function StatisticsPage() {
           </div>
         </div>
 
-        {/* 기간 필터 */}
-        <PeriodFilter filters={filters} onFiltersChange={setFilters} className='mb-6' />
+        {/* 메인 콘텐츠 */}
+        <div className='space-y-6'>
+          {/* 기간 필터 */}
+          <PeriodFilter filters={filters} onFiltersChange={setFilters} />
 
-        {/* 요약 통계 */}
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6'>
+          {/* 요약 통계 */}
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
           <Card>
             <CardContent className='p-6'>
               <div className='flex items-center justify-between'>
@@ -223,10 +225,10 @@ export default function StatisticsPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
+          </div>
 
-        {/* 차트 탭 */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className='space-y-6'>
+          {/* 차트 탭 */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className='space-y-6'>
           <TabsList>
             <TabsTrigger value='overview' className='gap-2'>
               <BarChart3 className='h-4 w-4' />
@@ -360,6 +362,7 @@ export default function StatisticsPage() {
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </ResponsiveLayout>
   )
