@@ -45,93 +45,19 @@ export async function GET(request: NextRequest) {
 
     // 🚀 최적화된 통계 조회 (8개 쿼리 → 3개 쿼리로 축소)
     const statsParams: StatsQueryParams = {
-      userId: user.userId,
+      userId: BigInt(user.userId),
       year,
       month,
       groupFilter,
     }
 
-    const optimizedStats = await getOptimizedMonthlyStats(statsParams)
-
-    // 성능 메트릭 계산
-    const queryTime = Date.now() - startTime
+    const monthlyStats = await getOptimizedMonthlyStats(statsParams)
 
     // 응답 데이터 구성
-    const response = {
+    return NextResponse.json({
       success: true,
-      data: {
-        // 💰 수입/지출 요약
-        totalIncome: optimizedStats.totalIncome,
-        totalExpense: optimizedStats.totalExpense,
-        netAmount: optimizedStats.totalIncome - optimizedStats.totalExpense,
-        transactionCount: optimizedStats.transactionCount,
-
-        // 📊 지출 분석
-        expenseBreakdown: {
-          myExpense: optimizedStats.myExpense,
-          sharedExpense: optimizedStats.sharedExpense,
-          partnerExpense: optimizedStats.partnerExpense,
-        },
-
-        // 🏷️ 카테고리별 지출 순위 (TOP 5)
-        topCategories: optimizedStats.categoryStats.map((category, index) => ({
-          rank: index + 1,
-          categoryId: category.categoryId,
-          categoryName: category.categoryName,
-          amount: category.amount,
-          percentage:
-            optimizedStats.totalExpense > 0
-              ? Number(((category.amount / optimizedStats.totalExpense) * 100).toFixed(1))
-              : 0,
-          color: `hsl(${(index * 60) % 360}, 70%, 50%)`, // 자동 색상 생성
-        })),
-
-        // 📈 일별 트렌드
-        dailyTrend: optimizedStats.dailyTrend,
-
-        // 📊 추가 분석 지표
-        analytics: {
-          averageDailyExpense:
-            optimizedStats.transactionCount > 0
-              ? Number((optimizedStats.totalExpense / optimizedStats.dailyTrend.length).toFixed(0))
-              : 0,
-          expenseGrowth: 0, // TODO: 전월 대비 증감률 계산 (향후 구현)
-          savingsRate:
-            optimizedStats.totalIncome > 0
-              ? Number(
-                  (
-                    ((optimizedStats.totalIncome - optimizedStats.totalExpense) /
-                      optimizedStats.totalIncome) *
-                    100
-                  ).toFixed(1)
-                )
-              : 0,
-        },
-
-        // 🕒 메타데이터
-        metadata: {
-          year,
-          month,
-          period: `${year}-${String(month).padStart(2, '0')}`,
-          queryTime: `${queryTime}ms`,
-          optimized: true,
-          queriesExecuted: 3, // 최적화 후
-          queriesReduced: '8 → 3 (62.5% 감소)',
-        },
-      },
-    }
-
-    // 성공 로깅 - 비활성화
-    // safeConsole.log('월별 통계 조회 성공', {
-    //   userId: user.userId,
-    //   period: `${year}-${month}`,
-    //   queryTime,
-    //   categoriesFound: optimizedStats.categoryStats.length,
-    //   transactionCount: optimizedStats.transactionCount,
-    //   performance: 'optimized',
-    // })
-
-    return NextResponse.json(response)
+      data: monthlyStats,
+    })
   } catch (error) {
     const queryTime = Date.now() - startTime
 

@@ -23,6 +23,7 @@ import { useNavigation, MobileNavigation } from './MobileNavigation'
 import { useAuth } from '@/contexts/auth-context'
 import { useGroup } from '@/contexts/group-context'
 import { QuickAddModal } from './QuickAddModal'
+import { SuccessModal } from '@/components/ui/success-modal'
 import { useToast } from '@/hooks/use-toast'
 import { LogoutConfirmDialog } from '@/components/ui/logout-confirm-dialog'
 import { useQuickAddTransaction } from '@/hooks/use-transactions'
@@ -325,9 +326,18 @@ export function ResponsiveLayout({
 }) {
   const { toast } = useToast()
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
+  const [savedTransactionData, setSavedTransactionData] = useState<{
+    amount: number
+    category: string
+    type: 'INCOME' | 'EXPENSE'
+    date: string
+    memo?: string
+  } | null>(null)
   const quickAddMutation = useQuickAddTransaction()
   const { currentGroup } = useGroup()
-  const { categories } = useCategories(currentGroup ? { groupId: currentGroup.id } : null)
+  const { data: categoriesData } = useCategories(currentGroup ? { groupId: currentGroup.id } : null)
+  const categories = categoriesData?.categories || []
 
   // 빠른입력 모달 열기
   const handleQuickAddClick = () => {
@@ -361,13 +371,26 @@ export function ResponsiveLayout({
         categoryName: category.name, // categoryId → categoryName 변환
         memo: transaction.memo || '',
         date: transaction.date,
+        // groupId는 useQuickAddTransaction 훅에서 자동으로 추가됨
       }
 
       // 빠른 입력 API 호출
       await quickAddMutation.mutateAsync(quickAddData)
 
-      // 모달 닫기 (성공 시 useQuickAddTransaction hook에서 자동으로 토스트 표시)
+      // 거래 데이터 저장 후 성공 모달 표시
+      setSavedTransactionData({
+        amount: Number(transaction.amount),
+        category: category.name,
+        type: transaction.type || 'EXPENSE',
+        date: transaction.date,
+        memo: transaction.memo,
+      })
+
+      // 빠른 입력 모달 닫기
       setIsQuickAddOpen(false)
+      
+      // 성공 모달 표시
+      setIsSuccessModalOpen(true)
 
       return Promise.resolve()
     } catch (error) {
@@ -398,6 +421,17 @@ export function ResponsiveLayout({
         onClose={handleQuickAddClose}
         onSave={handleSaveTransaction}
         templates={[]} // 템플릿 기능 향후 구현 예정
+      />
+
+      {/* 성공 모달 */}
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        title="거래 추가 완료!"
+        message="새로운 거래가 성공적으로 추가되었습니다"
+        transactionData={savedTransactionData}
+        autoClose={true}
+        autoCloseDelay={4000}
       />
     </>
   )

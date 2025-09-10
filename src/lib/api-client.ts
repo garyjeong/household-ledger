@@ -61,90 +61,83 @@ async function refreshAccessToken(): Promise<boolean> {
  */
 export async function apiCall<T = any>(
   url: string,
-  options: RequestInit = {},
-  skipRetry = false
+  options?: RequestInit,
+  skipRetry: boolean = false,
+  retryCount: number = 0
 ): Promise<ApiResponse<T>> {
-  const defaultOptions: RequestInit = {
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    ...options,
-  }
-
-  // 요청 시작 시간 기록
+  const method = options?.method || 'GET'
   const startTime = Date.now()
   let errorReport: ErrorReport | undefined
 
   try {
-    // API 호출 시도
-    const response = await fetch(url, defaultOptions)
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      credentials: 'include', // 모든 요청에 쿠키 포함
+    })
 
-    // 401 에러 (인증 실패)인 경우 토큰 갱신 시도
-    if (response.status === 401 && !skipRetry && url !== '/api/auth/refresh') {
-      safeConsole.info('🔄 401 에러 감지, 토큰 갱신 시도 중...')
-
-      // 토큰 갱신 시도
-      const refreshSuccess = await refreshAccessToken()
-
-      if (refreshSuccess) {
-        // 갱신 성공 시 원래 요청 재시도 (skipRetry=true로 무한 루프 방지)
-        safeConsole.info('🔄 토큰 갱신 성공, 원래 요청 재시도')
-        return apiCall<T>(url, options, true)
-      } else {
-        // 갱신 실패 시 로그인 페이지로 리다이렉트
-        safeConsole.warn('❌ 토큰 갱신 실패, 로그인 페이지로 리다이렉트')
-
-        const authError = new Error('세션이 만료되었습니다. 다시 로그인해주세요.')
-        errorReport = handleApiError(authError, url)
-
-        // 로그인 페이지로 리다이렉트 (브라우저 환경에서만)
-        if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-          window.location.href = '/login'
-        }
-
-        return {
-          ok: false,
-          status: 401,
-          error: authError.message,
-          errorReport,
-        }
-      }
-    }
-
-    let data: T | undefined
-    const contentType = response.headers.get('content-type')
-
-    try {
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json()
-      }
-    } catch (parseError) {
-      console.warn('JSON 파싱 실패:', parseError)
-      // JSON 파싱 실패는 무시하고 빈 데이터로 처리
-    }
-
-    // 응답 성공 여부 확인
     if (!response.ok) {
-      const errorMessage =
-        (data as any)?.error || `HTTP ${response.status}: 요청 처리 중 오류가 발생했습니다.`
-      const apiError = new Error(errorMessage)
+      if (response.status === 401 && !skipRetry && url !== '/api/auth/refresh') {
+        safeConsole.info('🔄 401 에러 감지, 토큰 갱신 시도 중...', {
+          currentUrl: window.location.href,
+          retryCount,
+        })
 
-      errorReport = handleApiError(apiError, url, undefined)
+        const refreshSuccessful = await refreshAccessToken()
+
+        if (refreshSuccessful) {
+          safeConsole.info('🔄 토큰 갱신 성공, 원래 요청 재시도', {
+            url,
+            retryCount: retryCount + 1,
+          })
+          return apiCall<T>(url, options, true, retryCount + 1) // 재시도 카운트 증가
+        } else {
+          safeConsole.warn('❌ 토큰 갱신 실패, 로그인 페이지로 리다이렉트', {
+            currentUrl: window.location.href,
+          })
+
+          const authError = new Error('세션이 만료되었습니다. 다시 로그인해주세요.')
+          errorReport = handleApiError(authError, url)
+
+          if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+            window.location.href = '/login'
+          }
+
+          return {
+            ok: false,
+            status: 401,
+            error: authError.message,
+            errorReport,
+          }
+        }
+      }
+      // 401 외의 에러 또는 재시도하지 않는 401 에러 처리
+      const errorData = await response.json().catch(() => ({ message: response.statusText }))
+      const apiError = new Error(errorData.message || '알 수 없는 API 오류')
+      errorReport = handleApiError(apiError, url, response.status, errorData)
+
+      safeConsole.error('API 오류 응답', errorReport, {
+        endpoint: url,
+        method,
+        status: response.status,
+        responseBody: errorData,
+      })
 
       return {
         ok: false,
         status: response.status,
-        data,
-        error: errorMessage,
+        error: errorData.error || apiError.message,
         errorReport,
       }
     }
 
-    // 성공적인 응답 로깅 (개발 환경에서만)
-    const duration = Date.now() - startTime
-    logApiCall(options.method || 'GET', url, response.status, duration)
+    // 성공 응답 처리
+    const data = await response.json().catch(() => null) // JSON 파싱 실패해도 진행
+
+    safeConsole.log('API 성공 응답', { endpoint: url, method, status: response.status, data })
 
     return {
       ok: true,
@@ -152,12 +145,14 @@ export async function apiCall<T = any>(
       data,
     }
   } catch (error) {
-    // 네트워크 에러 처리
     const networkError = error instanceof Error ? error : new Error('알 수 없는 네트워크 오류')
     errorReport = handleNetworkError(networkError, url)
 
-    const duration = Date.now() - startTime
-    logApiCall(options.method || 'GET', url, 500, duration, error)
+    safeConsole.error('네트워크 오류 발생', errorReport, {
+      endpoint: url,
+      method,
+      errorDetails: networkError.message,
+    })
 
     return {
       ok: false,

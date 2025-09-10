@@ -144,9 +144,24 @@ export function useCreateTransaction() {
         queryKey: ['transactions'],
       })
 
-      // 잔액 관련 쿼리도 무효화
+      // 잔액 관련 쿼리 무효화
       queryClient.invalidateQueries({
         queryKey: ['balance'],
+      })
+
+      // 월별 통계 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['monthly-stats'],
+      })
+
+      // 통계 페이지 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['statistics'],
+      })
+
+      // 거래 통계 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['transaction-stats'],
       })
 
       showSuccess('거래가 추가되었습니다')
@@ -183,9 +198,24 @@ export function useUpdateTransaction() {
         queryKey: ['transactions'],
       })
 
-      // 잔액 관련 쿼리도 무효화
+      // 잔액 관련 쿼리 무효화
       queryClient.invalidateQueries({
         queryKey: ['balance'],
+      })
+
+      // 월별 통계 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['monthly-stats'],
+      })
+
+      // 통계 페이지 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['statistics'],
+      })
+
+      // 거래 통계 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['transaction-stats'],
       })
 
       showSuccess('거래가 수정되었습니다')
@@ -224,9 +254,24 @@ export function useDeleteTransaction() {
         queryKey: ['transactions'],
       })
 
-      // 잔액 관련 쿼리도 무효화
+      // 잔액 관련 쿼리 무효화
       queryClient.invalidateQueries({
         queryKey: ['balance'],
+      })
+
+      // 월별 통계 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['monthly-stats'],
+      })
+
+      // 통계 페이지 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['statistics'],
+      })
+
+      // 거래 통계 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['transaction-stats'],
       })
 
       showSuccess('거래가 삭제되었습니다')
@@ -274,15 +319,32 @@ export function useQuickAddTransaction() {
         queryKey: ['transactions'],
       })
 
+      // 카테고리 쿼리 무효화 (새 카테고리 생성 가능성)
       queryClient.invalidateQueries({
         queryKey: ['categories'],
       })
 
+      // 잔액 관련 쿼리 무효화
       queryClient.invalidateQueries({
         queryKey: ['balance'],
       })
 
-      showSuccess('거래가 추가되었습니다')
+      // 월별 통계 쿼리 무효화 (대시보드)
+      queryClient.invalidateQueries({
+        queryKey: ['monthly-stats'],
+      })
+
+      // 통계 페이지 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['statistics'],
+      })
+
+      // 거래 통계 쿼리 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['transaction-stats'],
+      })
+
+      // showSuccess('거래가 추가되었습니다') // 빠른 입력에서는 성공 모달이 대신 표시됨
     },
     onError: (error: Error) => {
       showError(error.message || '거래 추가에 실패했습니다')

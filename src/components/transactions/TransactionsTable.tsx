@@ -119,9 +119,6 @@ export function TransactionsTable({
           return (
             <div className='text-sm'>
               <div className='font-medium'>{date.toLocaleDateString('ko-KR')}</div>
-              <div className='text-gray-500 text-xs'>
-                {date.toLocaleDateString('ko-KR', { weekday: 'short' })}
-              </div>
             </div>
           )
         },
@@ -185,23 +182,7 @@ export function TransactionsTable({
         size: 250,
       }),
 
-      // 계좌 컬럼
-      columnHelper.accessor('account', {
-        id: 'account',
-        header: '계좌',
-        cell: ({ getValue }) => {
-          const account = getValue()
-          return account ? (
-            <div className='text-sm'>
-              <div className='font-medium'>{account.name}</div>
-              <div className='text-gray-500 text-xs capitalize'>{account.type}</div>
-            </div>
-          ) : (
-            <span className='text-gray-400 text-sm'>-</span>
-          )
-        },
-        size: 120,
-      }),
+      // 계좌 컬럼 제거
 
       // 금액 컬럼
       columnHelper.accessor('amount', {

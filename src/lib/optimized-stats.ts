@@ -26,7 +26,7 @@ export interface OptimizedMonthlyStats {
 }
 
 export interface StatsQueryParams {
-  userId: string
+  userId: BigInt
   year: number
   month: number
   groupFilter: any
@@ -36,136 +36,235 @@ export interface StatsQueryParams {
  * 최적화된 월별 통계 조회
  * 8개 개별 쿼리 → 2개 최적화된 쿼리로 축소
  */
-export async function getOptimizedMonthlyStats(
-  params: StatsQueryParams
-): Promise<OptimizedMonthlyStats> {
+export async function getOptimizedMonthlyStats(params: StatsQueryParams): Promise<MonthlyStats> {
   const { userId, year, month, groupFilter } = params
 
   // 월 시작/끝 날짜 계산
   const startDate = new Date(year, month - 1, 1)
   const endDate = new Date(year, month, 0, 23, 59, 59)
-  const userIdInt = parseInt(userId)
 
   try {
     // 🚀 최적화 1: 모든 집계를 단일 Raw SQL로 처리
-    const groupCondition = groupFilter.groupId ? `AND groupId = ${groupFilter.groupId}` : ''
+    const hasGroupFilter = groupFilter.groupId && groupFilter.groupId !== ''
+    const groupIdBigInt = hasGroupFilter ? BigInt(groupFilter.groupId) : null
 
-    const aggregateResults = await prisma.$queryRaw<
-      Array<{
-        metric_type: string
-        total_amount: bigint | null
-        count_value: bigint | null
-      }>
-    >`
-      SELECT 
-        'total_income' as metric_type,
-        SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as total_amount,
-        COUNT(CASE WHEN type = 'INCOME' THEN 1 END) as count_value
-      FROM transactions 
-      WHERE date >= ${startDate} 
-        AND date <= ${endDate}
-        ${groupCondition}
+    let aggregateResults: Array<{
+      metric_type: string
+      total_amount: bigint | null
+      count_value: bigint | null
+    }>
+
+    if (hasGroupFilter && groupIdBigInt) {
+      aggregateResults = await prisma.$queryRaw`
+        SELECT 
+          'total_income' as metric_type,
+          SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as total_amount,
+          COUNT(CASE WHEN type = 'INCOME' THEN 1 END) as count_value
+        FROM transactions 
+        WHERE date >= ${startDate} 
+          AND date <= ${endDate}
+          AND group_id = ${groupIdBigInt}
+          
+        UNION ALL
         
-      UNION ALL
-      
-      SELECT 
-        'total_expense' as metric_type,
-        ABS(SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END)) as total_amount,
-        COUNT(CASE WHEN type = 'EXPENSE' THEN 1 END) as count_value
-      FROM transactions 
-      WHERE date >= ${startDate} 
-        AND date <= ${endDate}
-        ${groupCondition}
+        SELECT 
+          'total_expense' as metric_type,
+          SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as total_amount,
+          COUNT(CASE WHEN type = 'EXPENSE' THEN 1 END) as count_value
+        FROM transactions 
+        WHERE date >= ${startDate} 
+          AND date <= ${endDate}
+          AND group_id = ${groupIdBigInt}
+          
+        UNION ALL
         
-      UNION ALL
-      
-      SELECT 
-        'my_expense' as metric_type,
-        ABS(SUM(CASE WHEN type = 'EXPENSE' AND ownerUserId = ${userIdInt} THEN amount ELSE 0 END)) as total_amount,
-        COUNT(CASE WHEN type = 'EXPENSE' AND ownerUserId = ${userIdInt} THEN 1 END) as count_value
-      FROM transactions 
-      WHERE date >= ${startDate} 
-        AND date <= ${endDate}
-        ${groupCondition}
+        SELECT 
+          'my_expense' as metric_type,
+          SUM(CASE WHEN type = 'EXPENSE' AND owner_user_id = ${userId} THEN amount ELSE 0 END) as total_amount,
+          COUNT(CASE WHEN type = 'EXPENSE' AND owner_user_id = ${userId} THEN 1 END) as count_value
+        FROM transactions 
+        WHERE date >= ${startDate} 
+          AND date <= ${endDate}
+          AND group_id = ${groupIdBigInt}
+          
+        UNION ALL
         
-      UNION ALL
-      
-      SELECT 
-        'shared_expense' as metric_type,
-        ABS(SUM(CASE WHEN type = 'EXPENSE' AND groupId IS NOT NULL THEN amount ELSE 0 END)) as total_amount,
-        COUNT(CASE WHEN type = 'EXPENSE' AND groupId IS NOT NULL THEN 1 END) as count_value
-      FROM transactions 
-      WHERE date >= ${startDate} 
-        AND date <= ${endDate}
-        ${groupCondition}
+        SELECT 
+          'shared_expense' as metric_type,
+          SUM(CASE WHEN type = 'EXPENSE' AND group_id IS NOT NULL THEN amount ELSE 0 END) as total_amount,
+          COUNT(CASE WHEN type = 'EXPENSE' AND group_id IS NOT NULL THEN 1 END) as count_value
+        FROM transactions 
+        WHERE date >= ${startDate} 
+          AND date <= ${endDate}
+          AND group_id = ${groupIdBigInt}
+          
+        UNION ALL
         
-      UNION ALL
-      
-      SELECT 
-        'partner_expense' as metric_type,
-        ABS(SUM(CASE WHEN type = 'EXPENSE' AND ownerUserId != ${userIdInt} AND groupId IS NULL THEN amount ELSE 0 END)) as total_amount,
-        COUNT(CASE WHEN type = 'EXPENSE' AND ownerUserId != ${userIdInt} AND groupId IS NULL THEN 1 END) as count_value
-      FROM transactions 
-      WHERE date >= ${startDate} 
-        AND date <= ${endDate}
-        ${groupCondition}
+        SELECT 
+          'partner_expense' as metric_type,
+          SUM(CASE WHEN type = 'EXPENSE' AND owner_user_id != ${userId} THEN amount ELSE 0 END) as total_amount,
+          COUNT(CASE WHEN type = 'EXPENSE' AND owner_user_id != ${userId} THEN 1 END) as count_value
+        FROM transactions 
+        WHERE date >= ${startDate} 
+          AND date <= ${endDate}
+          AND group_id = ${groupIdBigInt}
+          
+        UNION ALL
         
-      UNION ALL
-      
-      SELECT 
-        'total_count' as metric_type,
-        0 as total_amount,
-        COUNT(*) as count_value
-      FROM transactions 
-      WHERE date >= ${startDate} 
-        AND date <= ${endDate}
-        ${groupCondition}
-    `
+        SELECT 
+          'total_count' as metric_type,
+          0 as total_amount,
+          COUNT(*) as count_value
+        FROM transactions 
+        WHERE date >= ${startDate} 
+          AND date <= ${endDate}
+          AND group_id = ${groupIdBigInt}
+      `
+    } else {
+      aggregateResults = await prisma.$queryRaw`
+        SELECT 
+          'total_income' as metric_type,
+          SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as total_amount,
+          COUNT(CASE WHEN type = 'INCOME' THEN 1 END) as count_value
+        FROM transactions 
+        WHERE date >= ${startDate} 
+          AND date <= ${endDate}
+          
+        UNION ALL
+        
+        SELECT 
+          'total_expense' as metric_type,
+          SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as total_amount,
+          COUNT(CASE WHEN type = 'EXPENSE' THEN 1 END) as count_value
+        FROM transactions 
+        WHERE date >= ${startDate} 
+          AND date <= ${endDate}
+          
+        UNION ALL
+        
+        SELECT 
+          'my_expense' as metric_type,
+          SUM(CASE WHEN type = 'EXPENSE' AND owner_user_id = ${userId} THEN amount ELSE 0 END) as total_amount,
+          COUNT(CASE WHEN type = 'EXPENSE' AND owner_user_id = ${userId} THEN 1 END) as count_value
+        FROM transactions 
+        WHERE date >= ${startDate} 
+          AND date <= ${endDate}
+          
+        UNION ALL
+        
+        SELECT 
+          'shared_expense' as metric_type,
+          SUM(CASE WHEN type = 'EXPENSE' AND group_id IS NOT NULL THEN amount ELSE 0 END) as total_amount,
+          COUNT(CASE WHEN type = 'EXPENSE' AND group_id IS NOT NULL THEN 1 END) as count_value
+        FROM transactions 
+        WHERE date >= ${startDate} 
+          AND date <= ${endDate}
+          
+        UNION ALL
+        
+        SELECT 
+          'partner_expense' as metric_type,
+          SUM(CASE WHEN type = 'EXPENSE' AND owner_user_id != ${userId} THEN amount ELSE 0 END) as total_amount,
+          COUNT(CASE WHEN type = 'EXPENSE' AND owner_user_id != ${userId} THEN 1 END) as count_value
+        FROM transactions 
+        WHERE date >= ${startDate} 
+          AND date <= ${endDate}
+          
+        UNION ALL
+        
+        SELECT 
+          'total_count' as metric_type,
+          0 as total_amount,
+          COUNT(*) as count_value
+        FROM transactions 
+        WHERE date >= ${startDate} 
+          AND date <= ${endDate}
+      `
+    }
 
     // 🚀 최적화 2: 카테고리별 통계와 일별 트렌드를 병렬로 조회
     const [categoryResults, dailyResults] = await Promise.all([
       // 카테고리별 지출 통계 (TOP 5)
-      prisma.$queryRaw<
-        Array<{
-          categoryId: bigint | null
-          categoryName: string | null
-          total_amount: bigint
-        }>
-      >`
-        SELECT 
-          t.categoryId,
-          c.name as categoryName,
-          ABS(SUM(t.amount)) as total_amount
-        FROM transactions t
-        LEFT JOIN categories c ON t.categoryId = c.id
-        WHERE t.date >= ${startDate}
-          AND t.date <= ${endDate}
-          AND t.type = 'EXPENSE'
-          ${groupCondition}
-        GROUP BY t.categoryId, c.name
-        ORDER BY total_amount DESC
-        LIMIT 5
-      `,
+      hasGroupFilter && groupIdBigInt
+        ? prisma.$queryRaw<
+            Array<{
+              categoryId: bigint | null
+              categoryName: string | null
+              total_amount: bigint
+            }>
+          >`
+            SELECT 
+              t.category_id,
+              c.name as categoryName,
+              SUM(t.amount) as total_amount
+            FROM transactions t
+            LEFT JOIN categories c ON t.category_id = c.id
+            WHERE t.date >= ${startDate}
+              AND t.date <= ${endDate}
+              AND t.type = 'EXPENSE'
+              AND t.group_id = ${groupIdBigInt}
+            GROUP BY t.category_id, c.name
+            ORDER BY total_amount DESC
+            LIMIT 5
+          `
+        : prisma.$queryRaw<
+            Array<{
+              categoryId: bigint | null
+              categoryName: string | null
+              total_amount: bigint
+            }>
+          >`
+            SELECT 
+              t.category_id,
+              c.name as categoryName,
+              SUM(t.amount) as total_amount
+            FROM transactions t
+            LEFT JOIN categories c ON t.category_id = c.id
+            WHERE t.date >= ${startDate}
+              AND t.date <= ${endDate}
+              AND t.type = 'EXPENSE'
+            GROUP BY t.category_id, c.name
+            ORDER BY total_amount DESC
+            LIMIT 5
+          `,
 
-      // 일별 트렌드 데이터
-      prisma.$queryRaw<
-        Array<{
-          transaction_date: Date
-          daily_income: bigint
-          daily_expense: bigint
-        }>
-      >`
-        SELECT 
-          DATE(date) as transaction_date,
-          SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as daily_income,
-          ABS(SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END)) as daily_expense
-        FROM transactions
-        WHERE date >= ${startDate}
-          AND date <= ${endDate}
-          ${groupCondition}
-        GROUP BY DATE(date)
-        ORDER BY transaction_date ASC
-      `,
+      // 일별 수입/지출 트렌드
+      hasGroupFilter && groupIdBigInt
+        ? prisma.$queryRaw<
+            Array<{
+              transaction_date: Date
+              daily_income: bigint
+              daily_expense: bigint
+            }>
+          >`
+            SELECT 
+              DATE(date) as transaction_date,
+              SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as daily_income,
+              SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as daily_expense
+            FROM transactions
+            WHERE date >= ${startDate}
+              AND date <= ${endDate}
+              AND group_id = ${groupIdBigInt}
+            GROUP BY DATE(date)
+            ORDER BY transaction_date ASC
+          `
+        : prisma.$queryRaw<
+            Array<{
+              transaction_date: Date
+              daily_income: bigint
+              daily_expense: bigint
+            }>
+          >`
+            SELECT 
+              DATE(date) as transaction_date,
+              SUM(CASE WHEN type = 'INCOME' THEN amount ELSE 0 END) as daily_income,
+              SUM(CASE WHEN type = 'EXPENSE' THEN amount ELSE 0 END) as daily_expense
+            FROM transactions
+            WHERE date >= ${startDate}
+              AND date <= ${endDate}
+            GROUP BY DATE(date)
+            ORDER BY transaction_date ASC
+          `,
     ])
 
     // 📊 결과 데이터 가공
@@ -192,25 +291,30 @@ export async function getOptimizedMonthlyStats(
       expense: Number(row.daily_expense),
     }))
 
-    const result: OptimizedMonthlyStats = {
-      totalIncome: statsMap.get('total_income')?.amount || 0,
-      totalExpense: statsMap.get('total_expense')?.amount || 0,
-      transactionCount: statsMap.get('total_count')?.count || 0,
-      myExpense: statsMap.get('my_expense')?.amount || 0,
-      sharedExpense: statsMap.get('shared_expense')?.amount || 0,
-      partnerExpense: statsMap.get('partner_expense')?.amount || 0,
-      categoryStats,
-      dailyTrend,
+    const result: MonthlyStats = {
+      period: `${year}-${String(month).padStart(2, '0')}`,
+      totalIncome: Number(statsMap.get('total_income')?.amount || 0),
+      totalExpense: Number(statsMap.get('total_expense')?.amount || 0),
+      myExpense: Number(statsMap.get('my_expense')?.amount || 0),
+      partnerExpense: Number(statsMap.get('partner_expense')?.amount || 0),
+      sharedExpense: Number(statsMap.get('shared_expense')?.amount || 0),
+      categoryBreakdown: categoryResults
+        .map((cat, index) => ({
+          categoryId: cat.category_id?.toString() || '',
+          categoryName: cat.categoryName || '알 수 없음',
+          amount: Number(cat.total_amount),
+          percentage:
+            (Number(cat.total_amount) / Number(statsMap.get('total_expense')?.amount || 1)) * 100,
+          color: `hsl(${(index * 45) % 360}, 70%, 50%)`, // 임의의 색상 할당
+          icon: '💵', // 임의의 아이콘 할당
+        }))
+        .sort((a, b) => b.amount - a.amount),
+      dailyTrend: dailyResults.map(day => ({
+        date: day.transaction_date.toISOString().slice(0, 10),
+        amount: Number(day.daily_income) + Number(day.daily_expense), // 수입+지출 합계 (월별 대시보드에 맞게)
+        type: Number(day.daily_income) > Number(day.daily_expense) ? 'income' : 'expense', // 지출이 더 많으면 expense로 간주
+      })),
     }
-
-    // 성능 로깅 - 비활성화
-    // safeConsole.log('최적화된 월별 통계 조회 완료', {
-    //   userId,
-    //   month: `${year}-${month}`,
-    //   queryCount: 3, // 기존 8개 → 3개로 축소 (1개 Union + 2개 병렬)
-    //   categoriesFound: categoryStats.length,
-    //   daysWithData: dailyTrend.length,
-    // })
 
     return result
   } catch (error) {
@@ -241,13 +345,12 @@ export async function getOptimizedMonthlyStats(
 export async function getCachedMonthlyStats(
   params: StatsQueryParams
 ): Promise<OptimizedMonthlyStats> {
-  // TODO: Redis 캐싱 로직 추가
-  // 현재는 직접 조회
+  // 현재는 캐시 없이 직접 조회
   return getOptimizedMonthlyStats(params)
 }
 
 /**
- * 통계 성능 메트릭 수집
+ * 성능 메트릭 인터페이스
  */
 export interface StatsPerformanceMetrics {
   queryTime: number

@@ -70,11 +70,6 @@ export function QuickAddModal({
   // 카테고리 가져오기 (API에서 자동으로 사용자의 그룹 상황에 맞는 카테고리 반환)
   const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError, refetch: refetchCategories } = useCategories({})
 
-  // 카테고리 배열 추출 및 타입별 필터링
-  const allCategories = categoriesData?.categories || []
-  const categories = allCategories.filter(cat => cat.type === formData.type)
-  
-
   // 폼 상태
   const [formData, setFormData] = useState<QuickAddForm>({
     amount: '',
@@ -87,6 +82,10 @@ export function QuickAddModal({
     tags: [],
     saveAsTemplate: false,
   })
+
+  // 카테고리 배열 추출 및 타입별 필터링
+  const allCategories = categoriesData?.categories || []
+  const categories = allCategories.filter(cat => cat.type === formData.type)
   
   // 선택된 카테고리 이름 찾기
   const selectedCategory = categories.find(cat => cat.id === formData.categoryId)
@@ -408,7 +407,9 @@ export function QuickAddModal({
                       {selectedCategory ? selectedCategory.name : '카테고리 선택'}
                     </p>
                     <p className='text-xs text-slate-500'>
-                      {selectedCategory ? '다른 카테고리로 변경하려면 클릭' : '지출 카테고리를 선택해주세요'}
+                      {selectedCategory
+                        ? '다른 카테고리로 변경하려면 클릭'
+                        : `${formData.type === 'INCOME' ? '수입' : '지출'} 카테고리를 선택해주세요`}
                     </p>
                   </div>
                 </div>
@@ -529,7 +530,7 @@ export function QuickAddModal({
         }}
         categories={categories}
         selectedId={formData.categoryId}
-        type='EXPENSE'
+        type={formData.type}
       />
     </Dialog>
   )

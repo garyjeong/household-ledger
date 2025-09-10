@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { ResponsiveLayout } from '@/components/couple-ledger/DesktopSidebar'
 import { MonthlyDashboard } from '@/components/couple-ledger/MonthlyDashboard'
 import { MonthlyStats } from '@/types/couple-ledger'
-import { fetchMonthlyStats } from '@/lib/api/dashboard'
+import { useMonthlyStats } from '@/hooks/use-monthly-stats'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
@@ -29,50 +29,34 @@ export default function HomePage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
 
-  const [monthlyStats, setMonthlyStats] = useState<MonthlyStats | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-
-
-  // 월별 통계 데이터 로드
-  const loadMonthlyStats = async (period: string) => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      const stats = await fetchMonthlyStats(period)
-      setMonthlyStats(stats)
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '데이터를 불러오는데 실패했습니다.'
-      setError(errorMessage)
-      toast({
-        title: '오류',
-        description: errorMessage,
-        variant: 'destructive',
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  // React Query를 사용한 월별 통계 데이터 조회
+  const { data: monthlyStats, isLoading, error, refetch } = useMonthlyStats({
+    period: selectedMonth,
+  })
 
   // 월 변경 핸들러
   const handleMonthChange = (month: string) => {
     setSelectedMonth(month)
-    loadMonthlyStats(month)
   }
 
-  // 인증 상태 확인 및 데이터 로드
+  // 인증 상태 확인
   useEffect(() => {
-    if (!authLoading) {
-      if (!isAuthenticated) {
-        // 인증되지 않은 사용자는 로그인 페이지로 리다이렉트
-        router.push('/login')
-        return
-      }
-      // 인증된 사용자만 데이터 로드
-      loadMonthlyStats(selectedMonth)
+    if (!authLoading && !isAuthenticated) {
+      // 인증되지 않은 사용자는 로그인 페이지로 리다이렉트
+      router.push('/login')
     }
-  }, [authLoading, isAuthenticated, selectedMonth, router])
+  }, [authLoading, isAuthenticated, router])
+
+  // 에러 토스트 표시
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: '오류',
+        description: error instanceof Error ? error.message : '데이터를 불러오는데 실패했습니다.',
+        variant: 'destructive',
+      })
+    }
+  }, [error, toast])
 
 
 
@@ -116,15 +100,17 @@ export default function HomePage() {
     )
   }
 
-  if (error || !monthlyStats) {
+  if (error || (!monthlyStats && !isLoading)) {
     return (
       <ResponsiveLayout>
         <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
           <div className='flex items-center justify-center min-h-[400px]'>
             <div className='text-center'>
-              <p className='text-red-600 mb-4'>{error || '데이터를 불러올 수 없습니다.'}</p>
+              <p className='text-red-600 mb-4'>
+                {error instanceof Error ? error.message : '데이터를 불러올 수 없습니다.'}
+              </p>
               <button
-                onClick={() => loadMonthlyStats(selectedMonth)}
+                onClick={() => refetch()}
                 className='px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors'
               >
                 다시 시도

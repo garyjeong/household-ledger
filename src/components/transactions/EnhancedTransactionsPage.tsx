@@ -125,12 +125,7 @@ export function EnhancedTransactionsPage() {
                 )}
               </div>
 
-              <div className='flex gap-2'>
-                <Button variant='outline' className='gap-2 border-slate-300 text-slate-700 hover:bg-slate-50'>
-                  <Download className='h-4 w-4' />
-                  내보내기
-                </Button>
-              </div>
+              <div className='flex gap-2' />
             </div>
           </div>
 
@@ -148,7 +143,10 @@ export function EnhancedTransactionsPage() {
                   {formatCurrency(
                     transactions
                       .filter((t: any) => t.type === 'INCOME')
-                      .reduce((sum: number, t: any) => sum + (t.convertedAmount || t.amount), 0),
+                      .reduce(
+                        (sum: number, t: any) => sum + Number(t.convertedAmount ?? t.amount),
+                        0
+                      ),
                     'KRW'
                   )}
                 </div>
@@ -165,7 +163,10 @@ export function EnhancedTransactionsPage() {
                   {formatCurrency(
                     transactions
                       .filter((t: any) => t.type === 'EXPENSE')
-                      .reduce((sum: number, t: any) => sum + (t.convertedAmount || t.amount), 0),
+                      .reduce(
+                        (sum: number, t: any) => sum + Number(t.convertedAmount ?? t.amount),
+                        0
+                      ),
                     'KRW'
                   )}
                 </div>
@@ -181,7 +182,7 @@ export function EnhancedTransactionsPage() {
                 <div className='text-2xl font-bold text-blue-600'>
                   {formatCurrency(
                     transactions.reduce((sum: number, t: any) => {
-                      const amount = t.convertedAmount || t.amount
+                      const amount = Number(t.convertedAmount ?? t.amount)
                       return sum + (t.type === 'INCOME' ? amount : -amount)
                     }, 0),
                     'KRW'
@@ -256,7 +257,7 @@ export function EnhancedTransactionsPage() {
           <TransactionsTable
             data={transactions}
             isLoading={transactionsLoading}
-            totalCount={totalCount}
+            totalCount={transactions.length}
             pagination={
               transactionsData?.pagination
                 ? {

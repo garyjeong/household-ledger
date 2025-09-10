@@ -16,12 +16,14 @@ import { createMockRequest, expectApiSuccess, expectApiError } from '../utils/te
 // Mock the auth module
 jest.mock('@/lib/auth', () => ({
   verifyAccessToken: jest.fn(),
+  verifyCookieToken: jest.fn(),
   findUserById: jest.fn(),
 }))
 
-import { verifyAccessToken, findUserById } from '@/lib/auth'
+import { verifyAccessToken, verifyCookieToken, findUserById } from '@/lib/auth'
 
 const mockVerifyAccessToken = verifyAccessToken as jest.MockedFunction<typeof verifyAccessToken>
+const mockVerifyCookieToken = verifyCookieToken as jest.MockedFunction<typeof verifyCookieToken>
 const mockFindUserById = findUserById as jest.MockedFunction<typeof findUserById>
 
 const mockUser = {
@@ -41,6 +43,7 @@ describe('Transactions API Routes', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockVerifyAccessToken.mockReturnValue(mockTokenPayload)
+    mockVerifyCookieToken.mockReturnValue(mockTokenPayload)
     mockFindUserById.mockResolvedValue(mockUser)
   })
 

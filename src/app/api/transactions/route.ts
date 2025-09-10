@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { verifyToken, extractTokenFromHeader, verifyAccountOwnership } from '@/lib/auth'
+import { verifyCookieToken, verifyAccountOwnership } from '@/lib/auth'
 import {
   createTransactionSchema,
   transactionQuerySchema,
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const user = await verifyToken(accessToken)
+    const user = await verifyCookieToken(accessToken)
     if (!user) {
       return NextResponse.json(
         { error: '유효하지 않은 토큰입니다', code: 'INVALID_TOKEN' },
@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const user = await verifyToken(accessToken)
+    const user = await verifyCookieToken(accessToken)
     if (!user) {
       return NextResponse.json(
         { error: '유효하지 않은 토큰입니다', code: 'INVALID_TOKEN' },
@@ -236,11 +236,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 거래 생성 (트랜잭션 처리)
-    // EXPENSE는 음수, INCOME은 양수로 저장
-    const signedAmount =
-      transactionData.type === 'EXPENSE'
-        ? -BigInt(Math.abs(transactionData.amount))
-        : BigInt(Math.abs(transactionData.amount))
+    // amount는 항상 양수로 저장, type에 따라 계산 시 부호 결정
+    const amount = BigInt(Math.abs(transactionData.amount))
 
     // 트랜잭션으로 데이터 무결성 보장
     const newTransaction = await prisma.$transaction(async tx => {
@@ -284,7 +281,7 @@ export async function POST(request: NextRequest) {
         data: {
           type: transactionData.type,
           date: transactionData.date,
-          amount: signedAmount,
+          amount: amount,
           categoryId: transactionData.categoryId ? BigInt(transactionData.categoryId) : null,
           tagId: transactionData.tagId ? BigInt(transactionData.tagId) : null,
           merchant: transactionData.merchant || null,

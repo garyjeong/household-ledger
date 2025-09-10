@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { verifyToken } from '@/lib/auth'
+import { verifyCookieToken } from '@/lib/auth'
 
 // Quick Add Transaction Schema
 const quickAddTransactionSchema = z.object({
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const user = await verifyToken(accessToken)
+    const user = verifyCookieToken(accessToken)
     if (!user) {
       return NextResponse.json(
         { error: '유효하지 않은 토큰입니다', code: 'INVALID_TOKEN' },
@@ -83,8 +83,7 @@ export async function POST(request: NextRequest) {
       where: {
         name: categoryName,
         type: type,
-        ownerType: 'GROUP',
-        ownerId: BigInt(groupId),
+        groupId: BigInt(groupId),
       },
     })
 
@@ -107,8 +106,8 @@ export async function POST(request: NextRequest) {
           name: categoryName,
           type: type,
           color: randomColor,
-          ownerType: 'GROUP',
-          ownerId: BigInt(groupId),
+          groupId: BigInt(groupId),
+          createdBy: BigInt(user.userId),
         },
       })
     }
@@ -118,7 +117,7 @@ export async function POST(request: NextRequest) {
       data: {
         type: type,
         date: new Date(date),
-        amount: type === 'EXPENSE' ? -BigInt(amount) : BigInt(amount), // EXPENSE는 음수, INCOME은 양수
+        amount: BigInt(amount), // amount는 항상 양수로 저장, type에 따라 계산 시 부호 결정
         categoryId: category.id,
         memo: memo || null,
         ownerUserId: BigInt(user.userId),

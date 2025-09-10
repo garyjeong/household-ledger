@@ -168,7 +168,7 @@ export const MonthlyDashboard = React.memo(function MonthlyDashboard({
                   </div>
                 </div>
                 <div className='text-2xl font-bold text-slate-900'>
-                  {formatKRW(stats.totalIncome)}
+                  {formatKRW(Number(stats.totalIncome))}
                 </div>
               </CardContent>
             </Card>
@@ -186,12 +186,11 @@ export const MonthlyDashboard = React.memo(function MonthlyDashboard({
                   </div>
                 </div>
                 <div className='text-2xl font-bold text-slate-900'>
-                  {formatKRW(stats.totalExpense)}
+                  {formatKRW(Number(stats.totalExpense))}
                 </div>
               </CardContent>
             </Card>
           </div>
-
 
 
           {/* 📊 카테고리 분석 섹션 */}
