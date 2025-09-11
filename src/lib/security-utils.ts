@@ -183,6 +183,16 @@ export const safeConsole = {
   },
 
   warn: (message: string, data?: any) => {
+    // 특정 안내성 경고(레거시 페이지네이션)는 테스트 환경을 제외하고 출력 억제
+    if (
+      typeof message === 'string' &&
+      message.includes('레거시 페이지네이션') &&
+      process.env.NODE_ENV !== 'test'
+    ) {
+      return
+    }
+
+    if (!shouldLog('warn')) return
     console.warn(message, data ? sanitizeObject(data) : '')
   },
 

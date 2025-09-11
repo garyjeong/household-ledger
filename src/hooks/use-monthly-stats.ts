@@ -23,9 +23,12 @@ export function useMonthlyStats({ period, refetchInterval = 30000 }: UseMonthlyS
   return useQuery({
     queryKey: ['monthly-stats', period, currentGroup?.id],
     queryFn: async (): Promise<MonthlyStats> => {
-      const params = new URLSearchParams({
-        period,
-      })
+      const params = new URLSearchParams()
+      const [yearStr, monthStr] = period.split('-')
+      const year = parseInt(yearStr, 10)
+      const month = parseInt(monthStr, 10)
+      if (!Number.isNaN(year)) params.set('year', String(year))
+      if (!Number.isNaN(month)) params.set('month', String(month))
 
       if (currentGroup?.id) {
         params.append('groupId', currentGroup.id)
@@ -44,12 +47,14 @@ export function useMonthlyStats({ period, refetchInterval = 30000 }: UseMonthlyS
       return response.data.data
     },
     enabled: true,
-    staleTime: 5 * 60 * 1000, // 5분간 fresh 상태 유지
-    gcTime: 10 * 60 * 1000, // 10분간 캐시 유지
+    // 월 이동 시마다 항상 서버에서 새로 로드
+    staleTime: 0,
+    gcTime: 0,
     refetchInterval, // 30초마다 자동 갱신 (실시간 업데이트)
     refetchIntervalInBackground: false,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
+    refetchOnWindowFocus: 'always',
+    refetchOnMount: 'always',
+    refetchOnReconnect: 'always',
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   })

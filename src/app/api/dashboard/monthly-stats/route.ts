@@ -35,6 +35,13 @@ export async function GET(request: NextRequest) {
       : new Date().getMonth() + 1
     const groupId = searchParams.get('groupId')
 
+    safeConsole.info('API /api/dashboard/monthly-stats 호출됨', {
+      year,
+      month,
+      groupId,
+      userId: user.userId,
+    })
+
     // 날짜 유효성 검증
     if (year < 2020 || year > 2030 || month < 1 || month > 12) {
       return NextResponse.json({ error: '올바르지 않은 날짜입니다' }, { status: 400 })

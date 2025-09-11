@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react'
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   X,
   Zap,
@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   QuickAddModalProps,
   QuickAddForm,
+  TransactionType,
 } from '@/types/couple-ledger'
 import { CategorySelectModal } from './CategorySelectModal'
 import { useCategories } from '@/hooks/use-categories'
@@ -107,6 +108,9 @@ export function QuickAddModal({
     }
   }, [initialData])
 
+  // 금액 인풋 포커스 유지를 위한 ref
+  const amountInputRef = useRef<HTMLInputElement | null>(null)
+
   // 모달 리셋
   const resetForm = useCallback(() => {
     setFormData({
@@ -139,15 +143,19 @@ export function QuickAddModal({
       // 금액에서 숫자만 추출
       const amount = parseInt(formData.amount.replace(/[^\d]/g, '')) || 0
       
+      const transactionType: TransactionType = formData.type === 'EXPENSE' ? 'expense' : 'income'
+
       const transactionData = {
         amount,
         categoryId: formData.categoryId,
         date: formData.date,
         memo: formData.memo,
-        type: formData.type, // 사용자가 선택한 타입
+        type: transactionType, // TransactionType (lowercase)
         person: formData.person,
         payMethod: formData.payMethod,
         tags: formData.tags,
+        // 타입 정의 상 필수지만 이 단계에서는 상위에서 보강/변환하므로 빈값 전달
+        userId: '',
       }
 
       await onSave(transactionData)
@@ -201,10 +209,20 @@ export function QuickAddModal({
                   inputMode='numeric'
                   pattern='[0-9]*'
                   value={formData.amount}
+                  ref={amountInputRef}
                   onChange={(e) => {
                     const value = e.target.value.replace(/[^\d]/g, '')
                     const formatted = value ? `${parseInt(value).toLocaleString()}원` : ''
                     setFormData(prev => ({ ...prev, amount: formatted }))
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Backspace') {
+                      e.preventDefault()
+                      const digits = (formData.amount || '').replace(/[^\d]/g, '')
+                      const nextDigits = digits.slice(0, -1)
+                      const formatted = nextDigits ? `${parseInt(nextDigits).toLocaleString()}원` : ''
+                      setFormData(prev => ({ ...prev, amount: formatted }))
+                    }
                   }}
                   placeholder='0원'
                   autoFocus
@@ -230,11 +248,28 @@ export function QuickAddModal({
                       key={item.amount}
                       type='button'
                       variant='outline'
+                      onMouseDown={(e) => {
+                        // 버튼 클릭 시 인풋 포커스가 이동하지 않도록 방지
+                        e.preventDefault()
+                      }}
                       onClick={() => {
                         if (item.amount === 0) {
                           setFormData(prev => ({ ...prev, amount: '' }))
                         } else {
-                          setFormData(prev => ({ ...prev, amount: `${item.amount.toLocaleString()}원` }))
+                          const currentDigits = (formData.amount || '').replace(/[^\d]/g, '')
+                          const currentValue = currentDigits ? parseInt(currentDigits) : 0
+                          const nextValue = currentValue + item.amount
+                          const formatted = nextValue ? `${nextValue.toLocaleString()}원` : ''
+                          setFormData(prev => ({ ...prev, amount: formatted }))
+                        }
+                        // 클릭 후에도 금액 인풋 포커스 유지
+                        const el = amountInputRef.current
+                        if (el) {
+                          el.focus()
+                          try {
+                            const len = el.value.length
+                            el.setSelectionRange(len, len)
+                          } catch {}
                         }
                       }}
                       className='h-12 flex items-center justify-center text-sm font-medium hover:bg-blue-50 hover:border-blue-300 transition-colors'
