@@ -54,8 +54,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // 그룹 멤버인지 확인
     const isMember =
-      group.members.some(member => member.id.toString() === user.userId) ||
-      group.ownerId.toString() === user.userId
+      group.members.some(member => member.id.toString() === user!.userId) ||
+      group.ownerId.toString() === user!.userId
 
     if (!isMember) {
       return NextResponse.json(
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       success: true,
       group: formattedGroup,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ 그룹 조회 중 오류:', error)
     return NextResponse.json(
       { error: '그룹 조회 중 오류가 발생했습니다', code: 'INTERNAL_ERROR' },
@@ -119,7 +119,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const user = await verifyCookieToken(accessToken)
     const { groupId } = await params
 
-    // console.log('👤 사용자 검증 성공:', user.userId, '그룹 ID:', groupId)
+    // console.log('👤 사용자 검증 성공:', user!.userId, '그룹 ID:', groupId)
 
     // 그룹 존재 여부 및 소유권 확인
     const group = await prisma.group.findUnique({
@@ -145,7 +145,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // 소유자 권한 확인
-    if (group.ownerId.toString() !== user.userId) {
+    if (group.ownerId.toString() !== user!.userId) {
       return NextResponse.json(
         {
           error: '그룹을 삭제할 권한이 없습니다. 소유자만 그룹을 삭제할 수 있습니다.',
@@ -171,7 +171,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       }
 
       // 2. 그룹 관련 카테고리 삭제 (기본 카테고리 제외)
-      const deletedCategories = await tx.category.deleteMany({
+      const _deletedCategories = await tx.category.deleteMany({
         where: {
           groupId: BigInt(groupId),
           isDefault: false, // 기본 카테고리는 삭제하지 않음
@@ -180,7 +180,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       // console.log(`✅ 그룹 카테고리 ${deletedCategories.count}개 삭제 완료`)
 
       // 3. 그룹 관련 거래를 개인 거래로 전환 (삭제하지 않고 보존)
-      const updatedTransactions = await tx.transaction.updateMany({
+      const _updatedTransactions = await tx.transaction.updateMany({
         where: { groupId: BigInt(groupId) },
         data: { groupId: null },
       })
@@ -205,7 +205,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         name: group.name,
       },
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ 그룹 삭제 중 오류:', error)
 
     // 트랜잭션 오류 처리
@@ -278,7 +278,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    if (group.ownerId.toString() !== user.userId) {
+    if (group.ownerId.toString() !== user!.userId) {
       return NextResponse.json(
         { error: '그룹을 수정할 권한이 없습니다', code: 'ACCESS_DENIED' },
         { status: 403 }
@@ -301,7 +301,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         createdAt: updatedGroup.createdAt.toISOString(),
       },
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ 그룹 수정 중 오류:', error)
     return NextResponse.json(
       { error: '그룹 수정 중 오류가 발생했습니다', code: 'INTERNAL_ERROR' },

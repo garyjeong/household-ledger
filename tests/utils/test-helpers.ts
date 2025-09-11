@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import { NextRequest } from 'next/server'
 import type { JWTPayload, User, Group, GroupMember } from '@/lib/auth'
 
 // Mock JWT 토큰 생성 (테스트용)
@@ -144,7 +145,7 @@ export function createMockRequest(options: {
     clone: () => mockRequest,
   }
 
-  return mockRequest
+  return mockRequest as unknown as NextRequest
 }
 
 // 테스트 케이스 헬퍼
@@ -186,15 +187,16 @@ export function expectApiSuccess(
   expect(response.body).toHaveProperty('success', true)
 }
 
-export function expectApiError(
-  response: { status: number; body: Record<string, unknown> },
+export async function expectApiError(
+  response: Response,
   expectedStatus: number,
   expectedError?: string
 ) {
   expect(response.status).toBe(expectedStatus)
-  expect(response.body).toHaveProperty('error')
+  const body = await response.json()
+  expect(body).toHaveProperty('error')
   if (expectedError) {
-    expect(response.body.error).toContain(expectedError)
+    expect(body.error).toContain(expectedError)
   }
 }
 

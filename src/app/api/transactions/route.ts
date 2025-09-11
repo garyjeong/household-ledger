@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
-import { verifyCookieToken, verifyAccountOwnership } from '@/lib/auth'
+import { verifyCookieToken } from '@/lib/auth'
 import {
   createTransactionSchema,
   transactionQuerySchema,
@@ -83,7 +82,7 @@ export async function GET(request: NextRequest) {
     if (cursor || !page) {
       // 새로운 커서 페이지네이션 사용
       const paginationParams: CursorPaginationParams = {
-        cursor,
+        cursor: cursor || undefined,
         limit: limit || 20,
         direction,
       }
@@ -100,10 +99,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         transactions: formattedTransactions,
         pagination: {
-          hasMore: result.pagination.hasMore,
+          hasMore: result.pagination.hasNext,
           nextCursor: result.pagination.nextCursor,
           prevCursor: result.pagination.prevCursor,
-          totalCount: result.pagination.totalCount,
+          totalCount: result.pagination.totalEstimate,
           // 개발 환경에서만 성능 정보 포함
           ...(process.env.NODE_ENV === 'development' && {
             performance: result.performance,
@@ -247,10 +246,9 @@ export async function POST(request: NextRequest) {
           where: {
             id: BigInt(transactionData.categoryId),
             OR: [
-              { ownerType: 'USER', ownerId: BigInt(user.userId) },
+              { createdBy: BigInt(user.userId), groupId: null },
               {
-                ownerType: 'GROUP',
-                ownerId: transactionData.groupId ? BigInt(transactionData.groupId) : undefined,
+                groupId: transactionData.groupId ? BigInt(transactionData.groupId) : undefined,
               },
             ],
           },
@@ -263,15 +261,14 @@ export async function POST(request: NextRequest) {
 
       // 2. 그룹 존재 및 멤버십 확인
       if (transactionData.groupId) {
-        const groupMembership = await tx.groupMember.findFirst({
+        const userInGroup = await tx.user.findFirst({
           where: {
+            id: BigInt(user.userId),
             groupId: BigInt(transactionData.groupId),
-            userId: BigInt(user.userId),
-            status: 'ACTIVE',
           },
         })
 
-        if (!groupMembership) {
+        if (!userInGroup) {
           throw new Error('그룹에 대한 권한이 없습니다')
         }
       }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { verifyAccessToken, findGroupsByUserId, createGroup } from '@/lib/auth'
 import { safeConsole } from '@/lib/security-utils'
+import { prisma } from '@/lib/prisma'
 
 const createGroupSchema = z.object({
   name: z
@@ -20,13 +21,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 })
     }
 
-    const payload = verifyAccessToken(accessToken)
-    if (!payload) {
+    const user = verifyAccessToken(accessToken)
+    if (!user) {
       return NextResponse.json({ error: '유효하지 않은 토큰입니다.' }, { status: 401 })
     }
 
     // 사용자의 그룹 목록 조회
-    const groups = await findGroupsByUserId(payload.userId)
+    const groups = await findGroupsByUserId(user.userId)
 
     return NextResponse.json({
       success: true,
@@ -50,8 +51,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '인증이 필요합니다.' }, { status: 401 })
     }
 
-    const payload = verifyAccessToken(accessToken)
-    if (!payload) {
+    const user = verifyAccessToken(accessToken)
+    if (!user) {
       return NextResponse.json({ error: '유효하지 않은 토큰입니다.' }, { status: 401 })
     }
 
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     // 사용자가 이미 소유한 그룹이 있는지 확인
     const existingOwnedGroup = await prisma.group.findFirst({
-      where: { ownerId: BigInt(payload.userId) },
+      where: { ownerId: BigInt(user.userId) },
     })
 
     if (existingOwnedGroup) {
@@ -88,14 +89,14 @@ export async function POST(request: NextRequest) {
     // 그룹 생성
     const newGroup = await createGroup({
       name,
-      ownerId: payload.userId,
+      ownerId: user.userId,
     })
 
     // 성공 로깅 - 비활성화
     // safeConsole.log('그룹 생성 성공', {
     //   groupId: newGroup.id,
     //   groupName: newGroup.name,
-    //   ownerId: payload.userId,
+    //   ownerId: user.userId,
     // })
 
     return NextResponse.json(
@@ -109,7 +110,6 @@ export async function POST(request: NextRequest) {
     safeConsole.error('그룹 생성 실패', error, {
       endpoint: '/api/groups',
       method: 'POST',
-      ownerId: payload?.userId,
     })
     return NextResponse.json({ error: '그룹 생성 중 오류가 발생했습니다.' }, { status: 500 })
   }

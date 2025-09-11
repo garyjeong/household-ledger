@@ -117,7 +117,7 @@ export async function apiCall<T = any>(
       // 401 외의 에러 또는 재시도하지 않는 401 에러 처리
       const errorData = await response.json().catch(() => ({ message: response.statusText }))
       const apiError = new Error(errorData.message || '알 수 없는 API 오류')
-      errorReport = handleApiError(apiError, url, response.status, errorData)
+      errorReport = handleApiError(apiError, url)
 
       safeConsole.error('API 오류 응답', errorReport, {
         endpoint: url,

@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import { NextRequest } from 'next/server'
 import { POST as forgotPasswordHandler } from '@/app/api/auth/forgot-password/route'
 import { createMockRequest } from '../utils/test-helpers'
@@ -56,7 +57,7 @@ describe('Forgot Password API', () => {
       const request = createMockRequest({
         method: 'POST',
         body: { email: validEmail },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await forgotPasswordHandler(request)
       const responseData = await response.json()
@@ -89,7 +90,7 @@ describe('Forgot Password API', () => {
       const request = createMockRequest({
         method: 'POST',
         body: { email: 'nonexistent@example.com' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await forgotPasswordHandler(request)
       const responseData = await response.json()
@@ -105,7 +106,7 @@ describe('Forgot Password API', () => {
       const request = createMockRequest({
         method: 'POST',
         body: { email: 'invalid-email' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await forgotPasswordHandler(request)
       const responseData = await response.json()
@@ -120,7 +121,7 @@ describe('Forgot Password API', () => {
       const request = createMockRequest({
         method: 'POST',
         body: {},
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await forgotPasswordHandler(request)
       const responseData = await response.json()
@@ -138,7 +139,7 @@ describe('Forgot Password API', () => {
       const request = createMockRequest({
         method: 'POST',
         body: { email: validEmail },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await forgotPasswordHandler(request)
       const responseData = await response.json()

@@ -46,14 +46,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     // 사용자의 그룹 정보 가져오기
     const userData = await prisma.user.findUnique({
-      where: { id: BigInt(user.userId) },
+      where: { id: BigInt(user!.userId) },
       select: { groupId: true },
     })
 
     const userGroupId = userData?.groupId?.toString() || null
 
     // 수정 권한 확인
-    if (!canEditCategory(existingCategory, user.userId, userGroupId)) {
+    if (!canEditCategory(existingCategory, user!.userId, userGroupId)) {
       return NextResponse.json(
         { error: '카테고리를 수정할 권한이 없습니다', code: 'ACCESS_DENIED' },
         { status: 403 }
@@ -163,14 +163,14 @@ export async function DELETE(
 
     // 사용자의 그룹 정보 가져오기
     const userData = await prisma.user.findUnique({
-      where: { id: BigInt(user.userId) },
+      where: { id: BigInt(user!.userId) },
       select: { groupId: true },
     })
 
     const userGroupId = userData?.groupId?.toString() || null
 
     // 삭제 권한 확인
-    if (!canDeleteCategory(existingCategory, user.userId, userGroupId)) {
+    if (!canDeleteCategory(existingCategory, user!.userId, userGroupId)) {
       return NextResponse.json(
         { error: '카테고리를 삭제할 권한이 없습니다', code: 'ACCESS_DENIED' },
         { status: 403 }
@@ -245,7 +245,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!isDefaultCategory(category)) {
       // 커스텀 카테고리는 소유권 검증
       const userData = await prisma.user.findUnique({
-        where: { id: BigInt(user.userId) },
+        where: { id: BigInt(user!.userId) },
         select: { groupId: true },
       })
 
@@ -261,7 +261,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
       } else {
         // 개인 카테고리인 경우 생성자인지 확인
-        if (category.createdBy.toString() !== user.userId) {
+        if (category.createdBy.toString() !== user!.userId) {
           return NextResponse.json(
             { error: '접근 권한이 없습니다', code: 'ACCESS_DENIED' },
             { status: 403 }

@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import { NextRequest } from 'next/server'
 import { POST as checkEmailHandler } from '@/app/api/auth/check-email/route'
 import { createMockRequest } from '../utils/test-helpers'
@@ -38,7 +39,7 @@ describe('Check Email API', () => {
       const request = createMockRequest({
         method: 'POST',
         body: { email: existingEmail },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await checkEmailHandler(request)
       const responseData = await response.json()
@@ -54,7 +55,7 @@ describe('Check Email API', () => {
       const request = createMockRequest({
         method: 'POST',
         body: { email: newEmail },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await checkEmailHandler(request)
       const responseData = await response.json()
@@ -68,7 +69,7 @@ describe('Check Email API', () => {
       const request = createMockRequest({
         method: 'POST',
         body: { email: 'invalid-email' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await checkEmailHandler(request)
       const responseData = await response.json()
@@ -82,7 +83,7 @@ describe('Check Email API', () => {
       const request = createMockRequest({
         method: 'POST',
         body: {},
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await checkEmailHandler(request)
       const responseData = await response.json()
@@ -98,7 +99,7 @@ describe('Check Email API', () => {
       const request = createMockRequest({
         method: 'POST',
         body: { email: existingEmail },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await checkEmailHandler(request)
       const responseData = await response.json()

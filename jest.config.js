@@ -7,6 +7,11 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'jsdom',
+  globals: {
+    'ts-jest': {
+      useESM: true
+    }
+  },
   testMatch: [
     '<rootDir>/tests/**/*.(test|spec).(js|jsx|ts|tsx)',
     '<rootDir>/src/**/*.(test|spec).(js|jsx|ts|tsx)'

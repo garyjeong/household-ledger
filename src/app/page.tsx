@@ -192,11 +192,13 @@ export default function HomePage() {
     <ResponsiveLayout>
       {/* 메인 컨텐츠 */}
       <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>
-        <MonthlyDashboard
-          stats={monthlyStats}
-          selectedMonth={selectedMonth}
-          onMonthChange={handleMonthChange}
-        />
+        {monthlyStats && (
+          <MonthlyDashboard
+            stats={monthlyStats}
+            selectedMonth={selectedMonth}
+            onMonthChange={handleMonthChange}
+          />
+        )}
       </div>
     </ResponsiveLayout>
   )

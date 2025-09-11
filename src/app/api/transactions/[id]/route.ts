@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyToken, extractTokenFromHeader } from '@/lib/auth'
+import { verifyToken } from '@/lib/auth'
 import { updateTransactionSchema, formatTransactionForResponse } from '@/lib/schemas/transaction'
 
 /**

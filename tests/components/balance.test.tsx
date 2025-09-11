@@ -5,6 +5,7 @@
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BalanceCard } from '@/components/balance/BalanceCard'
 import { BalanceWidget } from '@/components/balance/BalanceWidget'
 
@@ -44,6 +45,10 @@ const mockBalanceResponse = {
   totalExpense: 1000000,
   currency: 'KRW',
   lastUpdated: '2024-01-01T12:00:00Z',
+  accountBalances: [
+    { id: '1', name: '메인 계좌', balance: 2000000, isActive: true },
+    { id: '2', name: '저축 계좌', balance: 1000000, isActive: false }
+  ],
   monthlyTrend: [
     { month: '2024-01', balance: 1800000, income: 2500000, expense: 700000 },
     { month: '2024-02', balance: 2000000, income: 3000000, expense: 1000000 }
@@ -100,6 +105,21 @@ describe('BalanceCard', () => {
   })
 })
 
+// QueryClient wrapper for BalanceWidget tests
+const renderWithQueryClient = (component: React.ReactElement) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  })
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {component}
+    </QueryClientProvider>
+  )
+}
+
 describe('BalanceWidget', () => {
   beforeEach(() => {
     ;(fetch as jest.Mock).mockResolvedValue({
@@ -113,7 +133,7 @@ describe('BalanceWidget', () => {
   })
 
   it('컴팩트 모드에서 잔액 정보를 표시해야 한다', async () => {
-    render(<BalanceWidget ownerType='USER' ownerId='1' compact={true} />)
+    renderWithQueryClient(<BalanceWidget ownerType='USER' ownerId='1' compact={true} />)
 
     await waitFor(() => {
       expect(screen.getByText('잔액')).toBeInTheDocument()
@@ -132,7 +152,7 @@ describe('BalanceWidget', () => {
       json: async () => negativeBalanceResponse,
     })
 
-    render(<BalanceWidget ownerType='USER' ownerId='1' />)
+    renderWithQueryClient(<BalanceWidget ownerType='USER' ownerId='1' />)
 
     await waitFor(() => {
       expect(screen.getByText('-₩100,000')).toBeInTheDocument()

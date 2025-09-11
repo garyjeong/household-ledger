@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import { NextRequest } from 'next/server'
 import {
   GET as getCategoriesHandler,
@@ -67,7 +68,7 @@ describe('Categories API Routes', () => {
         method: 'GET',
         url: '/api/categories?groupId=1',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await getCategoriesHandler(request)
       const responseData = await response.json()
@@ -82,7 +83,7 @@ describe('Categories API Routes', () => {
         method: 'GET',
         url: '/api/categories?groupId=1',
         cookies: {},
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await getCategoriesHandler(request)
       const responseData = await response.json()
@@ -96,7 +97,7 @@ describe('Categories API Routes', () => {
         method: 'GET',
         url: '/api/categories',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await getCategoriesHandler(request)
       const responseData = await response.json()
@@ -110,7 +111,7 @@ describe('Categories API Routes', () => {
         method: 'GET',
         url: '/api/categories?groupId=1&type=EXPENSE',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await getCategoriesHandler(request)
       const responseData = await response.json()
@@ -133,7 +134,7 @@ describe('Categories API Routes', () => {
         method: 'POST',
         body: validCategoryData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await createCategoryHandler(request)
       const responseData = await response.json()
@@ -155,7 +156,7 @@ describe('Categories API Routes', () => {
         method: 'POST',
         body: incompleteData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await createCategoryHandler(request)
       const responseData = await response.json()
@@ -174,7 +175,7 @@ describe('Categories API Routes', () => {
         method: 'POST',
         body: invalidData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await createCategoryHandler(request)
       const responseData = await response.json()
@@ -193,7 +194,7 @@ describe('Categories API Routes', () => {
         method: 'POST',
         body: invalidData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await createCategoryHandler(request)
       const responseData = await response.json()
@@ -212,7 +213,7 @@ describe('Categories API Routes', () => {
         method: 'POST',
         body: invalidData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await createCategoryHandler(request)
       const responseData = await response.json()
@@ -229,7 +230,7 @@ describe('Categories API Routes', () => {
           name: '식비', // 이미 존재하는 카테고리 이름
         },
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await createCategoryHandler(request)
       const responseData = await response.json()
@@ -250,7 +251,7 @@ describe('Categories API Routes', () => {
         method: 'PUT',
         body: updateData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await updateCategoryHandler(request, { params: { id: '1' } })
       const responseData = await response.json()
@@ -265,7 +266,7 @@ describe('Categories API Routes', () => {
         method: 'PUT',
         body: updateData,
         cookies: {},
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await updateCategoryHandler(request, { params: { id: '1' } })
       const responseData = await response.json()
@@ -279,7 +280,7 @@ describe('Categories API Routes', () => {
         method: 'PUT',
         body: updateData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await updateCategoryHandler(request, { params: { id: 'invalid-id' } })
       const responseData = await response.json()
@@ -293,7 +294,7 @@ describe('Categories API Routes', () => {
         method: 'PUT',
         body: updateData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await updateCategoryHandler(request, { params: { id: '999' } })
       const responseData = await response.json()
@@ -308,7 +309,7 @@ describe('Categories API Routes', () => {
       const request = createMockRequest({
         method: 'DELETE',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await deleteCategoryHandler(request, { params: { id: '1' } })
       const responseData = await response.json()
@@ -321,7 +322,7 @@ describe('Categories API Routes', () => {
       const request = createMockRequest({
         method: 'DELETE',
         cookies: {},
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await deleteCategoryHandler(request, { params: { id: '1' } })
       const responseData = await response.json()
@@ -334,7 +335,7 @@ describe('Categories API Routes', () => {
       const request = createMockRequest({
         method: 'DELETE',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       // 거래가 있는 카테고리 삭제 시도
       const response = await deleteCategoryHandler(request, { params: { id: '1' } })
@@ -348,7 +349,7 @@ describe('Categories API Routes', () => {
       const request = createMockRequest({
         method: 'DELETE',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await deleteCategoryHandler(request, { params: { id: '999' } })
       const responseData = await response.json()

@@ -41,6 +41,33 @@ export const MonthlyDashboard = React.memo(function MonthlyDashboard({
   onMonthChange,
   className = '',
 }: MonthlyDashboardProps) {
+  // 월 정보 계산
+  const getCurrentMonthInfo = () => {
+    const currentDate = new Date(selectedMonth + '-01')
+    const prevDate = new Date(currentDate)
+    prevDate.setMonth(prevDate.getMonth() - 1)
+    const nextDate = new Date(currentDate)
+    nextDate.setMonth(nextDate.getMonth() + 1)
+
+    return {
+      prev: {
+        label: '전달',
+        month: new Intl.DateTimeFormat('ko-KR', { month: 'short' }).format(prevDate),
+        isSelected: false,
+      },
+      current: {
+        label: '금달',
+        month: new Intl.DateTimeFormat('ko-KR', { month: 'short' }).format(currentDate),
+        isSelected: true,
+      },
+      next: {
+        label: '다음달',
+        month: new Intl.DateTimeFormat('ko-KR', { month: 'short' }).format(nextDate),
+        isSelected: false,
+      },
+    }
+  }
+
   // 실제 API 데이터만 사용 - 데이터가 없으면 빈 상태 표시
   if (!propStats) {
     return (
@@ -143,32 +170,7 @@ export const MonthlyDashboard = React.memo(function MonthlyDashboard({
     }).format(date)
   }
 
-  // 월 정보 계산
-  const getCurrentMonthInfo = () => {
-    const currentDate = new Date(selectedMonth + '-01')
-    const prevDate = new Date(currentDate)
-    prevDate.setMonth(prevDate.getMonth() - 1)
-    const nextDate = new Date(currentDate)
-    nextDate.setMonth(nextDate.getMonth() + 1)
-
-    return {
-      prev: {
-        label: '전달',
-        month: new Intl.DateTimeFormat('ko-KR', { month: 'short' }).format(prevDate),
-        isSelected: false,
-      },
-      current: {
-        label: '금달',
-        month: new Intl.DateTimeFormat('ko-KR', { month: 'short' }).format(currentDate),
-        isSelected: true,
-      },
-      next: {
-        label: '다음달',
-        month: new Intl.DateTimeFormat('ko-KR', { month: 'short' }).format(nextDate),
-        isSelected: false,
-      },
-    }
-  }
+  // getCurrentMonthInfo 함수를 상단으로 이동됨
 
   const monthInfo = getCurrentMonthInfo()
 

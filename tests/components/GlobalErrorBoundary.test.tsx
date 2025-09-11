@@ -1,7 +1,7 @@
 // tests/components/GlobalErrorBoundary.test.tsx
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import GlobalErrorBoundary from '@/components/error/GlobalErrorBoundary'
+import { GlobalErrorBoundary } from '@/components/error/GlobalErrorBoundary'
 import { safeConsole } from '@/lib/security-utils'
 
 // Mock safeConsole

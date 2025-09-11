@@ -2,6 +2,7 @@
  * 거래 데이터 확인 스크립트
  */
 
+/* eslint-disable no-console */
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
@@ -81,20 +82,20 @@ async function checkTransactions() {
     })
 
     // 사용자 4의 그룹 정보 확인
-    const userGroups = await prisma.groupMember.findMany({
+    const user = await prisma.user.findUnique({
       where: {
-        userId: 4,
+        id: BigInt(4),
       },
       include: {
         group: true,
+        ownedGroups: true,
       },
     })
 
+    const userGroups = [...(user?.group ? [user.group] : []), ...(user?.ownedGroups || [])]
     console.log(`\n👥 사용자 4의 그룹 멤버십: ${userGroups.length}개`)
-    userGroups.forEach(membership => {
-      console.log(
-        `  - 그룹 ID: ${membership.groupId}, 이름: ${membership.group.name}, 상태: ${membership.status}`
-      )
+    userGroups.forEach(group => {
+      console.log(`  - 그룹 ID: ${group.id}, 이름: ${group.name}`)
     })
   } catch (error) {
     console.error('❌ 스크립트 실행 중 오류 발생:', error)

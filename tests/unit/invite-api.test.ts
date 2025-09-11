@@ -3,7 +3,7 @@
  * - API endpoint를 통한 그룹 참여 테스트
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals'
+// Jest globals are available by default in Jest environment
 import { POST } from '@/app/api/groups/join/route'
 
 // Mock the auth functions

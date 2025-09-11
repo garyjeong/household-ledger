@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { JsonValue } from '@prisma/client/runtime/library'
 import { verifyCookieToken } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { DEFAULT_SETTINGS, AppSettings } from '@/contexts/settings-context'
@@ -165,7 +166,7 @@ export async function PUT(request: NextRequest) {
     await prisma.user.update({
       where: { id: BigInt(user.userId) },
       data: {
-        settings: newSettings as any,
+        settings: newSettings as JsonValue,
       },
     })
 
@@ -211,7 +212,7 @@ export async function DELETE(request: NextRequest) {
     await prisma.user.update({
       where: { id: BigInt(user.userId) },
       data: {
-        settings: null as any, // null로 설정하면 기본값 사용
+        settings: null, // null로 설정하면 기본값 사용
       },
     })
 

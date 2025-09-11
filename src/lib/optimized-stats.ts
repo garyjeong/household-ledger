@@ -5,28 +5,12 @@
 
 import { prisma } from './prisma'
 import { safeConsole } from './security-utils'
+import { MonthlyStats } from '@/types/couple-ledger'
 
-export interface OptimizedMonthlyStats {
-  totalIncome: number
-  totalExpense: number
-  transactionCount: number
-  myExpense: number
-  sharedExpense: number
-  partnerExpense: number
-  categoryStats: Array<{
-    categoryId: string | null
-    categoryName: string
-    amount: number
-  }>
-  dailyTrend: Array<{
-    date: string
-    income: number
-    expense: number
-  }>
-}
+// OptimizedMonthlyStats 제거 - MonthlyStats 사용
 
 export interface StatsQueryParams {
-  userId: BigInt
+  userId: bigint
   year: number
   month: number
   groupFilter: any
@@ -298,9 +282,10 @@ export async function getOptimizedMonthlyStats(params: StatsQueryParams): Promis
       myExpense: Number(statsMap.get('my_expense')?.amount || 0),
       partnerExpense: Number(statsMap.get('partner_expense')?.amount || 0),
       sharedExpense: Number(statsMap.get('shared_expense')?.amount || 0),
+      transactionCount: Number(statsMap.get('total_transactions')?.count || 0),
       categoryBreakdown: categoryResults
         .map((cat, index) => ({
-          categoryId: cat.category_id?.toString() || '',
+          categoryId: cat.categoryId?.toString() || '',
           categoryName: cat.categoryName || '알 수 없음',
           amount: Number(cat.total_amount),
           percentage:
@@ -313,6 +298,13 @@ export async function getOptimizedMonthlyStats(params: StatsQueryParams): Promis
         date: day.transaction_date.toISOString().slice(0, 10),
         amount: Number(day.daily_income) + Number(day.daily_expense), // 수입+지출 합계 (월별 대시보드에 맞게)
         type: Number(day.daily_income) > Number(day.daily_expense) ? 'income' : 'expense', // 지출이 더 많으면 expense로 간주
+      })),
+      categoryStats: categoryResults.map((cat, index) => ({
+        categoryId: cat.categoryId?.toString() || '',
+        categoryName: cat.categoryName || '알 수 없음',
+        amount: Number(cat.total_amount),
+        transactionCount: 0, // TODO: 실제 거래 수 계산
+        color: `hsl(${(index * 45) % 360}, 70%, 50%)`,
       })),
     }
 
@@ -327,12 +319,14 @@ export async function getOptimizedMonthlyStats(params: StatsQueryParams): Promis
 
     // 실패 시 빈 결과 반환
     return {
+      period: `${year}-${String(month).padStart(2, '0')}`,
       totalIncome: 0,
       totalExpense: 0,
       transactionCount: 0,
       myExpense: 0,
       sharedExpense: 0,
       partnerExpense: 0,
+      categoryBreakdown: [],
       categoryStats: [],
       dailyTrend: [],
     }
@@ -342,9 +336,7 @@ export async function getOptimizedMonthlyStats(params: StatsQueryParams): Promis
 /**
  * 캐시된 통계 조회 (향후 Redis 적용 시 사용)
  */
-export async function getCachedMonthlyStats(
-  params: StatsQueryParams
-): Promise<OptimizedMonthlyStats> {
+export async function getCachedMonthlyStats(params: StatsQueryParams): Promise<MonthlyStats> {
   // 현재는 캐시 없이 직접 조회
   return getOptimizedMonthlyStats(params)
 }

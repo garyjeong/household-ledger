@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+// Jest globals are available by default in Jest environment
 import {
   fetchExchangeRates,
   fetchCurrencyPair,
@@ -9,12 +9,12 @@ import {
 } from '@/lib/currency-api'
 
 // Mock fetch
-global.fetch = vi.fn()
-const mockFetch = fetch as vi.MockedFunction<typeof fetch>
+global.fetch = jest.fn()
+const mockFetch = fetch as jest.MockedFunction<typeof fetch>
 
 describe('Currency API', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
   })
 
   describe('fetchExchangeRates', () => {

@@ -406,7 +406,7 @@ export async function GET(request: NextRequest) {
         'X-Response-Time': `${Date.now() - startTime}ms`,
       },
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Metrics collection failed:', error)
 
     return NextResponse.json(

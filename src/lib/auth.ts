@@ -548,14 +548,16 @@ export async function createGroup(data: CreateGroupData): Promise<GroupWithMembe
           user: {
             id: result.updatedUser.id.toString(),
             email: result.updatedUser.email,
-            name: result.updatedUser.name,
+            nickname: result.updatedUser.nickname,
+            createdAt: result.updatedUser.createdAt,
           },
         },
       ],
       owner: {
         id: result.updatedUser.id.toString(),
         email: result.updatedUser.email,
-        name: result.updatedUser.name,
+        nickname: result.updatedUser.nickname,
+        createdAt: result.updatedUser.createdAt,
       },
     }
   } catch (error) {

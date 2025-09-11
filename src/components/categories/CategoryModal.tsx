@@ -32,7 +32,7 @@ const categoryFormSchema = z.object({
     .max(20, '카테고리 이름은 20자 이하로 입력해주세요')
     .trim(),
   type: z.enum(['INCOME', 'EXPENSE'], {
-    required_error: '카테고리 유형을 선택해주세요',
+    message: '카테고리 유형을 선택해주세요',
   }),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, '올바른 색상 코드를 선택해주세요'),
 })
@@ -133,8 +133,7 @@ export function CategoryModal({ isOpen, onClose, onSuccess, mode, category }: Ca
       if (mode === 'create') {
         const createData: CreateCategoryData = {
           ...data,
-          ownerType: 'GROUP',
-          ownerId: parseInt(currentGroup.id, 10),
+          groupId: parseInt(currentGroup.id, 10),
         }
         await createCategoryFn(createData)
         toast({

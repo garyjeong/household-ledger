@@ -3,6 +3,7 @@
  * amount 컬럼은 항상 양수로 저장되어야 하며, type 컬럼에 따라 계산 시 부호를 결정
  */
 
+/* eslint-disable no-console */
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()

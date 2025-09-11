@@ -59,7 +59,7 @@ async function checkDatabase(): Promise<HealthCheck> {
         queryTime: `${responseTime}ms`,
       },
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       status: 'down',
       responseTime: Date.now() - start,
@@ -126,7 +126,7 @@ async function checkExchangeRateApi(): Promise<HealthCheck> {
         ratesCount: Object.keys(data.rates || {}).length,
       },
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       status: 'down',
       responseTime: Date.now() - start,
@@ -220,7 +220,7 @@ export async function GET(request: NextRequest) {
         'X-Response-Time': `${Date.now() - startTime}ms`,
       },
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Health check failed:', error)
 
     return NextResponse.json(

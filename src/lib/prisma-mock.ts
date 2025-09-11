@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals'
+// Jest globals are available by default in Jest environment
 import { PrismaClient } from '@prisma/client'
 
 // Create a mock Prisma client with Jest mocks

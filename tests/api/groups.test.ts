@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import { NextRequest } from 'next/server'
 import { GET as getGroupsHandler, POST as createGroupHandler } from '@/app/api/groups/route'
 import { POST as inviteHandler } from '@/app/api/groups/[groupId]/invite/route'
@@ -86,7 +87,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'GET',
         cookies: { accessToken: 'valid-token' },
-      }) as unknown as NextRequest
+      }) as unknown as unknown as NextRequest
 
       const response = await getGroupsHandler(request)
       const responseData = await response.json()
@@ -102,7 +103,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'GET',
         cookies: {},
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await getGroupsHandler(request)
       const responseData = await response.json()
@@ -117,7 +118,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'GET',
         cookies: { accessToken: 'invalid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await getGroupsHandler(request)
       const responseData = await response.json()
@@ -133,7 +134,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'GET',
         cookies: { accessToken: 'valid-token' },
-      }) as unknown as NextRequest
+      }) as unknown as unknown as NextRequest
 
       const response = await getGroupsHandler(request)
       const responseData = await response.json()
@@ -165,7 +166,7 @@ describe('Groups API Routes', () => {
         method: 'POST',
         body: validGroupData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await createGroupHandler(request)
       const responseData = await response.json()
@@ -191,7 +192,7 @@ describe('Groups API Routes', () => {
         method: 'POST',
         body: invalidGroupData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await createGroupHandler(request)
       const responseData = await response.json()
@@ -211,7 +212,7 @@ describe('Groups API Routes', () => {
         method: 'POST',
         body: longNameData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await createGroupHandler(request)
       const responseData = await response.json()
@@ -240,7 +241,7 @@ describe('Groups API Routes', () => {
         method: 'POST',
         body: spacedNameData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await createGroupHandler(request)
       const responseData = await response.json()
@@ -257,7 +258,7 @@ describe('Groups API Routes', () => {
         method: 'POST',
         body: validGroupData,
         cookies: {},
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await createGroupHandler(request)
       const responseData = await response.json()
@@ -282,7 +283,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await inviteHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()
@@ -322,7 +323,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await inviteHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()
@@ -344,7 +345,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await inviteHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()
@@ -360,7 +361,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await inviteHandler(request, { params: { groupId: '999' } })
       const responseData = await response.json()
@@ -382,7 +383,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await inviteHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()
@@ -405,7 +406,7 @@ describe('Groups API Routes', () => {
         method: 'POST',
         body: { inviteCode: validInviteCode },
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await joinHandler(request)
       const responseData = await response.json()
@@ -425,7 +426,7 @@ describe('Groups API Routes', () => {
         method: 'POST',
         body: { inviteCode: 'INVALID123' },
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await joinHandler(request)
       const responseData = await response.json()
@@ -441,7 +442,7 @@ describe('Groups API Routes', () => {
         method: 'POST',
         body: { inviteCode: '' },
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await joinHandler(request)
       const responseData = await response.json()
@@ -459,7 +460,7 @@ describe('Groups API Routes', () => {
         method: 'POST',
         body: { inviteCode: validInviteCode },
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await joinHandler(request)
       const responseData = await response.json()
@@ -473,7 +474,7 @@ describe('Groups API Routes', () => {
         method: 'POST',
         body: { inviteCode: validInviteCode },
         cookies: {},
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await joinHandler(request)
       const responseData = await response.json()
@@ -498,7 +499,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await leaveHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()
@@ -516,7 +517,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await leaveHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()
@@ -533,7 +534,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await leaveHandler(request, { params: Promise.resolve({ groupId: '999' }) })
       const responseData = await response.json()
@@ -556,7 +557,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await leaveHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()
@@ -569,7 +570,7 @@ describe('Groups API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: {},
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await leaveHandler(request, { params: Promise.resolve({ groupId: '1' }) })
       const responseData = await response.json()

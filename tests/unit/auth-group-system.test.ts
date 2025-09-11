@@ -7,7 +7,7 @@
  * 3. 그룹 탈퇴 시 새 개인 그룹 자동 생성
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals'
+// Jest globals are available by default in Jest environment
 import { createUser, joinGroup, leaveGroup } from '@/lib/auth'
 
 // Mock Prisma

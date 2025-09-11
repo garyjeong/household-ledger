@@ -98,10 +98,23 @@ export async function POST(request: NextRequest) {
     const refreshToken = generateRefreshToken(tokenPayload)
 
     // 응답 생성
-    const responseData: any = {
+    const responseData: {
+      success: boolean
+      user: {
+        id: string
+        email: string
+        nickname: string
+        avatarUrl: string | null
+      }
+      joinedGroup?: {
+        id: string
+        name: string
+        members: number
+      }
+    } = {
       success: true,
       user: {
-        id: newUser.id,
+        id: newUser.id.toString(),
         email: newUser.email,
         nickname: newUser.nickname,
         avatarUrl: newUser.avatarUrl,

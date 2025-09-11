@@ -238,8 +238,7 @@ export class BalanceService {
 
     const recurringRules = await prisma.recurringRule.findMany({
       where: {
-        ownerType,
-        ownerId,
+        createdBy: BigInt(ownerId),
         isActive: true,
       },
     })
@@ -324,8 +323,7 @@ export class BalanceService {
     // 카테고리별 예산 대비 지출
     const categories = await prisma.category.findMany({
       where: {
-        ownerType,
-        ownerId,
+        createdBy: BigInt(ownerId),
         budgetAmount: { gt: 0 },
       },
       include: {

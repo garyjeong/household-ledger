@@ -25,6 +25,8 @@ const emailSchema = z.object({
   customDomain: z.string().optional(),
 })
 
+type EmailFormData = z.infer<typeof emailSchema>
+
 // 도메인 목록
 const EMAIL_DOMAINS = [
   'naver.com',
@@ -147,7 +149,7 @@ export default function ForgotPasswordPage() {
   const selectedDomain = watch('domain')
 
   // 전체 이메일 주소 생성
-  const getFullEmail = (data: any) => {
+  const getFullEmail = (data: EmailFormData) => {
     const { username, domain, customDomain } = data
     if (!username || !domain) return ''
 
@@ -157,7 +159,7 @@ export default function ForgotPasswordPage() {
     return `${username}@${domain}`
   }
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: EmailFormData) => {
     const fullEmail = getFullEmail(data)
 
     if (!fullEmail) {

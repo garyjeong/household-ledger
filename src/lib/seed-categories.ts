@@ -157,7 +157,7 @@ export function canDeleteCategory(
 
   // 그룹 카테고리는 같은 그룹 멤버만 삭제 가능
   if (category.groupId) {
-    return userGroupId && category.groupId.toString() === userGroupId
+    return Boolean(userGroupId && category.groupId.toString() === userGroupId)
   }
 
   // 개인 카테고리는 생성자만 삭제 가능
@@ -179,7 +179,7 @@ export function canEditCategory(
 
   // 그룹 카테고리는 같은 그룹 멤버만 수정 가능
   if (category.groupId) {
-    return userGroupId && category.groupId.toString() === userGroupId
+    return Boolean(userGroupId && category.groupId.toString() === userGroupId)
   }
 
   // 개인 카테고리는 생성자만 수정 가능

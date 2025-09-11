@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import { NextRequest } from 'next/server'
 import { POST as quickAddHandler } from '@/app/api/transactions/quick-add/route'
 import { createMockRequest } from '../utils/test-helpers'
@@ -105,7 +106,7 @@ describe('Quick Add Transaction API', () => {
         method: 'POST',
         body: validQuickAddData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await quickAddHandler(request)
       const responseData = await response.json()
@@ -121,7 +122,7 @@ describe('Quick Add Transaction API', () => {
         method: 'POST',
         body: validQuickAddData,
         cookies: {},
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await quickAddHandler(request)
       const responseData = await response.json()
@@ -138,7 +139,7 @@ describe('Quick Add Transaction API', () => {
         method: 'POST',
         body: validQuickAddData,
         cookies: { accessToken: 'invalid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await quickAddHandler(request)
       const responseData = await response.json()
@@ -159,7 +160,7 @@ describe('Quick Add Transaction API', () => {
         method: 'POST',
         body: incompleteData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await quickAddHandler(request)
       const responseData = await response.json()
@@ -180,7 +181,7 @@ describe('Quick Add Transaction API', () => {
         method: 'POST',
         body: invalidData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await quickAddHandler(request)
       const responseData = await response.json()
@@ -199,7 +200,7 @@ describe('Quick Add Transaction API', () => {
         method: 'POST',
         body: invalidData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await quickAddHandler(request)
       const responseData = await response.json()
@@ -218,7 +219,7 @@ describe('Quick Add Transaction API', () => {
         method: 'POST',
         body: invalidData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await quickAddHandler(request)
       const responseData = await response.json()
@@ -238,7 +239,7 @@ describe('Quick Add Transaction API', () => {
         method: 'POST',
         body: validQuickAddData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await quickAddHandler(request)
       const responseData = await response.json()
@@ -257,7 +258,7 @@ describe('Quick Add Transaction API', () => {
         method: 'POST',
         body: validQuickAddData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await quickAddHandler(request)
       const responseData = await response.json()
@@ -305,7 +306,7 @@ describe('Quick Add Transaction API', () => {
         method: 'POST',
         body: incomeData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await quickAddHandler(request)
       const responseData = await response.json()
@@ -339,7 +340,7 @@ describe('Quick Add Transaction API', () => {
         method: 'POST',
         body: dataWithoutMemo,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await quickAddHandler(request)
       const responseData = await response.json()
@@ -358,7 +359,7 @@ describe('Quick Add Transaction API', () => {
         method: 'POST',
         body: validQuickAddData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await quickAddHandler(request)
       const responseData = await response.json()
@@ -392,7 +393,7 @@ describe('Quick Add Transaction API', () => {
         method: 'POST',
         body: validQuickAddData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await quickAddHandler(request)
       const responseData = await response.json()

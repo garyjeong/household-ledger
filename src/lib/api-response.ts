@@ -14,6 +14,10 @@ export interface ApiErrorResponse {
   error: string
   code?: string
   details?: any
+  dev?: {
+    timestamp: string
+    stack?: string
+  }
 }
 
 export interface ApiResponseOptions {

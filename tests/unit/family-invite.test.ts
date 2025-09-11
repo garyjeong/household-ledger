@@ -5,7 +5,7 @@
  * - 개인 그룹 자동 생성/삭제 로직
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals'
+// Jest globals are available by default in Jest environment
 import { prismaMock } from '@/lib/prisma-mock'
 
 // Mock modules

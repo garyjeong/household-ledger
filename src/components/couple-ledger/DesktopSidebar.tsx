@@ -439,7 +439,7 @@ export function ResponsiveLayout({
         onClose={() => setIsSuccessModalOpen(false)}
         title="거래 추가 완료!"
         message="새로운 거래가 성공적으로 추가되었습니다"
-        transactionData={savedTransactionData}
+        transactionData={savedTransactionData || undefined}
         autoClose={true}
         autoCloseDelay={4000}
       />

@@ -70,11 +70,7 @@ export function CategoryForm({
       name: initialData?.name || '',
       type: initialData?.type || 'EXPENSE',
       color: initialData?.color || '#6B7280',
-      groupId: initialData?.groupId
-        ? parseInt(initialData.groupId)
-        : currentGroup
-          ? parseInt(currentGroup.id)
-          : undefined,
+      groupId: currentGroup ? parseInt(currentGroup.id) : undefined,
     },
   })
 
@@ -171,9 +167,7 @@ export function CategoryForm({
             </div>
           )}
 
-          {/* 숨겨진 필드들 */}
-          <input type='hidden' {...register('ownerType')} />
-          <input type='hidden' {...register('ownerId')} />
+          {/* 숨겨진 필드들 제거됨 - ownerType, ownerId는 스키마에 존재하지 않음 */}
 
           {/* 버튼 */}
           <div className='flex gap-2 pt-4'>

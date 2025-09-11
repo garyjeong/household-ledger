@@ -89,9 +89,7 @@ function shouldBypassMiddleware(pathname: string): boolean {
  * 공개 경로인지 확인
  */
 function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some(
-    path => pathname === path || (path !== '/' && pathname.startsWith(path + '/'))
-  )
+  return PUBLIC_PATHS.some(path => pathname === path || pathname.startsWith(path + '/'))
 }
 
 /**

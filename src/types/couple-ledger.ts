@@ -75,6 +75,7 @@ export interface MonthlyStats {
   myExpense: number
   partnerExpense: number
   sharedExpense: number
+  transactionCount: number
   categoryBreakdown: Array<{
     categoryId: string
     categoryName: string
@@ -87,6 +88,13 @@ export interface MonthlyStats {
     date: string
     amount: number
     type: TransactionType
+  }>
+  categoryStats: Array<{
+    categoryId: string
+    categoryName: string
+    amount: number
+    transactionCount: number
+    color: string
   }>
 }
 

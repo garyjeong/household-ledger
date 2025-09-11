@@ -19,6 +19,7 @@ interface GroupContextType {
     groupId: string
   ) => Promise<{ success: boolean; error?: string; inviteCode?: string | null; expiresAt?: string }>
   leaveGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>
+  deleteGroup: (groupId: string) => Promise<{ success: boolean; error?: string }>
 }
 
 const GroupContext = createContext<GroupContextType | undefined>(undefined)
@@ -220,6 +221,23 @@ export function GroupProvider({ children }: GroupProviderProps) {
     }
   }
 
+  const deleteGroup = async (groupId: string) => {
+    try {
+      const response = await apiDelete(`/api/groups/${groupId}`)
+
+      if (response.ok) {
+        await refreshGroups() // 그룹 목록 새로고침
+        // 카테고리 캐시 클리어 (그룹 삭제 후 카테고리 변경 반영)
+        clearCategoriesCache()
+        return { success: true }
+      } else {
+        return { success: false, error: response.error || '그룹 삭제에 실패했습니다.' }
+      }
+    } catch (error) {
+      console.error('Delete group error:', error)
+      return { success: false, error: '네트워크 오류가 발생했습니다.' }
+    }
+  }
 
   const value: GroupContextType = {
     groups,
@@ -230,6 +248,7 @@ export function GroupProvider({ children }: GroupProviderProps) {
     generateInvite,
     getInviteCode,
     leaveGroup,
+    deleteGroup,
   }
 
   return <GroupContext.Provider value={value}>{children}</GroupContext.Provider>

@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import { NextRequest } from 'next/server'
 import {
   GET as getTransactionsHandler,
@@ -53,7 +54,7 @@ describe('Transactions API Routes', () => {
         method: 'GET',
         url: '/api/transactions?groupId=1',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await getTransactionsHandler(request)
       const responseData = await response.json()
@@ -68,7 +69,7 @@ describe('Transactions API Routes', () => {
         method: 'GET',
         url: '/api/transactions?groupId=1',
         cookies: {},
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await getTransactionsHandler(request)
       const responseData = await response.json()
@@ -82,7 +83,7 @@ describe('Transactions API Routes', () => {
         method: 'GET',
         url: '/api/transactions',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await getTransactionsHandler(request)
       const responseData = await response.json()
@@ -107,7 +108,7 @@ describe('Transactions API Routes', () => {
         method: 'POST',
         body: validTransactionData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await createTransactionHandler(request)
       const responseData = await response.json()
@@ -128,7 +129,7 @@ describe('Transactions API Routes', () => {
         method: 'POST',
         body: incompleteData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await createTransactionHandler(request)
       const responseData = await response.json()
@@ -147,7 +148,7 @@ describe('Transactions API Routes', () => {
         method: 'POST',
         body: invalidData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await createTransactionHandler(request)
       const responseData = await response.json()
@@ -166,7 +167,7 @@ describe('Transactions API Routes', () => {
         method: 'POST',
         body: invalidData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await createTransactionHandler(request)
       const responseData = await response.json()
@@ -188,7 +189,7 @@ describe('Transactions API Routes', () => {
         method: 'PUT',
         body: updateData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await updateTransactionHandler(request, { params: { id: '1' } })
       const responseData = await response.json()
@@ -203,7 +204,7 @@ describe('Transactions API Routes', () => {
         method: 'PUT',
         body: updateData,
         cookies: {},
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await updateTransactionHandler(request, { params: { id: '1' } })
       const responseData = await response.json()
@@ -217,7 +218,7 @@ describe('Transactions API Routes', () => {
         method: 'PUT',
         body: updateData,
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await updateTransactionHandler(request, { params: { id: 'invalid-id' } })
       const responseData = await response.json()
@@ -232,7 +233,7 @@ describe('Transactions API Routes', () => {
       const request = createMockRequest({
         method: 'DELETE',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await deleteTransactionHandler(request, { params: { id: '1' } })
       const responseData = await response.json()
@@ -245,7 +246,7 @@ describe('Transactions API Routes', () => {
       const request = createMockRequest({
         method: 'DELETE',
         cookies: {},
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await deleteTransactionHandler(request, { params: { id: '1' } })
       const responseData = await response.json()
@@ -258,7 +259,7 @@ describe('Transactions API Routes', () => {
       const request = createMockRequest({
         method: 'DELETE',
         cookies: { accessToken: 'valid-token' },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await deleteTransactionHandler(request, { params: { id: '999' } })
       const responseData = await response.json()
@@ -276,7 +277,7 @@ describe('Transactions API Routes', () => {
           method: 'GET',
           url: `/api/transactions?cursor=${cursor}&limit=10`,
           cookies: { accessToken: 'valid-token' },
-        }) as NextRequest
+        }) as unknown as unknown as NextRequest
 
         const response = await getTransactionsHandler(request)
         const responseData = await response.json()
@@ -298,7 +299,7 @@ describe('Transactions API Routes', () => {
           method: 'GET',
           url: `/api/transactions?cursor=${cursor}&direction=forward&limit=10`,
           cookies: { accessToken: 'valid-token' },
-        }) as NextRequest
+        }) as unknown as unknown as NextRequest
 
         const forwardResponse = await getTransactionsHandler(forwardRequest)
         const forwardData = await forwardResponse.json()
@@ -311,7 +312,7 @@ describe('Transactions API Routes', () => {
           method: 'GET',
           url: `/api/transactions?cursor=${cursor}&direction=backward&limit=10`,
           cookies: { accessToken: 'valid-token' },
-        }) as NextRequest
+        }) as unknown as unknown as NextRequest
 
         const backwardResponse = await getTransactionsHandler(backwardRequest)
         const backwardData = await backwardResponse.json()
@@ -325,7 +326,7 @@ describe('Transactions API Routes', () => {
           method: 'GET',
           url: '/api/transactions?cursor=' + Buffer.from('123').toString('base64'),
           cookies: { accessToken: 'valid-token' },
-        }) as NextRequest
+        }) as unknown as unknown as NextRequest
 
         const response = await getTransactionsHandler(request)
         const responseData = await response.json()
@@ -342,7 +343,7 @@ describe('Transactions API Routes', () => {
           method: 'GET',
           url: `/api/transactions?cursor=${invalidCursor}`,
           cookies: { accessToken: 'valid-token' },
-        }) as NextRequest
+        }) as unknown as unknown as NextRequest
 
         const response = await getTransactionsHandler(request)
 
@@ -357,7 +358,7 @@ describe('Transactions API Routes', () => {
           method: 'GET',
           url: '/api/transactions?page=2&limit=10',
           cookies: { accessToken: 'valid-token' },
-        }) as NextRequest
+        }) as unknown as unknown as NextRequest
 
         const response = await getTransactionsHandler(request)
         const responseData = await response.json()
@@ -376,7 +377,7 @@ describe('Transactions API Routes', () => {
           method: 'GET',
           url: '/api/transactions?page=1&limit=20',
           cookies: { accessToken: 'valid-token' },
-        }) as NextRequest
+        }) as unknown as unknown as NextRequest
 
         const response = await getTransactionsHandler(request)
         const responseData = await response.json()
@@ -397,7 +398,7 @@ describe('Transactions API Routes', () => {
           method: 'GET',
           url: '/api/transactions?page=3&limit=15',
           cookies: { accessToken: 'valid-token' },
-        }) as NextRequest
+        }) as unknown as unknown as NextRequest
 
         const response = await getTransactionsHandler(request)
         const responseData = await response.json()
@@ -424,7 +425,7 @@ describe('Transactions API Routes', () => {
           method: 'GET',
           url: `/api/transactions?cursor=${deepCursor}&limit=20`,
           cookies: { accessToken: 'valid-token' },
-        }) as NextRequest
+        }) as unknown as unknown as NextRequest
 
         const cursorResponse = await getTransactionsHandler(cursorRequest)
         const cursorData = await cursorResponse.json()
@@ -449,7 +450,7 @@ describe('Transactions API Routes', () => {
               method: 'GET',
               url: `/api/transactions?cursor=${cursor}&limit=10`,
               cookies: { accessToken: 'valid-token' },
-            }) as NextRequest
+            }) as unknown as unknown as NextRequest
           )
         )
 
@@ -476,7 +477,7 @@ describe('Transactions API Routes', () => {
           method: 'GET',
           url: `/api/transactions?cursor=${cursor}&type=EXPENSE&categoryId=5&startDate=2024-01-01&endDate=2024-01-31`,
           cookies: { accessToken: 'valid-token' },
-        }) as NextRequest
+        }) as unknown as unknown as NextRequest
 
         const response = await getTransactionsHandler(request)
         const responseData = await response.json()
@@ -494,7 +495,7 @@ describe('Transactions API Routes', () => {
           method: 'GET',
           url: `/api/transactions?cursor=${cursor}&search=${searchQuery}&limit=5`,
           cookies: { accessToken: 'valid-token' },
-        }) as NextRequest
+        }) as unknown as unknown as NextRequest
 
         const response = await getTransactionsHandler(request)
         const responseData = await response.json()
@@ -512,7 +513,7 @@ describe('Transactions API Routes', () => {
           method: 'GET',
           url: `/api/transactions?cursor=${cursor}`,
           cookies: { accessToken: 'valid-token' },
-        }) as NextRequest
+        }) as unknown as unknown as NextRequest
 
         const response = await getTransactionsHandler(request)
         const responseData = await response.json()
@@ -529,7 +530,7 @@ describe('Transactions API Routes', () => {
           method: 'GET',
           url: `/api/transactions?cursor=${malformedCursor}`,
           cookies: { accessToken: 'valid-token' },
-        }) as NextRequest
+        }) as unknown as unknown as NextRequest
 
         const response = await getTransactionsHandler(request)
 
@@ -542,7 +543,7 @@ describe('Transactions API Routes', () => {
           method: 'GET',
           url: '/api/transactions?limit=10000', // Very large limit
           cookies: { accessToken: 'valid-token' },
-        }) as NextRequest
+        }) as unknown as unknown as NextRequest
 
         const response = await getTransactionsHandler(request)
         const responseData = await response.json()

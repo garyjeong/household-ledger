@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     // 사용자의 그룹 정보 가져오기
     // console.log('📊 사용자 데이터 조회 시작')
     const userData = await prisma.user.findUnique({
-      where: { id: BigInt(user.userId) },
+      where: { id: BigInt(user!.userId) },
       select: { groupId: true },
     })
     // console.log('📊 사용자 데이터 조회 완료:', userData)
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       groupId,
       timestamp: new Date().toISOString(),
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Categories API 에러:', error)
     return NextResponse.json(
       { error: '카테고리를 불러오는데 실패했습니다', code: 'INTERNAL_ERROR' },
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     // 사용자의 그룹 정보 가져오기
     const userData = await prisma.user.findUnique({
-      where: { id: BigInt(user.userId) },
+      where: { id: BigInt(user!.userId) },
       select: { groupId: true },
     })
 
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
     const newCategory = await prisma.category.create({
       data: {
         groupId: targetGroupId,
-        createdBy: BigInt(user.userId),
+        createdBy: BigInt(user!.userId),
         name,
         type,
         color: color || '#6B7280', // 기본 색상
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ 카테고리 생성 중 오류:', error)
 
     // Prisma 에러 처리

@@ -16,7 +16,7 @@ jest.mock('@/lib/security-utils', () => ({
 }))
 
 import { NextRequest, NextResponse } from 'next/server'
-import { middleware } from '@/src/middleware'
+import { middleware } from '@/middleware'
 
 describe('Middleware', () => {
   beforeEach(() => {

@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import { NextRequest } from 'next/server'
 import { POST as signupHandler } from '@/app/api/auth/signup/route'
 import { POST as loginHandler } from '@/app/api/auth/login/route'
@@ -15,42 +16,28 @@ import {
   createMockToken,
 } from '../utils/test-helpers'
 
+// Mock functions
+const mockFindUserByEmail = jest.fn()
+const mockCreateUser = jest.fn()
+const mockVerifyUserPassword = jest.fn()
+const mockFindUserById = jest.fn()
+const mockGenerateAccessToken = jest.fn()
+const mockGenerateRefreshToken = jest.fn()
+const mockVerifyAccessToken = jest.fn()
+const mockVerifyRefreshToken = jest.fn()
+
 // Mock the auth module
 jest.mock('@/lib/auth', () => ({
   ...jest.requireActual('@/lib/auth'),
-  findUserByEmail: jest.fn(),
-  createUser: jest.fn(),
-  verifyUserPassword: jest.fn(),
-  findUserById: jest.fn(),
-  generateAccessToken: jest.fn(),
-  generateRefreshToken: jest.fn(),
-  verifyAccessToken: jest.fn(),
-  verifyRefreshToken: jest.fn(),
+  findUserByEmail: mockFindUserByEmail,
+  createUser: mockCreateUser,
+  verifyUserPassword: mockVerifyUserPassword,
+  findUserById: mockFindUserById,
+  generateAccessToken: mockGenerateAccessToken,
+  generateRefreshToken: mockGenerateRefreshToken,
+  verifyAccessToken: mockVerifyAccessToken,
+  verifyRefreshToken: mockVerifyRefreshToken,
 }))
-
-import {
-  findUserByEmail,
-  createUser,
-  verifyUserPassword,
-  findUserById,
-  generateAccessToken,
-  generateRefreshToken,
-  verifyAccessToken,
-  verifyRefreshToken,
-} from '@/lib/auth'
-
-const mockFindUserByEmail = findUserByEmail as jest.MockedFunction<typeof findUserByEmail>
-const mockCreateUser = createUser as jest.MockedFunction<typeof createUser>
-const mockVerifyUserPassword = verifyUserPassword as jest.MockedFunction<typeof verifyUserPassword>
-const mockFindUserById = findUserById as jest.MockedFunction<typeof findUserById>
-const mockGenerateAccessToken = generateAccessToken as jest.MockedFunction<
-  typeof generateAccessToken
->
-const mockGenerateRefreshToken = generateRefreshToken as jest.MockedFunction<
-  typeof generateRefreshToken
->
-const mockVerifyAccessToken = verifyAccessToken as jest.MockedFunction<typeof verifyAccessToken>
-const mockVerifyRefreshToken = verifyRefreshToken as jest.MockedFunction<typeof verifyRefreshToken>
 
 describe('Auth API Routes', () => {
   beforeEach(() => {
@@ -121,7 +108,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         body: invalidData,
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await signupHandler(request)
       const responseData = await response.json()
@@ -139,7 +126,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         body: weakPasswordData,
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await signupHandler(request)
       const responseData = await response.json()
@@ -157,7 +144,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         body: shortNicknameData,
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await signupHandler(request)
       const responseData = await response.json()
@@ -175,7 +162,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         body: incompleteData,
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await signupHandler(request)
       const responseData = await response.json()
@@ -208,7 +195,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         body: validLoginData,
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await loginHandler(request)
       const responseData = await response.json()
@@ -228,7 +215,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         body: validLoginData,
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await loginHandler(request)
       const responseData = await response.json()
@@ -245,7 +232,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         body: validLoginData,
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await loginHandler(request)
       const responseData = await response.json()
@@ -263,7 +250,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         body: invalidEmailData,
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await loginHandler(request)
       const responseData = await response.json()
@@ -286,7 +273,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         body: rememberMeData,
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await loginHandler(request)
       const responseData = await response.json()
@@ -301,7 +288,7 @@ describe('Auth API Routes', () => {
     it('should logout successfully', async () => {
       const request = createMockRequest({
         method: 'POST',
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await logoutHandler()
       const responseData = await response.json()
@@ -337,7 +324,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: { refreshToken },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await refreshHandler(request)
       const responseData = await response.json()
@@ -355,7 +342,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: {},
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await refreshHandler(request)
       const responseData = await response.json()
@@ -373,7 +360,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: { refreshToken },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await refreshHandler(request)
       const responseData = await response.json()
@@ -392,7 +379,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: { refreshToken },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await refreshHandler(request)
       const responseData = await response.json()
@@ -415,7 +402,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: { refreshToken },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await refreshHandler(request)
       const responseData = await response.json()
@@ -436,7 +423,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'POST',
         cookies: { refreshToken },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await refreshHandler(request)
 
@@ -469,7 +456,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'GET',
         cookies: { accessToken },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await meHandler(request)
       const responseData = await response.json()
@@ -484,7 +471,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'GET',
         cookies: {},
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await meHandler(request)
       const responseData = await response.json()
@@ -501,7 +488,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'GET',
         cookies: { accessToken },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await meHandler(request)
       const responseData = await response.json()
@@ -519,7 +506,7 @@ describe('Auth API Routes', () => {
       const request = createMockRequest({
         method: 'GET',
         cookies: { accessToken },
-      }) as NextRequest
+      }) as unknown as NextRequest
 
       const response = await meHandler(request)
       const responseData = await response.json()

@@ -6,10 +6,9 @@ import {
   TransactionListSkeleton,
   MonthlyDashboardSkeleton,
   StatisticsPageSkeleton,
-  CategoryItemSkeleton,
-  GroupCardSkeleton,
-  Spinner,
-  PageOverlayLoader,
+  CategoryGridSkeleton,
+  LoadingSpinner,
+  PageLoadingOverlay,
 } from '@/components/loading/SkeletonLoaders'
 import { cn } from '@/lib/utils'
 
@@ -45,7 +44,7 @@ describe('SkeletonLoaders', () => {
     })
 
     it('should pass through additional props', () => {
-      render(<Skeleton data-testid="skeleton" role="presentation" />)
+      render(<Skeleton data-testid="skeleton" />)
       
       const skeleton = screen.getByTestId('skeleton')
       expect(skeleton).toHaveAttribute('role', 'presentation')
@@ -175,16 +174,16 @@ describe('SkeletonLoaders', () => {
     })
   })
 
-  describe('CategoryItemSkeleton', () => {
+  describe('CategoryGridSkeleton', () => {
     it('should render category item structure', () => {
-      const { container } = render(<CategoryItemSkeleton />)
+      const { container } = render(<CategoryGridSkeleton />)
       
       const item = container.firstChild
       expect(item).toHaveClass('flex', 'items-center', 'justify-between', 'p-3', 'border', 'rounded-md')
     })
 
     it('should include category icon, name and action buttons', () => {
-      const { container } = render(<CategoryItemSkeleton />)
+      const { container } = render(<CategoryGridSkeleton />)
       
       // 카테고리 아이콘 (원형)
       const icon = container.querySelector('.h-6.w-6.rounded-full')
@@ -200,7 +199,7 @@ describe('SkeletonLoaders', () => {
     })
 
     it('should have proper flex layout', () => {
-      const { container } = render(<CategoryItemSkeleton />)
+      const { container } = render(<CategoryGridSkeleton />)
       
       // 왼쪽 섹션 (아이콘 + 이름)
       const leftSection = container.querySelector('.flex.items-center.space-x-3')
@@ -212,43 +211,11 @@ describe('SkeletonLoaders', () => {
     })
   })
 
-  describe('GroupCardSkeleton', () => {
-    it('should render group card structure', () => {
-      const { container } = render(<GroupCardSkeleton />)
-      
-      // Card 컴포넌트 사용
-      const card = container.querySelector('.card')
-      expect(card).toBeInTheDocument()
-    })
+  // GroupCardSkeleton 컴포넌트가 제거됨
 
-    it('should include header and content sections', () => {
-      const { container } = render(<GroupCardSkeleton />)
-      
-      // CardHeader
-      const header = container.querySelector('.card-header')
-      expect(header).toBeInTheDocument()
-      
-      // CardContent
-      const content = container.querySelector('.card-content')
-      expect(content).toBeInTheDocument()
-    })
-
-    it('should have proper skeleton elements in header and content', () => {
-      const { container } = render(<GroupCardSkeleton />)
-      
-      // 헤더의 스켈레톤들
-      const headerSkeletons = container.querySelectorAll('.card-header .h-5')
-      expect(headerSkeletons.length).toBeGreaterThanOrEqual(1)
-      
-      // 컨텐츠의 스켈레톤들
-      const contentSkeletons = container.querySelectorAll('.card-content .h-4')
-      expect(contentSkeletons.length).toBeGreaterThanOrEqual(2)
-    })
-  })
-
-  describe('Spinner', () => {
+  describe('LoadingSpinner', () => {
     it('should render with default medium size', () => {
-      const { container } = render(<Spinner data-testid="spinner" />)
+      const { container } = render(<LoadingSpinner data-testid="spinner" />)
       
       const spinner = screen.getByTestId('spinner')
       expect(spinner).toHaveClass('flex', 'items-center', 'justify-center')
@@ -259,8 +226,8 @@ describe('SkeletonLoaders', () => {
     })
 
     it('should support different sizes', () => {
-      const { container: smallContainer } = render(<Spinner size="sm" />)
-      const { container: largeContainer } = render(<Spinner size="lg" />)
+      const { container: smallContainer } = render(<LoadingSpinner size="sm" />)
+      const { container: largeContainer } = render(<LoadingSpinner size="lg" />)
       
       const smallIcon = smallContainer.querySelector('.h-4.w-4')
       const largeIcon = largeContainer.querySelector('.h-8.w-8')
@@ -270,29 +237,29 @@ describe('SkeletonLoaders', () => {
     })
 
     it('should apply custom className', () => {
-      render(<Spinner className="custom-spinner" data-testid="spinner" />)
+      render(<LoadingSpinner className="custom-spinner" data-testid="spinner" />)
       
       const spinner = screen.getByTestId('spinner')
       expect(spinner).toHaveClass('custom-spinner')
     })
 
     it('should pass through additional props', () => {
-      render(<Spinner data-testid="spinner" role="status" />)
+      render(<LoadingSpinner data-testid="spinner" role="status" />)
       
       const spinner = screen.getByTestId('spinner')
       expect(spinner).toHaveAttribute('role', 'status')
     })
   })
 
-  describe('PageOverlayLoader', () => {
+  describe('PageLoadingOverlay', () => {
     it('should not render when isLoading is false', () => {
-      const { container } = render(<PageOverlayLoader isLoading={false} />)
+      const { container } = render(<PageLoadingOverlay isLoading={false} />)
       
       expect(container.firstChild).toBeNull()
     })
 
     it('should render overlay when isLoading is true', () => {
-      const { container } = render(<PageOverlayLoader isLoading={true} />)
+      const { container } = render(<PageLoadingOverlay isLoading={true} />)
       
       const overlay = container.firstChild
       expect(overlay).toHaveClass(
@@ -308,7 +275,7 @@ describe('SkeletonLoaders', () => {
     })
 
     it('should display spinner in overlay', () => {
-      const { container } = render(<PageOverlayLoader isLoading={true} />)
+      const { container } = render(<PageLoadingOverlay isLoading={true} />)
       
       const spinner = container.querySelector('.animate-spin')
       expect(spinner).toBeInTheDocument()
@@ -316,20 +283,20 @@ describe('SkeletonLoaders', () => {
     })
 
     it('should display custom message when provided', () => {
-      render(<PageOverlayLoader isLoading={true} message="데이터를 불러오는 중..." />)
+      render(<PageLoadingOverlay isLoading={true} message="데이터를 불러오는 중..." />)
       
       expect(screen.getByText('데이터를 불러오는 중...')).toBeInTheDocument()
     })
 
     it('should not display message when not provided', () => {
-      const { container } = render(<PageOverlayLoader isLoading={true} />)
+      const { container } = render(<PageLoadingOverlay isLoading={true} />)
       
       const message = container.querySelector('p')
       expect(message).toBeNull()
     })
 
     it('should have proper overlay styling', () => {
-      const { container } = render(<PageOverlayLoader isLoading={true} message="Loading..." />)
+      const { container } = render(<PageLoadingOverlay isLoading={true} message="Loading..." />)
       
       const contentBox = container.querySelector('.bg-white.rounded-lg.shadow-xl')
       expect(contentBox).toBeInTheDocument()
@@ -337,7 +304,7 @@ describe('SkeletonLoaders', () => {
     })
 
     it('should handle overlay clicks properly', () => {
-      const { container } = render(<PageOverlayLoader isLoading={true} />)
+      const { container } = render(<PageLoadingOverlay isLoading={true} />)
       
       const overlay = container.firstChild as HTMLElement
       expect(overlay).toHaveClass('fixed', 'inset-0')
@@ -348,7 +315,7 @@ describe('SkeletonLoaders', () => {
 
   describe('Accessibility', () => {
     it('should provide proper ARIA attributes for loaders', () => {
-      render(<Spinner role="status" aria-label="로딩 중" />)
+      render(<LoadingSpinner role="status" aria-label="로딩 중" />)
       
       const spinner = document.querySelector('[role="status"]')
       expect(spinner).toBeInTheDocument()
@@ -356,7 +323,7 @@ describe('SkeletonLoaders', () => {
     })
 
     it('should support screen reader text for skeleton content', () => {
-      render(<Skeleton role="presentation" aria-hidden="true" />)
+      render(<Skeleton aria-hidden="true" />)
       
       const skeleton = document.querySelector('[role="presentation"]')
       expect(skeleton).toBeInTheDocument()
@@ -373,7 +340,7 @@ describe('SkeletonLoaders', () => {
     })
 
     it('should use CSS animations for spinner rotation', () => {
-      const { container } = render(<Spinner />)
+      const { container } = render(<LoadingSpinner />)
       
       const icon = container.querySelector('svg')
       expect(icon).toHaveClass('animate-spin')

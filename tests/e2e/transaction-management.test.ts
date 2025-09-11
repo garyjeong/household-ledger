@@ -137,8 +137,8 @@ test.describe('Transaction Management - T-019', () => {
     await page.getByRole('combobox', { name: /거래 타입/ }).click()
     await page.getByRole('option', { name: '지출' }).click()
 
-    await page.getByLabelText(/금액/).fill('8500')
-    await page.getByLabelText(/거래 내용/).fill('아메리카노')
+    await page.getByLabel(/금액/).fill('8500')
+    await page.getByLabel(/거래 내용/).fill('아메리카노')
 
     // Select category
     await page.getByRole('combobox', { name: /카테고리/ }).click()
@@ -152,7 +152,7 @@ test.describe('Transaction Management - T-019', () => {
     await page.getByRole('button', { name: /거래 추가/ }).click()
 
     // Fill amount
-    await page.getByLabelText(/금액/).fill('10')
+    await page.getByLabel(/금액/).fill('10')
 
     // Change currency to USD
     await page.getByRole('combobox', { name: /통화/ }).click()
@@ -167,17 +167,17 @@ test.describe('Transaction Management - T-019', () => {
     await page.getByRole('button', { name: /거래 추가/ }).click()
 
     // Fill form
-    await page.getByLabelText(/금액/).fill('8500')
-    await page.getByLabelText(/거래 내용/).fill('아메리카노')
+    await page.getByLabel(/금액/).fill('8500')
+    await page.getByLabel(/거래 내용/).fill('아메리카노')
 
     await page.getByRole('combobox', { name: /카테고리/ }).click()
     await page.getByText('카페').click()
 
     // Add memo
-    await page.getByLabelText(/메모/).fill('스타벅스 아메리카노')
+    await page.getByLabel(/메모/).fill('스타벅스 아메리카노')
 
     // Add tags
-    await page.getByPlaceholderText('태그 입력 후 Enter').fill('커피')
+    await page.getByPlaceholder('태그 입력 후 Enter').fill('커피')
     await page.getByRole('button', { name: '추가' }).click()
 
     await expect(page.locator('text=커피 ×')).toBeVisible()
@@ -201,12 +201,12 @@ test.describe('Transaction Management - T-019', () => {
     await expect(page.locator('text=거래 내용을 입력해주세요')).toBeVisible()
 
     // Test invalid amount
-    await page.getByLabelText(/금액/).fill('-100')
+    await page.getByLabel(/금액/).fill('-100')
     await expect(page.locator('text=금액은 0보다 커야 합니다')).toBeVisible()
 
     // Test description too long
     const longText = 'a'.repeat(101)
-    await page.getByLabelText(/거래 내용/).fill(longText)
+    await page.getByLabel(/거래 내용/).fill(longText)
     await expect(page.locator('text=거래 내용은 100자 이하로 입력해주세요')).toBeVisible()
   })
 
@@ -270,8 +270,8 @@ test.describe('Transaction Management - T-019', () => {
     await expect(page.locator('text=새 거래 추가')).toBeVisible()
 
     // Form should be scrollable on mobile
-    await page.getByLabelText(/금액/).fill('1000')
-    await page.getByLabelText(/거래 내용/).fill('모바일 테스트')
+    await page.getByLabel(/금액/).fill('1000')
+    await page.getByLabel(/거래 내용/).fill('모바일 테스트')
   })
 
   test('should handle offline state gracefully', async ({ page }) => {
@@ -286,6 +286,6 @@ test.describe('Transaction Management - T-019', () => {
     await page.context().setOffline(false)
 
     // Should work normally again
-    await page.getByLabelText(/금액/).fill('5000')
+    await page.getByLabel(/금액/).fill('5000')
   })
 })

@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import { NextRequest } from 'next/server'
 import { GET as getBalanceHandler } from '@/app/api/balance/route'
 import { createMockRequest, expectApiSuccess, expectApiError } from '../utils/test-helpers'
@@ -71,11 +72,11 @@ describe('/api/balance', () => {
 
   describe('GET /api/balance', () => {
     it('인증되지 않은 요청을 거부해야 한다', async () => {
-      const request = createMockRequest('GET', '/api/balance')
+      const request = createMockRequest({ method: 'GET', url: '/api/balance' })
 
       const response = await getBalanceHandler(request)
 
-      expectApiError(response, 401, 'AUTH_REQUIRED')
+      await await expectApiError(response, 401, 'AUTH_REQUIRED')
     })
 
     it('기본 잔액 정보를 성공적으로 반환해야 한다', async () => {
@@ -251,7 +252,7 @@ describe('/api/balance', () => {
 
       const response = await getBalanceHandler(request)
 
-      expectApiError(response, 403, 'ACCESS_DENIED')
+      await expectApiError(response, 403, 'ACCESS_DENIED')
     })
 
     it('잘못된 쿼리 파라미터를 거부해야 한다', async () => {
@@ -263,7 +264,7 @@ describe('/api/balance', () => {
 
       const response = await getBalanceHandler(request)
 
-      expectApiError(response, 400, 'VALIDATION_ERROR')
+      await expectApiError(response, 400, 'VALIDATION_ERROR')
     })
 
     it('BalanceService 에러를 올바르게 처리해야 한다', async () => {
@@ -277,7 +278,7 @@ describe('/api/balance', () => {
 
       const response = await getBalanceHandler(request)
 
-      expectApiError(response, 500, 'INTERNAL_ERROR')
+      await expectApiError(response, 500, 'INTERNAL_ERROR')
     })
 
     it('빈 결과를 올바르게 처리해야 한다', async () => {

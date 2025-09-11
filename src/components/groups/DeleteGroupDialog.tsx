@@ -156,7 +156,7 @@ export function DeleteGroupDialog({ open, onOpenChange, group }: DeleteGroupDial
           {/* 확인 입력 */}
           <div className="space-y-2">
             <Label htmlFor="confirm-text" className="text-sm font-medium">
-              삭제를 확인하려면 그룹 이름 <span className="font-bold text-red-600">"{group.name}"</span>을 입력하세요:
+              삭제를 확인하려면 그룹 이름 <span className="font-bold text-red-600">&quot;{group.name}&quot;</span>을 입력하세요:
             </Label>
             <Input
               id="confirm-text"

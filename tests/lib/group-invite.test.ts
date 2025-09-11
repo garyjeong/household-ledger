@@ -1,23 +1,23 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+// Jest globals are available by default in Jest environment
 import { generateInviteCode, validateInviteCode, cleanupExpiredInviteCodes } from '@/lib/auth'
 
 // Mock Prisma
 const mockPrisma = {
   groupInvite: {
-    deleteMany: vi.fn(),
-    create: vi.fn(),
-    findUnique: vi.fn(),
-    delete: vi.fn(),
+    deleteMany: jest.fn(),
+    create: jest.fn(),
+    findUnique: jest.fn(),
+    delete: jest.fn(),
   },
 }
 
-vi.mock('@/lib/prisma', () => ({
+jest.mock('@/lib/prisma', () => ({
   prisma: mockPrisma,
 }))
 
 describe('Group Invite Functions', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
   })
 
   describe('generateInviteCode', () => {
@@ -44,7 +44,7 @@ describe('Group Invite Functions', () => {
       const mockDate = new Date('2024-01-01T00:00:00Z')
       const expectedExpiry = new Date('2024-01-02T00:00:00Z')
 
-      vi.spyOn(global, 'Date').mockImplementation(() => mockDate)
+      jest.spyOn(global, 'Date').mockImplementation(() => mockDate)
 
       mockPrisma.groupInvite.deleteMany.mockResolvedValue({ count: 0 })
       mockPrisma.groupInvite.create.mockImplementation(data => {
@@ -61,7 +61,7 @@ describe('Group Invite Functions', () => {
 
       await generateInviteCode('1', '1')
 
-      vi.restoreAllMocks()
+      jest.restoreAllMocks()
     })
 
     it('should clean up existing non-expired invite codes before creating new one', async () => {
