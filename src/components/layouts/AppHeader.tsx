@@ -40,37 +40,36 @@ export default function AppHeader({
   return (
     <div className='bg-white border-b border-slate-200 sticky top-0 z-40 backdrop-blur-sm bg-white/95'>
       <div className='container-responsive'>
-        <div className='flex items-center justify-between h-14 sm:h-16'>
-          <div className='flex items-center gap-2 sm:gap-4 min-w-0 flex-1'>
+        <div className='flex items-center h-14 sm:h-16 relative'>
+          {/* 좌측 영역 - 뒤로가기 버튼 */}
+          <div className='flex items-center min-w-0 flex-1'>
             {showBackButton && (
-              <>
-                <Link
-                  href={backHref}
-                  className='flex items-center gap-1 sm:gap-2 text-slate-600 hover:text-slate-900 cursor-pointer transition-colors btn-touch p-1'
-                >
-                  <ArrowLeft className='h-4 w-4 flex-shrink-0' />
-                  <span className='text-xs sm:text-sm font-medium hidden xs:inline'>
-                    {backText}
-                  </span>
-                </Link>
-
-                <div className='h-4 sm:h-6 w-px bg-slate-300 hidden xs:block'></div>
-              </>
+              <Link
+                href={backHref}
+                className='flex items-center gap-1 sm:gap-2 text-slate-600 hover:text-slate-900 cursor-pointer transition-colors btn-touch p-1'
+              >
+                <ArrowLeft className='h-4 w-4 flex-shrink-0' />
+                <span className='text-xs sm:text-sm font-medium hidden xs:inline'>
+                  {backText}
+                </span>
+              </Link>
             )}
-
-            <div className='min-w-0 flex-1'>
-              {displayTitle && (
-                <h1 className='text-base sm:text-xl font-bold text-slate-900 truncate'>
-                  {displayTitle}
-                </h1>
-              )}
-              {displaySubtitle && (
-                <p className='text-2xs sm:text-xs text-slate-500 truncate'>{displaySubtitle}</p>
-              )}
-            </div>
           </div>
 
-          <div className='flex items-center gap-3'>
+          {/* 중앙 영역 - 제목 */}
+          <div className='absolute left-1/2 transform -translate-x-1/2 text-center min-w-0 max-w-[60%]'>
+            {displayTitle && (
+              <h1 className='text-base sm:text-xl font-bold text-slate-900 truncate'>
+                {displayTitle}
+              </h1>
+            )}
+            {displaySubtitle && (
+              <p className='text-2xs sm:text-xs text-slate-500 truncate'>{displaySubtitle}</p>
+            )}
+          </div>
+
+          {/* 우측 영역 - 설정 버튼들 */}
+          <div className='flex items-center gap-3 justify-end min-w-0 flex-1'>
             <Button
               variant='ghost'
               size='sm'

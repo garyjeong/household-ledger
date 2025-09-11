@@ -99,9 +99,14 @@ export function usePrefetchMonthlyStats() {
     queryClient.prefetchQuery({
       queryKey: ['monthly-stats', prevPeriod, currentGroup?.id],
       queryFn: async (): Promise<MonthlyStats> => {
-        const params = new URLSearchParams({ period: prevPeriod })
+        const params = new URLSearchParams()
+        const [prevYear, prevMonth] = prevPeriod.split('-')
+        const year = parseInt(prevYear, 10)
+        const month = parseInt(prevMonth, 10)
+        if (!Number.isNaN(year)) params.set('year', String(year))
+        if (!Number.isNaN(month)) params.set('month', String(month))
         if (currentGroup?.id) {
-          params.append('groupId', currentGroup.id)
+          params.set('groupId', currentGroup.id)
         }
 
         const response = await apiGet(`/api/dashboard/monthly-stats?${params}`)
@@ -127,9 +132,14 @@ export function usePrefetchMonthlyStats() {
       queryClient.prefetchQuery({
         queryKey: ['monthly-stats', nextPeriod, currentGroup?.id],
         queryFn: async (): Promise<MonthlyStats> => {
-          const params = new URLSearchParams({ period: nextPeriod })
+          const params = new URLSearchParams()
+          const [nextYear, nextMonth] = nextPeriod.split('-')
+          const year = parseInt(nextYear, 10)
+          const month = parseInt(nextMonth, 10)
+          if (!Number.isNaN(year)) params.set('year', String(year))
+          if (!Number.isNaN(month)) params.set('month', String(month))
           if (currentGroup?.id) {
-            params.append('groupId', currentGroup.id)
+            params.set('groupId', currentGroup.id)
           }
 
           const response = await apiGet(`/api/dashboard/monthly-stats?${params}`)

@@ -142,27 +142,37 @@ export function DesktopSidebar({ onQuickAddClick, className = '' }: DesktopSideb
       <div className='h-full flex flex-col'>
         {/* 헤더 */}
         <div className='p-4 border-b border-gray-200'>
-          <div className='flex items-center justify-between'>
-            {!isCollapsed && (
+          {isCollapsed ? (
+            /* 접힌 상태: 화살표 버튼만 중앙에 표시 */
+            <div className='flex items-center justify-center'>
+              <Button
+                type='button'
+                variant='ghost'
+                size='sm'
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className='h-8 w-8 p-0 hover:bg-gray-50 rounded-lg transition-colors'
+              >
+                <ChevronRight className='h-4 w-4' />
+              </Button>
+            </div>
+          ) : (
+            /* 펼쳐진 상태: 로고와 접기 버튼 양쪽 배치 */
+            <div className='flex items-center justify-between'>
               <div className='flex items-center gap-2'>
                 <Heart className='h-6 w-6 text-blue-500' />
                 <h1 className='text-lg font-bold text-gray-900'>우리집 가계부</h1>
               </div>
-            )}
-            <Button
-              type='button'
-              variant='ghost'
-              size='sm'
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className='h-8 w-8 p-0 hover:bg-gray-50'
-            >
-              {isCollapsed ? (
-                <ChevronRight className='h-4 w-4' />
-              ) : (
+              <Button
+                type='button'
+                variant='ghost'
+                size='sm'
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className='h-8 w-8 p-0 hover:bg-gray-50 rounded-lg transition-colors'
+              >
                 <ChevronLeft className='h-4 w-4' />
-              )}
-            </Button>
-          </div>
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* 빠른입력 버튼 */}

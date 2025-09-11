@@ -89,7 +89,9 @@ function shouldBypassMiddleware(pathname: string): boolean {
  * 공개 경로인지 확인
  */
 function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some(path => pathname === path || pathname.startsWith(path + '/'))
+  return PUBLIC_PATHS.some(
+    path => pathname === path || (path !== '/' && pathname.startsWith(path + '/'))
+  )
 }
 
 /**
@@ -279,18 +281,19 @@ export function middleware(request: NextRequest) {
     if (isPublicPath(pathname) || isPublicApiPath(pathname)) {
       const tokenValidation = validateToken(request)
       // 이미 로그인된 사용자가 공개 페이지에 접근 시 메인 페이지로 리다이렉트
-      if (tokenValidation.isValid && isPublicPath(pathname)) {
+      if (
+        tokenValidation.isValid &&
+        tokenValidation.tokenType === 'access' &&
+        isPublicPath(pathname)
+      ) {
         return NextResponse.redirect(new URL('/', request.url))
       }
 
       // 공개 경로에 대한 기본 헤더 설정
       const response = NextResponse.next()
       response.headers.set('X-Request-ID', context.requestId)
-
-      // 공개 경로 접근 로깅 비활성화
-      // if (process.env.NODE_ENV === 'development') {
-      //   safeConsole.log('공개 경로 접근', context)
-      // }
+      response.headers.set('X-Content-Type-Options', 'nosniff')
+      response.headers.set('X-Frame-Options', 'DENY')
 
       return response
     }
@@ -300,7 +303,7 @@ export function middleware(request: NextRequest) {
       const tokenValidation = validateToken(request)
 
       if (!tokenValidation.isValid) {
-        // API 경로인 경우 401 응답
+        // API 경로인 경우 JSON 응답 (401)
         if (pathname.startsWith('/api/')) {
           return createSecurityResponse('unauthorized', context, tokenValidation.error)
         }
@@ -311,6 +314,14 @@ export function middleware(request: NextRequest) {
           protocol: request.nextUrl.protocol,
           host: request.nextUrl.host,
         })
+      }
+
+      // Refresh 토큰만 있는 경우 API 요청은 클라이언트에서 처리하도록 허용
+      if (tokenValidation.tokenType === 'refresh' && pathname.startsWith('/api/')) {
+        const response = NextResponse.next()
+        response.headers.set('X-Request-ID', context.requestId)
+        response.headers.set('X-Token-Status', 'refresh-required')
+        return response
       }
 
       // 인증 성공 로깅 (필요시에만)

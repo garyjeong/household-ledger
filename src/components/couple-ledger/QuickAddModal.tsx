@@ -31,11 +31,13 @@ const getDateChips = () => {
   const today = new Date()
   const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000)
   const threeDaysAgo = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000)
+  const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
 
   return [
     { label: '오늘', value: today.toISOString().split('T')[0] },
     { label: '어제', value: yesterday.toISOString().split('T')[0] },
     { label: '3일 전', value: threeDaysAgo.toISOString().split('T')[0] },
+    { label: '7일 전', value: sevenDaysAgo.toISOString().split('T')[0] },
   ]
 }
 
@@ -471,7 +473,7 @@ export function QuickAddModal({
             </div>
 
             <div className='space-y-3'>
-                <div className='flex gap-2 mb-2'>
+                <div className='grid grid-cols-2 gap-2 mb-2'>
                   {getDateChips().map(chip => (
                     <Button
                       key={chip.label}
