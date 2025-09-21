@@ -126,7 +126,7 @@ export function CategoryBarChart({
   }
 
   return (
-    <Card className={className}>
+    <Card className={className} style={{ height: '400px' }}>
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
           <BarChart3 className='h-5 w-5' />
@@ -134,47 +134,45 @@ export function CategoryBarChart({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className='h-[400px] w-full'>
-          <ResponsiveContainer width='100%' height='100%'>
-            <BarChart
-              data={chartData}
-              margin={{
-                top: 20,
-                right: 30,
-                left: 20,
-                bottom: 60,
-              }}
-            >
-              <CartesianGrid strokeDasharray='3 3' stroke='#e2e8f0' />
-              <XAxis
-                dataKey='category'
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 12, fill: '#64748b' }}
-                angle={-45}
-                textAnchor='end'
-                height={80}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fontSize: 12, fill: '#64748b' }}
-                tickFormatter={formatKRW}
-              />
-              <Tooltip content={<CustomTooltip />} />
+        <ResponsiveContainer width='100%' height='100%'>
+          <BarChart
+            data={chartData}
+            margin={{
+              top: 20,
+              right: 30,
+              left: 20,
+              bottom: 60,
+            }}
+          >
+            <CartesianGrid strokeDasharray='3 3' stroke='#e2e8f0' />
+            <XAxis
+              dataKey='category'
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 12, fill: '#64748b' }}
+              angle={-45}
+              textAnchor='end'
+              height={80}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 12, fill: '#64748b' }}
+              tickFormatter={formatKRW}
+            />
+            <Tooltip content={<CustomTooltip />} />
 
-              {(type === 'both' || type === 'income') && (
-                <Bar dataKey='income' name='수입' fill='#10b981' radius={[4, 4, 0, 0]} />
-              )}
+            {(type === 'both' || type === 'income') && (
+              <Bar dataKey='income' name='수입' fill='#10b981' radius={[4, 4, 0, 0]} />
+            )}
 
-              {(type === 'both' || type === 'expense') && (
-                <Bar dataKey='expense' name='지출' fill='#ef4444' radius={[4, 4, 0, 0]} />
-              )}
+            {(type === 'both' || type === 'expense') && (
+              <Bar dataKey='expense' name='지출' fill='#ef4444' radius={[4, 4, 0, 0]} />
+            )}
 
-              {type === 'both' && <Legend />}
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+            {type === 'both' && <Legend />}
+          </BarChart>
+        </ResponsiveContainer>
 
         {/* 상위 카테고리 요약 */}
         <div className='mt-6 space-y-3'>

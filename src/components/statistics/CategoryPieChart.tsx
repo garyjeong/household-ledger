@@ -145,7 +145,7 @@ export function CategoryPieChart({
   const totalAmount = chartData.reduce((sum, item) => sum + item.totalAmount, 0)
 
   return (
-    <Card className={className}>
+    <Card className={className} style={{ height: '400px' }}>
       <CardHeader>
         <div className='flex items-center justify-between'>
           <CardTitle className='flex items-center gap-2'>
@@ -186,7 +186,7 @@ export function CategoryPieChart({
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
           {/* 파이 차트 */}
           <div className='h-[300px] w-full'>
-            <ResponsiveContainer width='100%' height='100%'>
+            <ResponsiveContainer width='100%' height='100%' minWidth={300} minHeight={300}>
               <PieChart>
                 <Pie
                   data={chartData}

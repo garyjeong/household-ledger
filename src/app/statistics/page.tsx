@@ -252,48 +252,60 @@ export default function StatisticsPage() {
           {/* 개요 탭 */}
           <TabsContent value='overview' className='space-y-6'>
             <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-              <CategoryBarChart
-                data={statistics.categoryBreakdown}
-                type='both'
-                title='카테고리별 수입·지출 비교'
-              />
-              <CategoryPieChart
-                data={statistics.categoryBreakdown}
-                type='expense'
-                title='지출 카테고리 분포'
-              />
+              <div className='h-[400px]'>
+                <CategoryBarChart
+                  data={statistics.categoryBreakdown}
+                  type='both'
+                  title='카테고리별 수입·지출 비교'
+                />
+              </div>
+              <div className='h-[400px]'>
+                <CategoryPieChart
+                  data={statistics.categoryBreakdown}
+                  type='expense'
+                  title='지출 카테고리 분포'
+                />
+              </div>
             </div>
           </TabsContent>
 
           {/* 수입 분석 탭 */}
           <TabsContent value='income' className='space-y-6'>
             <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-              <CategoryBarChart
-                data={statistics.categoryBreakdown}
-                type='income'
-                title='수입 카테고리별 금액'
-              />
-              <CategoryPieChart
-                data={statistics.categoryBreakdown}
-                type='income'
-                title='수입 카테고리 분포'
-              />
+              <div className='h-[400px]'>
+                <CategoryBarChart
+                  data={statistics.categoryBreakdown}
+                  type='income'
+                  title='수입 카테고리별 금액'
+                />
+              </div>
+              <div className='h-[400px]'>
+                <CategoryPieChart
+                  data={statistics.categoryBreakdown}
+                  type='income'
+                  title='수입 카테고리 분포'
+                />
+              </div>
             </div>
           </TabsContent>
 
           {/* 지출 분석 탭 */}
           <TabsContent value='expense' className='space-y-6'>
             <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-              <CategoryBarChart
-                data={statistics.categoryBreakdown}
-                type='expense'
-                title='지출 카테고리별 금액'
-              />
-              <CategoryPieChart
-                data={statistics.categoryBreakdown}
-                type='expense'
-                title='지출 카테고리 분포'
-              />
+              <div className='h-[400px]'>
+                <CategoryBarChart
+                  data={statistics.categoryBreakdown}
+                  type='expense'
+                  title='지출 카테고리별 금액'
+                />
+              </div>
+              <div className='h-[400px]'>
+                <CategoryPieChart
+                  data={statistics.categoryBreakdown}
+                  type='expense'
+                  title='지출 카테고리 분포'
+                />
+              </div>
             </div>
           </TabsContent>
 
