@@ -158,14 +158,15 @@ export interface QuickAddForm {
   amount: string
   categoryId: string
   type: 'EXPENSE' | 'INCOME'
-  payMethod: PayMethod
   date: string
-  person: Person
   memo: string
+  payMethod: 'cash' | 'card'
+  person: 'me' | 'partner' | 'together'
   tags: string[]
-
   saveAsTemplate: boolean
-  templateName?: string
+  isRecurring: boolean
+  recurringFrequency: 'MONTHLY' | 'WEEKLY' | 'DAILY'
+  recurringDayRule: string
 }
 
 // 컴포넌트 Props 타입들

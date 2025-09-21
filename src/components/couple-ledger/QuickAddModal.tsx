@@ -10,6 +10,7 @@ import {
   Loader2,
   Users,
   ArrowRight,
+  Repeat,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,15 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   QuickAddModalProps,
   QuickAddForm,
@@ -25,6 +35,7 @@ import {
 import { CategorySelectModal } from './CategorySelectModal'
 import { useCategories } from '@/hooks/use-categories'
 import { useGroup } from '@/contexts/group-context'
+import { useCreateRecurringRule } from '@/hooks/use-recurring-rules'
 
 // 날짜 빠른 선택 칩
 const getDateChips = () => {
@@ -65,6 +76,7 @@ export function QuickAddModal({
 
   const [isLoading, setIsLoading] = useState(false)
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
+  const createRecurringRule = useCreateRecurringRule()
 
   // 현재 그룹 정보 가져오기
   const { currentGroup, isLoading: groupLoading } = useGroup()
@@ -84,6 +96,9 @@ export function QuickAddModal({
     person: 'me',
     tags: [],
     saveAsTemplate: false,
+    isRecurring: false,
+    recurringFrequency: 'MONTHLY',
+    recurringDayRule: '',
   })
 
   // 카테고리 배열 추출 및 타입별 필터링
@@ -138,37 +153,40 @@ export function QuickAddModal({
 
   // 저장 처리
   const handleSave = useCallback(async () => {
+    // 유효성 검사
     if (!formData.amount || !formData.categoryId) return
+
+    if (formData.isRecurring && !formData.recurringDayRule) {
+      alert('반복 거래의 날짜 규칙을 입력해주세요.')
+      return
+    }
 
     setIsLoading(true)
     try {
-      // 금액에서 숫자만 추출
-      const amount = parseInt(formData.amount.replace(/[^\d]/g, '')) || 0
-      
-      const transactionType: TransactionType = formData.type === 'EXPENSE' ? 'expense' : 'income'
-
-      const transactionData = {
-        amount,
-        categoryId: formData.categoryId,
-        date: formData.date,
-        memo: formData.memo,
-        type: transactionType, // TransactionType (lowercase)
-        person: formData.person,
-        payMethod: formData.payMethod,
-        tags: formData.tags,
-        // 타입 정의 상 필수지만 이 단계에서는 상위에서 보강/변환하므로 빈값 전달
-        userId: '',
+      if (formData.isRecurring) {
+        await createRecurringRule.mutateAsync({
+          startDate: formData.date,
+          frequency: formData.recurringFrequency as 'MONTHLY' | 'WEEKLY' | 'DAILY',
+          dayRule: formData.recurringDayRule,
+          amount: parseFloat(formData.amount.replace(/[^\d]/g, '')),
+          categoryId: formData.categoryId,
+          memo: formData.memo,
+        })
+        // 성공 시 모달을 닫고 폼을 리셋
+        onClose()
+        resetForm()
+      } else {
+        const amount = parseInt(formData.amount.replace(/[^\d]/g, '')) || 0
+        const transactionType: TransactionType = formData.type === 'EXPENSE' ? 'expense' : 'income'
+        await onSave({ ...formData, amount: amount.toString(), type: transactionType })
+        // onSave 성공 후의 처리는 상위 컴포넌트(DesktopSidebar)에서 담당
       }
-
-      await onSave(transactionData)
-      resetForm()
-      onClose()
     } catch (error) {
-      console.error('거래 저장 실패:', error)
+      console.error('Save error:', error)
     } finally {
       setIsLoading(false)
     }
-  }, [formData, onSave, resetForm, onClose])
+  }, [formData, onSave, resetForm, onClose, createRecurringRule])
 
   // ESC 키 처리는 Dialog 컴포넌트에서 자동으로 처리됨
 
@@ -511,6 +529,53 @@ export function QuickAddModal({
               className='h-20 resize-none'
             />
           </div>
+
+          <div className='flex items-center justify-between mt-6'>
+            <div className='flex items-center space-x-2'>
+              <Switch
+                id='isRecurring'
+                checked={formData.isRecurring}
+                onCheckedChange={value => setFormData(prev => ({ ...prev, isRecurring: value }))}
+              />
+              <Label htmlFor='isRecurring' className='flex items-center gap-2 cursor-pointer'>
+                <Repeat className='h-4 w-4' />
+                반복 거래로 등록
+              </Label>
+            </div>
+          </div>
+
+          {formData.isRecurring && (
+            <div className='mt-4 p-4 bg-gray-50 rounded-lg space-y-4'>
+              <div className='grid grid-cols-2 gap-4'>
+                <div>
+                  <Label htmlFor='recurringFrequency'>반복 주기</Label>
+                  <Select
+                    value={formData.recurringFrequency}
+                    onValueChange={value => setFormData(prev => ({ ...prev, recurringFrequency: value }))}
+                  >
+                    <SelectTrigger id='recurringFrequency'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value='MONTHLY'>매월</SelectItem>
+                      <SelectItem value='WEEKLY'>매주</SelectItem>
+                      <SelectItem value='DAILY'>매일</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor='recurringDayRule'>날짜 규칙</Label>
+                  <Input
+                    id='recurringDayRule'
+                    value={formData.recurringDayRule}
+                    onChange={e => setFormData(prev => ({ ...prev, recurringDayRule: e.target.value }))}
+                    placeholder='예: 매월 5일'
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
 
         {/* 고정 하단 버튼 */}
