@@ -15,6 +15,7 @@ import {
   Heart,
   Zap,
   LogOut,
+  Repeat,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -82,6 +83,14 @@ const sidebarMenu = [
         href: '/categories',
         icon: Receipt,
         description: '수입/지출 카테고리 관리',
+        badge: null,
+      },
+      {
+        id: 'recurring',
+        label: '반복 거래',
+        href: '/recurring',
+        icon: Repeat,
+        description: '정기적인 수입/지출 관리',
         badge: null,
       },
     ],

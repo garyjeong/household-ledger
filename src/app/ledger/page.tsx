@@ -40,9 +40,9 @@ export default function LedgerPage() {
   >([])
   const [isLoadingCategories, setIsLoadingCategories] = useState(false)
 
-  const { user, isAuthenticated, isLoading, logout } = useAuth()
+  const { user, isAuthenticated, isLoading, logout: _logout } = useAuth()
   const { currentGroup } = useGroup()
-  const { showSuccess, showError, showWarning } = useAlert()
+  const { showSuccess: _showSuccess, showError, showWarning } = useAlert()
 
   // Redirect if not authenticated (but wait for loading to complete)
   useEffect(() => {
