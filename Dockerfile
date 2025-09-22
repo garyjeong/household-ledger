@@ -5,6 +5,10 @@
 FROM node:18-alpine AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+# disable lifecycle scripts globally during install (husky, etc.)
+ENV PNPM_CONFIG_IGNORE_SCRIPTS=true \
+    HUSKY=0 \
+    HUSKY_SKIP_INSTALL=1
 RUN corepack enable
 
 WORKDIR /app
@@ -12,21 +16,18 @@ WORKDIR /app
 # ---- Dependencies Stage ----
 # Install dependencies in a separate layer to leverage Docker's caching.
 FROM base AS deps
-# Disable git hooks during container builds
-ENV HUSKY=0
 COPY package.json pnpm-lock.yaml ./
-# prisma generate is often executed on install; ensure schema is available
+# prisma schema is needed later but we don't run generate in deps
 COPY prisma ./prisma
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --prod --ignore-scripts
-RUN pnpm prisma generate
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --prod
 
 # ---- Builder Stage ----
 # Build the Next.js application.
 FROM base AS builder
-ENV HUSKY=0
+# builder installs dev deps and runs prisma generate explicitly
 COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --ignore-scripts
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 RUN pnpm prisma generate
 COPY . .
 RUN pnpm build
