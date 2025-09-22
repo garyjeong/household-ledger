@@ -8,7 +8,10 @@ ENV PATH="$PNPM_HOME:$PATH"
 # ensure lifecycle scripts (e.g., husky) never run during container installs
 ENV PNPM_IGNORE_SCRIPTS=true \
     HUSKY=0 \
-    HUSKY_SKIP_INSTALL=1
+    HUSKY_SKIP_INSTALL=1 \
+    ESLINT_NO_DEV_ERRORS=true \
+    NEXT_TELEMETRY_DISABLED=1 \
+    CI=true
 RUN corepack enable
 
 WORKDIR /app
@@ -31,7 +34,8 @@ COPY prisma ./prisma
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --ignore-scripts
 RUN pnpm prisma generate
 COPY . .
-RUN pnpm build
+# Use explicit build command without turbopack for stability
+RUN pnpm prisma generate && npx next build
 
 # ---- Runner Stage ----
 # Create the final, lightweight production image.
