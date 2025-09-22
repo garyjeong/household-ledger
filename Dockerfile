@@ -13,12 +13,15 @@ WORKDIR /app
 # Install dependencies in a separate layer to leverage Docker's caching.
 FROM base AS deps
 COPY package.json pnpm-lock.yaml ./
+# prisma generate is often executed on install; ensure schema is available
+COPY prisma ./prisma
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --prod
 
 # ---- Builder Stage ----
 # Build the Next.js application.
 FROM base AS builder
 COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
@@ -40,8 +43,8 @@ COPY --from=deps /app/node_modules ./node_modules
 # Expose the port the app runs on
 EXPOSE 3000
 
-# Set the user to a non-root user for security
-USER nextjs
+# Use an existing non-root user from the base image
+USER node
 
 # The command to run the application
 CMD ["pnpm", "start"]
