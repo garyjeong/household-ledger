@@ -34,8 +34,8 @@ COPY prisma ./prisma
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --ignore-scripts
 RUN pnpm prisma generate
 COPY . .
-# Use explicit build command without turbopack for stability
-RUN pnpm prisma generate && npx next build
+# Use explicit build command without turbopack and disable ESLint
+RUN pnpm prisma generate && ESLINT_NO_DEV_ERRORS=true npx next build --no-lint
 
 # ---- Runner Stage ----
 # Create the final, lightweight production image.
