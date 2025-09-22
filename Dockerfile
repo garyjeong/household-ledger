@@ -25,6 +25,8 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 # Build the Next.js application.
 FROM base AS builder
 COPY package.json pnpm-lock.yaml ./
+# strip prepare/postinstall to avoid invoking husky in CI
+RUN node -e "const fs=require('fs');const p=require('./package.json');if(p.scripts){delete p.scripts.prepare;delete p.scripts.postinstall;}fs.writeFileSync('package.json',JSON.stringify(p,null,2));"
 COPY prisma ./prisma
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --ignore-scripts
 RUN pnpm prisma generate
