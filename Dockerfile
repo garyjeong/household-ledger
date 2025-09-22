@@ -12,17 +12,22 @@ WORKDIR /app
 # ---- Dependencies Stage ----
 # Install dependencies in a separate layer to leverage Docker's caching.
 FROM base AS deps
+# Disable git hooks during container builds
+ENV HUSKY=0
 COPY package.json pnpm-lock.yaml ./
 # prisma generate is often executed on install; ensure schema is available
 COPY prisma ./prisma
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --prod
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --prod --ignore-scripts
+RUN pnpm prisma generate
 
 # ---- Builder Stage ----
 # Build the Next.js application.
 FROM base AS builder
+ENV HUSKY=0
 COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --ignore-scripts
+RUN pnpm prisma generate
 COPY . .
 RUN pnpm build
 
