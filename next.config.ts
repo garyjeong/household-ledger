@@ -1,9 +1,16 @@
 import type { NextConfig } from "next";
 
-// Bundle analyzer 설정
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: process.env.ANALYZE === 'true',
-})
+// Bundle analyzer 설정 (모듈이 없으면 무시)
+const withBundleAnalyzer = (() => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require('@next/bundle-analyzer')({
+      enabled: process.env.ANALYZE === 'true',
+    });
+  } catch {
+    return (config: NextConfig) => config;
+  }
+})();
 
 const nextConfig: NextConfig = {
   
