@@ -48,8 +48,8 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/next.config.ts ./next.config.ts
 
-# Copy production node_modules from the dependencies stage
-COPY --from=deps /app/node_modules ./node_modules
+# Copy node_modules from builder so generated Prisma client (node_modules/.prisma) is included
+COPY --from=builder /app/node_modules ./node_modules
 
 # Expose the port the app runs on
 EXPOSE 3000
