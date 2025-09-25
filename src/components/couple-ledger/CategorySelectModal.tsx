@@ -1,11 +1,11 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import { Search, X, Sparkles } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Search, X, Sparkles } from 'lucide-react'
 import { CategoryResponse } from '@/lib/schemas/category'
 
 interface CategorySelectModalProps {

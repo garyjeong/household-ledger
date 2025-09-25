@@ -3,9 +3,9 @@
  * N+1 쿼리 문제 해결을 위한 통합 쿼리 시스템
  */
 
+import { MonthlyStats } from '@/types/couple-ledger'
 import { prisma } from './prisma'
 import { safeConsole } from './security-utils'
-import { MonthlyStats } from '@/types/couple-ledger'
 
 // OptimizedMonthlyStats 제거 - MonthlyStats 사용
 
@@ -13,7 +13,7 @@ export interface StatsQueryParams {
   userId: bigint
   year: number
   month: number
-  groupFilter: any
+  groupFilter: { groupId?: string }
 }
 
 /**

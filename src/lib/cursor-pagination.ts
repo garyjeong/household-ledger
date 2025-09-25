@@ -3,6 +3,7 @@
  * 대량 데이터 처리 시 성능 최적화를 위한 커서 페이지네이션 구현
  */
 
+import { Prisma, PrismaClient, Transaction } from '@prisma/client'
 import { safeConsole } from './security-utils'
 
 export interface CursorPaginationParams {
@@ -26,6 +27,19 @@ export interface CursorPaginationResult<T> {
     itemsReturned: number
     cursorUsed: boolean
   }
+}
+
+interface PaginatedTransaction extends Transaction {
+  category: {
+    id: bigint
+    name: string
+    color: string | null
+    type: 'INCOME' | 'EXPENSE' | 'TRANSFER'
+  } | null
+  tag: {
+    id: bigint
+    name: string
+  } | null
 }
 
 /**
@@ -73,13 +87,13 @@ export class PrismaCursorPagination {
    * 거래 내역 페이지네이션
    */
   static async getTransactions(
-    prisma: any,
+    prisma: PrismaClient,
     params: CursorPaginationParams & {
       userId: string
       groupId?: string
-      filters?: any
+      filters?: Prisma.TransactionWhereInput
     }
-  ): Promise<CursorPaginationResult<any>> {
+  ): Promise<CursorPaginationResult<PaginatedTransaction>> {
     const startTime = Date.now()
     const { cursor, limit = 20, direction = 'forward', userId, groupId, filters = {} } = params
 
@@ -158,7 +172,7 @@ export class PrismaCursorPagination {
 
       const queryTime = Date.now() - startTime
 
-      const result: CursorPaginationResult<any> = {
+      const result: CursorPaginationResult<PaginatedTransaction> = {
         data,
         pagination: {
           hasNext,
@@ -204,8 +218,8 @@ export class PrismaCursorPagination {
    * 주의: 대량 데이터에서는 성능 저하 가능성
    */
   static async getTotalCount(
-    prisma: any,
-    where: any,
+    prisma: PrismaClient,
+    where: Prisma.TransactionWhereInput,
     options: {
       enableCount?: boolean // 기본: false (성능상 권장하지 않음)
       maxCountLimit?: number // 최대 카운트 제한 (기본: 10000)

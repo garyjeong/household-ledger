@@ -32,10 +32,10 @@ import {
   QuickAddForm,
   TransactionType,
 } from '@/types/couple-ledger'
-import { CategorySelectModal } from './CategorySelectModal'
 import { useCategories } from '@/hooks/use-categories'
 import { useGroup } from '@/contexts/group-context'
 import { useCreateRecurringRule } from '@/hooks/use-recurring-rules'
+import { CategorySelectModal } from './CategorySelectModal'
 
 // 날짜 빠른 선택 칩
 const getDateChips = () => {

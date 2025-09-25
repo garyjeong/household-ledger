@@ -1,11 +1,11 @@
 'use client'
 
 import React from 'react'
+import { User, Users, UserCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Card, CardContent } from '@/components/ui/card'
 import { Person, SplitRule } from '@/types/couple-ledger'
-import { User, Users, UserCheck } from 'lucide-react'
 
 interface CoupleSplitToggleProps {
   selectedPerson: Person

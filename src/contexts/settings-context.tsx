@@ -5,7 +5,7 @@
 
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { apiGet, apiPut } from '@/lib/api-client'
 
@@ -97,7 +97,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   const [isLoading, setIsLoading] = useState(true)
 
   // 설정 로드
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     if (!isAuthenticated || !user) {
       setSettings(DEFAULT_SETTINGS)
       setIsLoading(false)
@@ -120,7 +120,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [isAuthenticated, user])
 
   // 설정 업데이트
   const updateSettings = async (updates: Partial<AppSettings>) => {
@@ -155,14 +155,14 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   }
 
   // 설정 새로고침
-  const refreshSettings = async () => {
+  const refreshSettings = useCallback(async () => {
     await loadSettings()
-  }
+  }, [loadSettings])
 
   // 사용자 로그인/로그아웃 시 설정 로드
   useEffect(() => {
     loadSettings()
-  }, [isAuthenticated, user])
+  }, [loadSettings])
 
   // 로컬 스토리지와 동기화 (오프라인 지원)
   useEffect(() => {

@@ -20,15 +20,15 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { useNavigation, MobileNavigation } from './MobileNavigation'
 import { useAuth } from '@/contexts/auth-context'
 import { useGroup } from '@/contexts/group-context'
-import { QuickAddModal } from './QuickAddModal'
 import { SuccessModal } from '@/components/ui/success-modal'
 import { useToast } from '@/hooks/use-toast'
 import { LogoutConfirmDialog } from '@/components/ui/logout-confirm-dialog'
 import { useQuickAddTransaction } from '@/hooks/use-transactions'
 import { useCategories } from '@/hooks/use-categories'
+import { QuickAddModal } from './QuickAddModal'
+import { useNavigation, MobileNavigation } from './MobileNavigation'
 
 interface DesktopSidebarProps {
   onQuickAddClick: () => void

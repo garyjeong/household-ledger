@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { TrendingDown, TrendingUp, Calendar, Clock, AlertTriangle, Info } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -30,7 +30,7 @@ export function BalanceProjection({
   const [error, setError] = useState<string | null>(null)
 
   // 예상 잔액 데이터 로드
-  const loadProjection = async () => {
+  const loadProjection = useCallback(async () => {
     setIsLoading(true)
     setError(null)
 
@@ -59,12 +59,12 @@ export function BalanceProjection({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [ownerType, ownerId, months])
 
   // 초기 로드
   useEffect(() => {
     loadProjection()
-  }, [ownerType, ownerId, months])
+  }, [loadProjection])
 
   // 잔액 포맷팅
   const formatCurrency = (amount: number, currency = 'KRW'): string => {

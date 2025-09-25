@@ -1,6 +1,12 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from 'react'
 import { useRouter } from 'next/navigation'
 import { User, emailStorage } from '@/lib/auth'
 import { apiGet, apiPost } from '@/lib/api-client'
@@ -47,31 +53,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const isAuthenticated = !!user
 
-  // 컴포넌트 마운트 시 저장된 토큰 확인 및 이메일 불러오기
-  useEffect(() => {
-    checkAuthStatus()
-    loadRememberedEmail()
-  }, [])
-
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
       const response = await apiGet('/api/auth/me')
 
       if (response.ok && response.data) {
         setUser(response.data.user)
       } else {
-        // 토큰이 유효하지 않은 모든 경우에 로그아웃 처리
-        // console.log('Token invalid or expired, logging out...')
         setUser(null)
-        
-        // 로그인 페이지가 아닌 경우에만 리다이렉트
         if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
           router.push('/login')
         }
       }
     } catch (error) {
       console.error('Auth check failed:', error)
-      // 네트워크 에러 시에도 로그아웃 처리
       setUser(null)
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
         router.push('/login')
@@ -79,7 +74,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [router])
+
+  // 컴포넌트 마운트 시 저장된 토큰 확인 및 이메일 불러오기
+  useEffect(() => {
+    checkAuthStatus()
+    loadRememberedEmail()
+  }, [checkAuthStatus])
 
   const loadRememberedEmail = () => {
     const saved = emailStorage.load()

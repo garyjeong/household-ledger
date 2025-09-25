@@ -12,7 +12,7 @@ export interface ErrorDetails {
   url?: string
   userAgent?: string
   stack?: string
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 }
 
 export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical'
@@ -116,7 +116,7 @@ export function createErrorReport(
     statusCode?: number
     url?: string
     userId?: string
-    additionalContext?: Record<string, any>
+    additionalContext?: Record<string, unknown>
   }
 ): ErrorReport {
   const category = categorizeError(error, context?.statusCode)
@@ -281,9 +281,15 @@ export class GlobalErrorHandler {
 export const globalErrorHandler = GlobalErrorHandler.getInstance()
 
 // 에러 처리 헬퍼 함수들
-export function handleApiError(error: any, url?: string, userId?: string): ErrorReport {
-  const statusCode = error?.status || error?.response?.status
-  const message = error?.message || error?.error || '알 수 없는 API 오류가 발생했습니다.'
+export function handleApiError(error: unknown, url?: string, userId?: string): ErrorReport {
+  const statusCode =
+    typeof error === 'object' && error !== null && 'status' in error
+      ? (error as { status: number }).status
+      : undefined
+  const message =
+    (typeof error === 'object' && error !== null && 'message' in error
+      ? (error as { message: string }).message
+      : undefined) || '알 수 없는 API 오류가 발생했습니다.'
 
   return globalErrorHandler.handleError(new Error(message), {
     statusCode,
@@ -296,8 +302,11 @@ export function handleApiError(error: any, url?: string, userId?: string): Error
   })
 }
 
-export function handleNetworkError(error: any, url?: string): ErrorReport {
-  const message = error?.message || '네트워크 연결 오류가 발생했습니다.'
+export function handleNetworkError(error: unknown, url?: string): ErrorReport {
+  const message =
+    (typeof error === 'object' && error !== null && 'message' in error
+      ? (error as { message: string }).message
+      : undefined) || '네트워크 연결 오류가 발생했습니다.'
 
   return globalErrorHandler.handleError(new Error(message), {
     url,
@@ -308,7 +317,7 @@ export function handleNetworkError(error: any, url?: string): ErrorReport {
   })
 }
 
-export function handleValidationError(errors: any, context?: string): ErrorReport {
+export function handleValidationError(errors: unknown, context?: string): ErrorReport {
   const message = typeof errors === 'string' ? errors : '입력 정보가 올바르지 않습니다.'
 
   return globalErrorHandler.handleError(new Error(message), {

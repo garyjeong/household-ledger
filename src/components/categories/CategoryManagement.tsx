@@ -31,13 +31,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-
 import { useCategories, useDeleteCategory, Category, CategoryFilters } from '@/hooks/use-categories'
 import { useToast } from '@/hooks/use-toast'
 import { useGroup } from '@/contexts/group-context'
+import { isDefaultCategory } from '@/lib/seed-categories'
 import { CategoryModal } from './CategoryModal'
 import { DeleteConfirmDialog } from './DeleteConfirmDialog'
-import { isDefaultCategory } from '@/lib/seed-categories'
 
 interface CategoryManagementProps {
   className?: string

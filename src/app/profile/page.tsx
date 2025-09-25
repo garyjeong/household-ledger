@@ -10,7 +10,7 @@
 
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import {
   User,
@@ -51,22 +51,22 @@ export default function ProfilePage() {
   const [isGeneratingInvite, setIsGeneratingInvite] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
 
-  // '계정 관리' 탭이 활성화되면 초대 코드 조회
-  useEffect(() => {
-    if (activeTab === 'account' && currentGroup) {
-      fetchInviteCode()
-    }
-  }, [activeTab, currentGroup])
-
   // 초대 코드 조회 함수
-  const fetchInviteCode = async () => {
+  const fetchInviteCode = useCallback(async () => {
     if (!currentGroup) return
     const result = await getInviteCode(currentGroup.id)
     if (result.success) {
       setInviteCode(result.inviteCode || null)
       setInviteExpiresAt(result.expiresAt || null)
     }
-  }
+  }, [currentGroup, getInviteCode])
+
+  // '계정 관리' 탭이 활성화되면 초대 코드 조회
+  useEffect(() => {
+    if (activeTab === 'account' && currentGroup) {
+      fetchInviteCode()
+    }
+  }, [activeTab, currentGroup, fetchInviteCode])
 
   // 새로운 초대 코드 생성
   const handleGenerateInvite = async () => {

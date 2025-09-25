@@ -36,7 +36,8 @@ export const queryKeys = {
   currencyPair: (from: string, to: string) => ['currency-pair', from, to] as const,
 
   // 거래 관련
-  transactions: (filters?: Record<string, any>) => ['transactions', filters] as const,
+  transactions: (filters?: { groupId?: string; from?: string; to?: string; q?: string }) =>
+    ['transactions', filters] as const,
   transaction: (id: string) => ['transaction', id] as const,
 
   // 카테고리 관련

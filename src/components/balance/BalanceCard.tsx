@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Wallet, Eye, EyeOff, TrendingUp, TrendingDown, AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -30,41 +30,44 @@ export function BalanceCard({
   const [error, setError] = useState<string | null>(null)
 
   // 잔액 데이터 로드
-  const loadBalance = async (showLoading = true) => {
-    if (showLoading) setIsLoading(true)
-    setError(null)
+  const loadBalance = useCallback(
+    async (showLoading = true) => {
+      if (showLoading) setIsLoading(true)
+      setError(null)
 
-    try {
-      const params = new URLSearchParams({
-        ownerType,
-        ownerId,
-        includeProjection: showProjection.toString(),
-        projectionMonths: '3',
-      })
+      try {
+        const params = new URLSearchParams({
+          ownerType,
+          ownerId,
+          includeProjection: showProjection.toString(),
+          projectionMonths: '3',
+        })
 
-      const response = await fetch(`/api/balance?${params}`, {
-        credentials: 'include',
-      })
+        const response = await fetch(`/api/balance?${params}`, {
+          credentials: 'include',
+        })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch balance')
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to fetch balance')
+        }
+
+        const data = await response.json()
+        setBalanceData(data)
+      } catch (error) {
+        console.error('Balance loading error:', error)
+        setError(error instanceof Error ? error.message : '잔액을 불러오는데 실패했습니다')
+      } finally {
+        setIsLoading(false)
       }
-
-      const data = await response.json()
-      setBalanceData(data)
-    } catch (error) {
-      console.error('Balance loading error:', error)
-      setError(error instanceof Error ? error.message : '잔액을 불러오는데 실패했습니다')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    },
+    [ownerType, ownerId, showProjection]
+  )
 
   // 초기 로드
   useEffect(() => {
     loadBalance()
-  }, [ownerType, ownerId, showProjection])
+  }, [loadBalance])
 
   // 잔액 포맷팅
   const formatCurrency = (amount: number, currency = 'KRW'): string => {

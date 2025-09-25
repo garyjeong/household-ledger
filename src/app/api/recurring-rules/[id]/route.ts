@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyAccessToken } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
 import { RecurringFrequency } from '@prisma/client'
 import { z } from 'zod'
+import { verifyAccessToken } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
 // 반복 거래 규칙 수정 스키마
 const updateRecurringRuleSchema = z.object({

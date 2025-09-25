@@ -8,7 +8,6 @@ import { SettingsProvider } from '@/contexts/settings-context'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { ToastProvider } from '@/components/error/ToastProvider'
 import { DatabaseConnectionChecker } from '@/components/database/DatabaseConnectionChecker'
-
 import { WebVitalsReporter } from '@/components/performance/WebVitalsReporter'
 
 const jetbrainsMono = JetBrains_Mono({

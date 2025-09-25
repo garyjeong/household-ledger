@@ -1,13 +1,13 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { ResponsiveLayout } from '@/components/couple-ledger/DesktopSidebar'
 import { MonthlyDashboard } from '@/components/couple-ledger/MonthlyDashboard'
 import { MonthlyStats } from '@/types/couple-ledger'
 import { useMonthlyStats } from '@/hooks/use-monthly-stats'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/auth-context'
-import { useRouter } from 'next/navigation'
 
 
 /**

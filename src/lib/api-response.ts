@@ -5,15 +5,19 @@
 
 import { NextResponse } from 'next/server'
 
-export interface ApiSuccessResponse<T = any> {
-  data?: T
-  [key: string]: any
+export interface ApiSuccessResponse<T> {
+  data: T
+  dev?: {
+    timestamp: string
+    environment: string
+    [key: string]: unknown
+  }
 }
 
 export interface ApiErrorResponse {
   error: string
   code?: string
-  details?: any
+  details?: unknown
   dev?: {
     timestamp: string
     stack?: string
@@ -23,7 +27,7 @@ export interface ApiErrorResponse {
 export interface ApiResponseOptions {
   status?: number
   includeDevInfo?: boolean
-  devInfo?: Record<string, any>
+  devInfo?: Record<string, unknown>
 }
 
 /**
@@ -32,8 +36,8 @@ export interface ApiResponseOptions {
 export function createSuccessResponse<T>(data: T, options: ApiResponseOptions = {}): NextResponse {
   const { status = 200, includeDevInfo = false, devInfo = {} } = options
 
-  const response: Record<string, any> = {
-    ...(typeof data === 'object' && data !== null ? data : { data }),
+  const response: ApiSuccessResponse<T> = {
+    data,
   }
 
   // 개발 환경에서만 디버그 정보 포함
@@ -56,7 +60,7 @@ export function createSuccessResponse<T>(data: T, options: ApiResponseOptions = 
  */
 export function createErrorResponse(
   error: string,
-  options: { status?: number; code?: string; details?: any } = {}
+  options: { status?: number; code?: string; details?: unknown } = {}
 ): NextResponse {
   const { status = 500, code, details } = options
 
@@ -121,7 +125,7 @@ export function createListResponse<T>(
 ): NextResponse {
   const { key = 'items', includeCount = false, ...responseOptions } = options
 
-  const response: Record<string, any> = {
+  const response: Record<string, unknown> = {
     [key]: items,
   }
 
@@ -145,7 +149,7 @@ export function createResourceResponse<T>(
 ): NextResponse {
   const { key = 'resource', message, ...responseOptions } = options
 
-  const response: Record<string, any> = {
+  const response: Record<string, unknown> = {
     [key]: resource,
   }
 
@@ -176,7 +180,7 @@ export const ApiErrors = {
   conflict: (message = '중복된 요청입니다') =>
     createErrorResponse(message, { status: 409, code: 'CONFLICT' }),
 
-  validationError: (message = '잘못된 요청입니다', details?: any) =>
+  validationError: (message = '잘못된 요청입니다', details?: unknown) =>
     createErrorResponse(message, { status: 400, code: 'VALIDATION_ERROR', details }),
 
   serverError: (message = '서버 오류가 발생했습니다') =>

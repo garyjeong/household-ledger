@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { DatabaseErrorUI } from './DatabaseErrorUI'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { DatabaseErrorUI } from './DatabaseErrorUI'
 
 interface DatabaseStatus {
   status: 'checking' | 'connected' | 'error'

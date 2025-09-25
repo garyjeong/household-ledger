@@ -1,10 +1,16 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+} from 'react'
 import { GroupWithMembers } from '@/lib/auth'
-import { useAuth } from './auth-context'
 import { apiGet, apiPost, apiDelete } from '@/lib/api-client'
 import { clearCategoriesCache } from '@/hooks/use-categories'
+import { useAuth } from './auth-context'
 
 interface GroupContextType {
   groups: GroupWithMembers[]
@@ -44,6 +50,31 @@ export function GroupProvider({ children }: GroupProviderProps) {
   const [currentGroup, setCurrentGroup] = useState<GroupWithMembers | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
+  const refreshGroups = useCallback(async () => {
+    if (!user || isLoading) return
+
+    setIsLoading(true)
+    try {
+      const response = await apiGet('/api/groups')
+
+      if (response.ok && response.data) {
+        const fetchedGroups = response.data.groups || []
+
+        // 중복 방지 로직: ID 기준으로 유니크한 그룹만 설정
+        const uniqueGroups = fetchedGroups.filter(
+          (group: GroupWithMembers, index: number, self: GroupWithMembers[]) =>
+            index === self.findIndex((g: GroupWithMembers) => g.id === group.id)
+        )
+
+        setGroups(uniqueGroups)
+      }
+    } catch (error) {
+      console.error('Failed to fetch groups:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user, isLoading])
+
   // 사용자가 로그인했을 때 그룹 목록 불러오기
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -52,7 +83,7 @@ export function GroupProvider({ children }: GroupProviderProps) {
       setGroups([])
       setCurrentGroup(null)
     }
-  }, [isAuthenticated, user])
+  }, [isAuthenticated, user, refreshGroups])
 
   // 실시간 동기화를 위한 폴링 설정
   useEffect(() => {
@@ -64,7 +95,7 @@ export function GroupProvider({ children }: GroupProviderProps) {
     }, 30000) // 30초
 
     return () => clearInterval(intervalId)
-  }, [isAuthenticated, user])
+  }, [isAuthenticated, user, refreshGroups])
 
   // 브라우저 포커스 시 그룹 목록 새로고침
   useEffect(() => {
@@ -97,7 +128,7 @@ export function GroupProvider({ children }: GroupProviderProps) {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       clearTimeout(refreshTimeout)
     }
-  }, [isAuthenticated, user])
+  }, [isAuthenticated, user, refreshGroups])
 
   // 그룹 목록이 변경될 때 현재 그룹 설정
   useEffect(() => {
@@ -120,30 +151,6 @@ export function GroupProvider({ children }: GroupProviderProps) {
       localStorage.removeItem(CURRENT_GROUP_KEY)
     }
   }, [groups])
-
-  const refreshGroups = async () => {
-    if (!user || isLoading) return
-
-    setIsLoading(true)
-    try {
-      const response = await apiGet('/api/groups')
-
-      if (response.ok && response.data) {
-        const fetchedGroups = response.data.groups || []
-        
-        // 중복 방지 로직: ID 기준으로 유니크한 그룹만 설정
-        const uniqueGroups = fetchedGroups.filter((group: any, index: number, self: any[]) => 
-          index === self.findIndex((g: any) => g.id === group.id)
-        )
-        
-        setGroups(uniqueGroups)
-      }
-    } catch (error) {
-      console.error('Failed to fetch groups:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const switchGroup = (groupId: string | null) => {
     if (!groupId) {

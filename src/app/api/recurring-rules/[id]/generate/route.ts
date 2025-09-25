@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { TransactionType } from '@prisma/client'
 import { verifyAccessToken } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { TransactionType } from '@prisma/client'
 
 // 반복 거래 규칙에서 실제 거래 생성
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {

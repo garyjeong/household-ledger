@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Building,
   CreditCard,
@@ -74,7 +74,7 @@ export function AccountBalanceList({
   const [error, setError] = useState<string | null>(null)
 
   // 계좌 데이터 로드
-  const loadAccounts = async () => {
+  const loadAccounts = useCallback(async () => {
     setIsLoading(true)
     setError(null)
 
@@ -101,12 +101,12 @@ export function AccountBalanceList({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [ownerType, ownerId])
 
   // 초기 로드
   useEffect(() => {
     loadAccounts()
-  }, [ownerType, ownerId])
+  }, [loadAccounts])
 
   // 잔액 포맷팅
   const formatCurrency = (amount: number, currency = 'KRW'): string => {

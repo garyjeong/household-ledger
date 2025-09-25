@@ -7,9 +7,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { type CreateAccountData, type UpdateAccountData } from '@/lib/schemas/account'
 import { AccountForm } from './AccountForm'
 import { type Account } from './AccountList'
-import { type CreateAccountData, type UpdateAccountData } from '@/lib/schemas/account'
 
 interface AccountDialogProps {
   mode: 'create' | 'edit'

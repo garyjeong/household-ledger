@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { CheckCircle, Zap, TrendingUp, Calendar, Tag, DollarSign } from 'lucide-react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { CheckCircle, Zap, TrendingUp, Calendar, Tag, DollarSign } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface SuccessModalProps {

@@ -1,5 +1,7 @@
 'use client'
 
+/* eslint-disable no-console */
+
 import { useEffect } from 'react'
 import { onCLS, onFCP, onLCP, onTTFB, onINP, type Metric } from 'web-vitals'
 

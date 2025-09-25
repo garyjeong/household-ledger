@@ -52,7 +52,7 @@ export default function RecurringSettingsPage() {
             <div>
               <h3 className='font-medium text-blue-900 mb-1'>빠른 입력과 통합</h3>
               <p className='text-sm text-blue-700'>
-                이제 반복 거래는 '빠른 입력' 시 "반복 거래로 등록" 옵션을 통해 추가할 수 있습니다.
+                이제 반복 거래는 &apos;빠른 입력&apos; 시 &quot;반복 거래로 등록&quot; 옵션을 통해 추가할 수 있습니다.
                 이곳에서는 생성된 규칙을 확인하고 관리할 수 있습니다.
               </p>
             </div>

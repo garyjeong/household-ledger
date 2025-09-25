@@ -6,11 +6,12 @@
 
 import { handleApiError, handleNetworkError, withRetry, type ErrorReport } from './error-handler'
 import { logApiCall, safeConsole } from './security-utils'
+import type { JsonValue } from '@/types/json'
 
-interface ApiResponse<T = any> {
+interface ApiResponse<TData> {
   ok: boolean
   status: number
-  data?: T
+  data?: TData
   error?: string
   errorReport?: ErrorReport
 }
@@ -59,12 +60,12 @@ async function refreshAccessToken(): Promise<boolean> {
 /**
  * API 호출 함수 (인증 에러 처리 및 자동 토큰 갱신 포함)
  */
-export async function apiCall<T = any>(
+export async function apiCall<TData>(
   url: string,
   options?: RequestInit,
   skipRetry: boolean = false,
   retryCount: number = 0
-): Promise<ApiResponse<T>> {
+): Promise<ApiResponse<TData>> {
   const method = options?.method || 'GET'
   const startTime = Date.now()
   let errorReport: ErrorReport | undefined
@@ -93,7 +94,7 @@ export async function apiCall<T = any>(
             url,
             retryCount: retryCount + 1,
           })
-          return apiCall<T>(url, options, true, retryCount + 1) // 재시도 카운트 증가
+          return apiCall<TData>(url, options, true, retryCount + 1) // 재시도 카운트 증가
         } else {
           safeConsole.warn('❌ 토큰 갱신 실패, 로그인 페이지로 리다이렉트', {
             currentUrl: window.location.href,
@@ -115,7 +116,9 @@ export async function apiCall<T = any>(
         }
       }
       // 401 외의 에러 또는 재시도하지 않는 401 에러 처리
-      const errorData = await response.json().catch(() => ({ message: response.statusText }))
+      const errorData: { message?: string; error?: string } = await response
+        .json()
+        .catch(() => ({ message: response.statusText }))
       const apiError = new Error(errorData.message || '알 수 없는 API 오류')
       errorReport = handleApiError(apiError, url)
 
@@ -135,7 +138,7 @@ export async function apiCall<T = any>(
     }
 
     // 성공 응답 처리
-    const data = await response.json().catch(() => null) // JSON 파싱 실패해도 진행
+    const data: TData = await response.json().catch(() => null as unknown as TData) // JSON 파싱 실패해도 진행
 
     safeConsole.log('API 성공 응답', { endpoint: url, method, status: response.status, data })
 
@@ -166,15 +169,18 @@ export async function apiCall<T = any>(
 /**
  * GET 요청
  */
-export async function apiGet<T = any>(url: string): Promise<ApiResponse<T>> {
-  return apiCall<T>(url, { method: 'GET' })
+export async function apiGet<TData>(url: string): Promise<ApiResponse<TData>> {
+  return apiCall<TData>(url, { method: 'GET' })
 }
 
 /**
  * POST 요청
  */
-export async function apiPost<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {
-  return apiCall<T>(url, {
+export async function apiPost<TData, TBody extends JsonValue | undefined = undefined>(
+  url: string,
+  data?: TBody
+): Promise<ApiResponse<TData>> {
+  return apiCall<TData>(url, {
     method: 'POST',
     body: data ? JSON.stringify(data) : undefined,
   })
@@ -183,8 +189,11 @@ export async function apiPost<T = any>(url: string, data?: any): Promise<ApiResp
 /**
  * PUT 요청
  */
-export async function apiPut<T = any>(url: string, data?: any): Promise<ApiResponse<T>> {
-  return apiCall<T>(url, {
+export async function apiPut<TData, TBody extends JsonValue | undefined = undefined>(
+  url: string,
+  data?: TBody
+): Promise<ApiResponse<TData>> {
+  return apiCall<TData>(url, {
     method: 'PUT',
     body: data ? JSON.stringify(data) : undefined,
   })
@@ -193,28 +202,28 @@ export async function apiPut<T = any>(url: string, data?: any): Promise<ApiRespo
 /**
  * DELETE 요청
  */
-export async function apiDelete<T = any>(url: string): Promise<ApiResponse<T>> {
-  return apiCall<T>(url, { method: 'DELETE' })
+export async function apiDelete<TData>(url: string): Promise<ApiResponse<TData>> {
+  return apiCall<TData>(url, { method: 'DELETE' })
 }
 
 /**
  * 재시도가 포함된 API 호출
  */
-export async function apiCallWithRetry<T = any>(
+export async function apiCallWithRetry<TData>(
   url: string,
   options: RequestInit = {},
   maxRetries = 3
-): Promise<ApiResponse<T>> {
-  return withRetry(() => apiCall<T>(url, options), maxRetries)
+): Promise<ApiResponse<TData>> {
+  return withRetry(() => apiCall<TData>(url, options), maxRetries)
 }
 
 /**
  * 배치 API 요청 (병렬 처리)
  */
-export async function apiBatch<T = any>(
+export async function apiBatch<TData>(
   requests: Array<{ url: string; options?: RequestInit }>
-): Promise<ApiResponse<T>[]> {
-  const promises = requests.map(({ url, options }) => apiCall<T>(url, options))
+): Promise<ApiResponse<TData>[]> {
+  const promises = requests.map(({ url, options }) => apiCall<TData>(url, options))
 
   return Promise.all(promises)
 }
@@ -222,11 +231,11 @@ export async function apiBatch<T = any>(
 /**
  * 파일 업로드 API 호출
  */
-export async function apiUpload<T = any>(
+export async function apiUpload<TData>(
   url: string,
   file: File,
   onProgress?: (progress: number) => void
-): Promise<ApiResponse<T>> {
+): Promise<ApiResponse<TData>> {
   return new Promise(resolve => {
     const formData = new FormData()
     formData.append('file', file)
@@ -242,7 +251,7 @@ export async function apiUpload<T = any>(
 
     xhr.addEventListener('load', () => {
       try {
-        const data = JSON.parse(xhr.responseText)
+        const data = JSON.parse(xhr.responseText) as TData
         resolve({
           ok: xhr.status >= 200 && xhr.status < 300,
           status: xhr.status,
@@ -284,9 +293,9 @@ export async function apiUpload<T = any>(
  * API 응답 캐싱을 위한 헬퍼
  */
 class ApiCache {
-  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>()
+  private cache = new Map<string, { data: JsonValue; timestamp: number; ttl: number }>()
 
-  set(key: string, data: any, ttl = 5 * 60 * 1000) {
+  set(key: string, data: JsonValue, ttl = 5 * 60 * 1000) {
     // 기본 5분 TTL
     this.cache.set(key, {
       data,
@@ -295,7 +304,7 @@ class ApiCache {
     })
   }
 
-  get(key: string): any | null {
+  get(key: string): JsonValue | null {
     const cached = this.cache.get(key)
     if (!cached) return null
 
@@ -321,7 +330,7 @@ const apiCache = new ApiCache()
 /**
  * 캐싱이 포함된 GET 요청
  */
-export async function apiGetCached<T = any>(url: string, ttl?: number): Promise<ApiResponse<T>> {
+export async function apiGetCached<TData>(url: string, ttl?: number): Promise<ApiResponse<TData>> {
   const cacheKey = `GET:${url}`
   const cached = apiCache.get(cacheKey)
 
@@ -329,11 +338,11 @@ export async function apiGetCached<T = any>(url: string, ttl?: number): Promise<
     return {
       ok: true,
       status: 200,
-      data: cached,
+      data: cached as TData,
     }
   }
 
-  const response = await apiGet<T>(url)
+  const response = await apiGet<TData>(url)
 
   if (response.ok && response.data) {
     apiCache.set(cacheKey, response.data, ttl)

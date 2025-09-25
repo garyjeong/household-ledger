@@ -2,6 +2,8 @@
  * 통계 쿼리 직접 테스트 스크립트
  */
 
+/* eslint-disable no-console */
+
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()

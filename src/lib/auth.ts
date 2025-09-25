@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken'
+import jwt, { JsonWebTokenError, NotBeforeError, TokenExpiredError } from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { safeConsole } from './security-utils'
 
@@ -98,10 +98,10 @@ export function verifyAccessToken(token: string): JWTPayload | null {
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload
     return decoded
-  } catch (error: any) {
-    if (error.name === 'TokenExpiredError') {
+  } catch (error: unknown) {
+    if (error instanceof TokenExpiredError) {
       safeConsole.warn('Access token expired', { expiredAt: error.expiredAt })
-    } else if (error.name === 'JsonWebTokenError') {
+    } else if (error instanceof JsonWebTokenError) {
       safeConsole.error('Access token malformed', error)
     } else {
       safeConsole.error('Access token verification failed', error)
@@ -114,10 +114,10 @@ export function verifyRefreshToken(token: string): JWTPayload | null {
   try {
     const decoded = jwt.verify(token, JWT_REFRESH_SECRET) as JWTPayload
     return decoded
-  } catch (error: any) {
-    if (error.name === 'TokenExpiredError') {
+  } catch (error: unknown) {
+    if (error instanceof TokenExpiredError) {
       safeConsole.warn('Refresh token expired', { expiredAt: error.expiredAt })
-    } else if (error.name === 'JsonWebTokenError') {
+    } else if (error instanceof JsonWebTokenError) {
       safeConsole.error('Refresh token malformed', error)
     } else {
       safeConsole.error('Refresh token verification failed', error)
@@ -134,20 +134,20 @@ export function verifyAccessTokenDetailed(token: string): TokenVerificationResul
       isValid: true,
       payload: decoded,
     }
-  } catch (error: any) {
-    if (error.name === 'TokenExpiredError') {
+  } catch (error: unknown) {
+    if (error instanceof TokenExpiredError) {
       return {
         isValid: false,
         error: 'EXPIRED',
         message: `토큰이 만료되었습니다. 만료 시간: ${error.expiredAt}`,
       }
-    } else if (error.name === 'JsonWebTokenError') {
+    } else if (error instanceof JsonWebTokenError) {
       return {
         isValid: false,
         error: 'MALFORMED',
         message: '유효하지 않은 토큰 형식입니다.',
       }
-    } else if (error.name === 'NotBeforeError') {
+    } else if (error instanceof NotBeforeError) {
       return {
         isValid: false,
         error: 'INVALID',
