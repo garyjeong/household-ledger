@@ -81,19 +81,6 @@ export function QuickAddModal({
   // 현재 그룹 정보 가져오기
   const { currentGroup, isLoading: groupLoading } = useGroup()
   
-
-  // 카테고리 가져오기: 현재 그룹과 선택된 타입 기준으로 서버에서 필터링
-  const {
-    data: categoriesData,
-    isLoading: categoriesLoading,
-    error: categoriesError,
-    refetch: refetchCategories,
-  } = useCategories(
-    currentGroup
-      ? { groupId: currentGroup.id, type: formData.type }
-      : { type: formData.type }
-  )
-
   // 폼 상태
   const [formData, setFormData] = useState<QuickAddForm>({
     amount: '',
@@ -109,6 +96,18 @@ export function QuickAddModal({
     recurringFrequency: 'MONTHLY',
     recurringDayRule: '',
   })
+
+  // 카테고리 가져오기: 현재 그룹과 선택된 타입 기준으로 서버에서 필터링
+  const {
+    data: categoriesData,
+    isLoading: categoriesLoading,
+    error: categoriesError,
+    refetch: refetchCategories,
+  } = useCategories(
+    currentGroup
+      ? { groupId: currentGroup.id, type: formData.type }
+      : { type: formData.type }
+  )
 
   // 카테고리 배열 추출 및 타입별 필터링
   const allCategories = categoriesData?.categories || []
@@ -173,10 +172,10 @@ export function QuickAddModal({
     setIsLoading(true)
     try {
       if (formData.isRecurring) {
+        // 날짜 규칙: 사용 날짜의 일자/요일을 자동 적용
         await createRecurringRule.mutateAsync({
           startDate: formData.date,
           frequency: formData.recurringFrequency as 'MONTHLY' | 'WEEKLY' | 'DAILY',
-          dayRule: formData.recurringDayRule,
           amount: parseFloat(formData.amount.replace(/[^\d]/g, '')),
           categoryId: formData.categoryId,
           memo: formData.memo,
@@ -210,7 +209,7 @@ export function QuickAddModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* 고정 헤더 */}
-        <div className='p-6 pb-4 border-b border-slate-200 flex-shrink-0'>
+        <div className='p-6 pb-4 flex-shrink-0'>
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2'>
               <div className='flex items-center justify-center w-8 h-8 bg-blue-100 rounded-lg'>
@@ -554,33 +553,25 @@ export function QuickAddModal({
           </div>
 
           {formData.isRecurring && (
-            <div className='mt-4 p-4 bg-gray-50 rounded-lg space-y-4'>
-              <div className='grid grid-cols-2 gap-4'>
-                <div>
-                  <Label htmlFor='recurringFrequency'>반복 주기</Label>
-                  <Select
-                    value={formData.recurringFrequency}
-                    onValueChange={value => setFormData(prev => ({ ...prev, recurringFrequency: value }))}
-                  >
-                    <SelectTrigger id='recurringFrequency'>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='MONTHLY'>매월</SelectItem>
-                      <SelectItem value='WEEKLY'>매주</SelectItem>
-                      <SelectItem value='DAILY'>매일</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor='recurringDayRule'>날짜 규칙</Label>
-                  <Input
-                    id='recurringDayRule'
-                    value={formData.recurringDayRule}
-                    onChange={e => setFormData(prev => ({ ...prev, recurringDayRule: e.target.value }))}
-                    placeholder='예: 매월 5일'
-                  />
-                </div>
+            <div className='mt-4 p-4 bg-gray-50 rounded-lg space-y-3'>
+              <div>
+                <Label htmlFor='recurringFrequency'>반복 주기</Label>
+                <Select
+                  value={formData.recurringFrequency}
+                  onValueChange={value => setFormData(prev => ({ ...prev, recurringFrequency: value }))}
+                >
+                  <SelectTrigger id='recurringFrequency'>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value='MONTHLY'>매월</SelectItem>
+                    <SelectItem value='WEEKLY'>매주</SelectItem>
+                    <SelectItem value='DAILY'>매일</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className='mt-2 text-xs text-slate-600'>
+                  날짜 규칙은 입력할 필요가 없습니다. 선택한 사용 날짜의 일자(예: 15일)를 기준으로 자동 반복됩니다.
+                </p>
               </div>
             </div>
           )}

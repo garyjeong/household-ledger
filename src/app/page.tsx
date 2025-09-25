@@ -8,6 +8,7 @@ import { MonthlyStats } from '@/types/couple-ledger'
 import { useMonthlyStats } from '@/hooks/use-monthly-stats'
 import { useToast } from '@/hooks/use-toast'
 import { useAuth } from '@/contexts/auth-context'
+import { useGroup } from '@/contexts/group-context'
 
 
 /**
@@ -22,6 +23,7 @@ import { useAuth } from '@/contexts/auth-context'
 export default function HomePage() {
   const { toast } = useToast()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const { currentGroup, isLoading: groupLoading } = useGroup()
   const router = useRouter()
 
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -49,24 +51,24 @@ export default function HomePage() {
 
   // 에러 토스트 표시
   useEffect(() => {
-    if (error) {
+    if (error && currentGroup) {
       toast({
         title: '오류',
         description: error instanceof Error ? error.message : '데이터를 불러오는데 실패했습니다.',
         variant: 'destructive',
       })
     }
-  }, [error, toast])
+  }, [error, toast, currentGroup])
 
 
 
   // 인증 로딩 중일 때 렌더링
-  if (authLoading) {
+  if (authLoading || groupLoading) {
     return (
       <div className='flex items-center justify-center min-h-screen'>
         <div className='text-center'>
           <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mx-auto mb-4'></div>
-          <p className='text-slate-600'>인증 상태를 확인하는 중...</p>
+          <p className='text-slate-600'>초기 상태를 준비하고 있습니다...</p>
         </div>
       </div>
     )
@@ -136,7 +138,7 @@ export default function HomePage() {
     )
   }
 
-  if (error || (!monthlyStats && !isLoading)) {
+  if (error && currentGroup) {
     return (
       <ResponsiveLayout>
         <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8'>

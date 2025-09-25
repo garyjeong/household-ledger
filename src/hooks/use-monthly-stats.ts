@@ -17,7 +17,7 @@ interface MonthlyStatsResponse {
 }
 
 // 월별 통계 데이터 조회
-export function useMonthlyStats({ period, refetchInterval = 30000 }: UseMonthlyStatsOptions) {
+export function useMonthlyStats({ period, refetchInterval = 0 }: UseMonthlyStatsOptions) {
   const { currentGroup } = useGroup()
 
   return useQuery({
@@ -46,17 +46,16 @@ export function useMonthlyStats({ period, refetchInterval = 30000 }: UseMonthlyS
 
       return response.data.data
     },
-    enabled: true,
-    // 월 이동 시마다 항상 서버에서 새로 로드
-    staleTime: 0,
-    gcTime: 0,
-    refetchInterval, // 30초마다 자동 갱신 (실시간 업데이트)
+    enabled: !!currentGroup,
+    // 자동 재호출 제거. 수동 invalidate로만 갱신
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchInterval: refetchInterval && refetchInterval > 0 ? refetchInterval : undefined,
     refetchIntervalInBackground: false,
-    refetchOnWindowFocus: 'always',
-    refetchOnMount: 'always',
-    refetchOnReconnect: 'always',
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    retry: 0,
   })
 }
 

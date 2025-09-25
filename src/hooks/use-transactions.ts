@@ -88,8 +88,13 @@ export function useTransactions(filters: TransactionFilters = {}) {
       return response.data
     },
     enabled: !!currentGroup,
-    staleTime: 1 * 60 * 1000, // 1분
-    gcTime: 5 * 60 * 1000, // 5분
+    // 자동 재호출 제거. 수동 invalidate로만 갱신
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 0,
   })
 }
 

@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from 'react'
 import { GroupWithMembers } from '@/lib/auth'
 import { apiGet, apiPost, apiDelete } from '@/lib/api-client'
@@ -49,10 +50,12 @@ export function GroupProvider({ children }: GroupProviderProps) {
   const [groups, setGroups] = useState<GroupWithMembers[]>([])
   const [currentGroup, setCurrentGroup] = useState<GroupWithMembers | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const isFetchingRef = useRef(false)
 
   const refreshGroups = useCallback(async () => {
-    if (!user || isLoading) return
+    if (!user || isFetchingRef.current) return
 
+    isFetchingRef.current = true
     setIsLoading(true)
     try {
       const response = await apiGet('/api/groups')
@@ -71,9 +74,10 @@ export function GroupProvider({ children }: GroupProviderProps) {
     } catch (error) {
       console.error('Failed to fetch groups:', error)
     } finally {
+      isFetchingRef.current = false
       setIsLoading(false)
     }
-  }, [user, isLoading])
+  }, [user])
 
   // 사용자가 로그인했을 때 그룹 목록 불러오기
   useEffect(() => {
@@ -85,50 +89,7 @@ export function GroupProvider({ children }: GroupProviderProps) {
     }
   }, [isAuthenticated, user, refreshGroups])
 
-  // 실시간 동기화를 위한 폴링 설정
-  useEffect(() => {
-    if (!isAuthenticated || !user) return
-
-    // 30초마다 그룹 목록을 새로고침하여 실시간 업데이트 효과 제공
-    const intervalId = setInterval(() => {
-      refreshGroups()
-    }, 30000) // 30초
-
-    return () => clearInterval(intervalId)
-  }, [isAuthenticated, user, refreshGroups])
-
-  // 브라우저 포커스 시 그룹 목록 새로고침
-  useEffect(() => {
-    if (!isAuthenticated || !user) return
-
-    let refreshTimeout: NodeJS.Timeout
-
-    const debouncedRefresh = () => {
-      clearTimeout(refreshTimeout)
-      refreshTimeout = setTimeout(() => {
-        refreshGroups()
-      }, 1000) // 1초 디바운싱
-    }
-
-    const handleFocus = () => {
-      debouncedRefresh()
-    }
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        debouncedRefresh()
-      }
-    }
-
-    window.addEventListener('focus', handleFocus)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      window.removeEventListener('focus', handleFocus)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      clearTimeout(refreshTimeout)
-    }
-  }, [isAuthenticated, user, refreshGroups])
+  // 자동 새로고침/포커스 기반 재호출 제거 (수동 갱신만 허용)
 
   // 그룹 목록이 변경될 때 현재 그룹 설정
   useEffect(() => {

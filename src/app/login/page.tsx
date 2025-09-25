@@ -15,6 +15,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { SignupPageContent } from '@/app/signup/page'
 import {
   Select,
   SelectContent,
@@ -84,6 +86,7 @@ function LoginPageContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [suggestedDomains, setSuggestedDomains] = useState<string[]>([])
   const [recentUsernames, setRecentUsernames] = useState<string[]>([])
+  const [showSignupModal, setShowSignupModal] = useState(false)
 
   const emailFromUrl = searchParams.get('email') || ''
   const isEmailFromUrl = Boolean(emailFromUrl)
@@ -190,8 +193,8 @@ function LoginPageContent() {
           setStage('password')
           return
         }
-        // 신규 사용자는 회원가입으로 이동 (이메일 전달)
-        router.push(`/signup?email=${encodeURIComponent(fullEmail)}`)
+        // 신규 사용자는 회원가입 모달로 진행
+        setShowSignupModal(true)
         return
       }
 
@@ -424,6 +427,16 @@ function LoginPageContent() {
           </CardContent>
         </Card>
       </div>
+      <Dialog open={showSignupModal} onOpenChange={setShowSignupModal}>
+        <DialogContent className='max-w-xl w-full p-0 overflow-hidden rounded-2xl border border-slate-200 shadow-2xl'>
+          <SignupPageContent asModal initialEmail={getFullEmail({
+            username: watch('username') || '',
+            domain: watch('domain') || '',
+            customDomain: watch('customDomain') || '',
+            rememberMe: watch('rememberMe') || false,
+          } as any)} />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

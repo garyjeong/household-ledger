@@ -347,7 +347,7 @@ export function ResponsiveLayout({
   } | null>(null)
   const quickAddMutation = useQuickAddTransaction()
   const { currentGroup } = useGroup()
-  const { data: categoriesData } = useCategories(currentGroup ? { groupId: currentGroup.id } : null)
+  const { data: categoriesData } = useCategories(isQuickAddOpen && currentGroup ? { groupId: currentGroup.id } : null)
   const categories = categoriesData?.categories || []
 
   // 빠른입력 모달 열기
@@ -427,12 +427,14 @@ export function ResponsiveLayout({
       </div>
 
       {/* 빠른입력 모달 - 모든 페이지에서 공통 사용 */}
-      <QuickAddModal
-        isOpen={isQuickAddOpen}
-        onClose={handleQuickAddClose}
-        onSave={handleSaveTransaction}
-        templates={[]} // 템플릿 기능 향후 구현 예정
-      />
+      {isQuickAddOpen && (
+        <QuickAddModal
+          isOpen={isQuickAddOpen}
+          onClose={handleQuickAddClose}
+          onSave={handleSaveTransaction}
+          templates={[]}
+        />
+      )}
 
       {/* 성공 모달 */}
       <SuccessModal

@@ -5,7 +5,7 @@
 
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { apiGet, apiPut } from '@/lib/api-client'
 
@@ -95,6 +95,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
   const { user, isAuthenticated } = useAuth()
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [isLoading, setIsLoading] = useState(true)
+  const isFetchingRef = useRef(false)
 
   // 설정 로드
   const loadSettings = useCallback(async () => {
@@ -104,6 +105,8 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       return
     }
 
+    if (isFetchingRef.current) return
+    isFetchingRef.current = true
     try {
       const response = await apiGet('/api/settings')
 
@@ -118,6 +121,7 @@ export function SettingsProvider({ children }: SettingsProviderProps) {
       console.error('설정 로드 중 오류:', error)
       setSettings(DEFAULT_SETTINGS)
     } finally {
+      isFetchingRef.current = false
       setIsLoading(false)
     }
   }, [isAuthenticated, user])

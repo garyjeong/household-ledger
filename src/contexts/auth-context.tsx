@@ -6,10 +6,12 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from 'react'
 import { useRouter } from 'next/navigation'
 import { User, emailStorage } from '@/lib/auth'
-import { apiGet, apiPost } from '@/lib/api-client'
+import { apiGet, apiPost, cache as apiCache } from '@/lib/api-client'
+import { clearCategoriesCache } from '@/hooks/use-categories'
 
 interface AuthContextType {
   user: User | null
@@ -50,15 +52,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [rememberedEmail, setRememberedEmail] = useState<string | null>(null)
+  const isCheckingRef = useRef(false)
 
   const isAuthenticated = !!user
 
   const checkAuthStatus = useCallback(async () => {
+    if (isCheckingRef.current) return
+    isCheckingRef.current = true
     try {
       const response = await apiGet('/api/auth/me')
 
       if (response.ok && response.data) {
         setUser(response.data.user)
+        apiCache.clear()
+        clearCategoriesCache()
       } else {
         setUser(null)
         if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
@@ -72,6 +79,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         router.push('/login')
       }
     } finally {
+      isCheckingRef.current = false
       setIsLoading(false)
     }
   }, [router])
@@ -144,6 +152,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error('Logout error:', error)
     } finally {
       setUser(null)
+      apiCache.clear()
+      clearCategoriesCache()
       // 로그아웃 후 로그인 페이지로 리디렉션
       router.push('/login')
     }

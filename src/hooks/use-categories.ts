@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { CategoryResponse, CreateCategoryData, UpdateCategoryData } from '@/lib/schemas/category'
 import { apiGet, apiPost, apiPut, apiDelete } from '@/lib/api-client'
 
@@ -55,7 +55,7 @@ export function useCategories(
   const [categories, setCategories] = useState<CategoryResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [retryCount, setRetryCount] = useState(0)
+  const isFetchingRef = useRef(false)
 
   // 파라미터 문자열 생성을 메모이제이션
   const paramString = useMemo(() => {
@@ -77,18 +77,17 @@ export function useCategories(
   }, [typeOrFilters])
 
   const fetchCategories = useCallback(
-    async (isRetry = false, forceRefresh = false) => {
+    async (_isRetry = false, forceRefresh = false) => {
       // null이 전달되면 API 호출하지 않음
       if (typeOrFilters === null) {
         setCategories([])
         setLoading(false)
         setError(null)
-        setRetryCount(0)
         return
       }
 
       // 캐시 확인 (강제 새로고침이 아닌 경우)
-      if (!forceRefresh && !isRetry) {
+      if (!forceRefresh) {
         const cacheKey = paramString
         const cachedData = categoriesCache.get(cacheKey)
 
@@ -97,12 +96,13 @@ export function useCategories(
           setCategories(cachedData.data)
           setLoading(false)
           setError(null)
-          setRetryCount(0)
           return
         }
       }
 
       try {
+        if (isFetchingRef.current) return
+        isFetchingRef.current = true
         setLoading(true)
         setError(null)
 
@@ -125,37 +125,26 @@ export function useCategories(
         })
 
         setCategories(categoriesData)
-        setRetryCount(0) // 성공 시 재시도 카운트 리셋
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다'
         setError(errorMessage)
         console.error('카테고리 로딩 오류:', err)
-
-        // 400 에러가 아니고 재시도 횟수가 3회 미만인 경우에만 재시도
-        if (!isRetry && retryCount < 3 && !errorMessage.includes('400')) {
-          setTimeout(
-            () => {
-              setRetryCount(prev => prev + 1)
-              fetchCategories(true)
-            },
-            1000 * (retryCount + 1)
-          ) // 지수 백오프: 1초, 2초, 3초
-        }
       } finally {
+        isFetchingRef.current = false
         setLoading(false)
       }
     },
-    [typeOrFilters, paramString, retryCount]
+    [paramString]
   )
 
   useEffect(() => {
     fetchCategories()
-  }, [fetchCategories])
+    // 의존성은 안정적인 파라미터 문자열만 사용해 불필요한 재호출 방지
+  }, [paramString])
 
   // 수동 재시도 함수 (재시도 카운트 리셋, 캐시 무시)
   const manualRefetch = useCallback(async () => {
-    setRetryCount(0)
-    await fetchCategories(false, true) // 강제 새로고침
+    await fetchCategories(false, true)
   }, [fetchCategories])
 
   // filters 객체가 전달된 경우 data 형태로 반환

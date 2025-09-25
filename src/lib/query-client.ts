@@ -11,20 +11,19 @@ export const queryClient = new QueryClient({
       staleTime: 5 * 60 * 1000,
       // 환율 정보는 자주 변하지 않으므로 10분 동안 캐시
       gcTime: 10 * 60 * 1000,
-      // 에러 시 3회 재시도
-      retry: 3,
+      // 자동 재시도 비활성화 (수동 재시도만 허용)
+      retry: 0,
       // 재시도 간격 (지수 백오프)
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
       // 네트워크 에러나 서버 에러만 재시도
       retryOnMount: true,
-      // 백그라운드에서 자동 새로고침 비활성화 (환율은 실시간성이 중요하지 않음)
+      // 자동 재호출 모두 비활성화
       refetchOnWindowFocus: false,
       refetchOnMount: false,
-      refetchOnReconnect: true,
+      refetchOnReconnect: false,
     },
     mutations: {
-      retry: 1,
-      retryDelay: 1000,
+      retry: 0,
     },
   },
 })

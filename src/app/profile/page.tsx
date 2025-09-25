@@ -37,6 +37,7 @@ import { useProfile } from '@/hooks/use-profile'
 import { useGroup } from '@/contexts/group-context'
 import { useToast } from '@/hooks/use-toast'
 import { Input } from '@/components/ui/input'
+import { useAuth } from '@/contexts/auth-context'
 
 type TabType = 'profile' | 'security' | 'account'
 
@@ -44,6 +45,7 @@ export default function ProfilePage() {
   const { currentGroup, generateInvite, getInviteCode, refreshGroups } = useGroup()
   const { data: profile, isLoading: profileLoading } = useProfile()
   const { toast } = useToast()
+  const { logout } = useAuth()
 
   const [activeTab, setActiveTab] = useState<TabType>('profile')
   const [inviteCode, setInviteCode] = useState<string | null>(null)
@@ -320,6 +322,17 @@ export default function ProfilePage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* 모바일 우선 로그아웃 버튼 (최하단) */}
+            <div className='pt-2'>
+              <Button
+                onClick={logout}
+                variant='outline'
+                className='w-full md:hidden'
+              >
+                로그아웃
+              </Button>
+            </div>
 
             {/* 계정 삭제 섹션 */}
             <div className='border border-red-200 bg-red-50/30 rounded-lg p-3'>

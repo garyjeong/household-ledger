@@ -22,14 +22,7 @@ export function useExchangeRates(baseCurrency = 'KRW') {
     queryFn: () => fetchExchangeRates(baseCurrency),
     staleTime: 15 * 60 * 1000, // 15분 동안 fresh 상태 유지
     gcTime: 30 * 60 * 1000, // 30분 동안 캐시 유지
-    retry: (failureCount, error) => {
-      // API 한도 초과나 서버 에러는 재시도하지 않음
-      if (error instanceof CurrencyApiError && error.status === 429) {
-        return false
-      }
-      return failureCount < 3
-    },
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
+    retry: 0,
   })
 }
 
@@ -158,18 +151,11 @@ export function useAutoRefreshRates(baseCurrency = 'KRW', interval?: number) {
  */
 export function useOfflineExchangeRates(baseCurrency = 'KRW') {
   const [isOnline, setIsOnline] = React.useState(navigator.onLine)
-  const { data, isLoading, error, refetch } = useExchangeRates(baseCurrency)
+  const { data, isLoading, error } = useExchangeRates(baseCurrency)
 
   React.useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true)
-      // 온라인 복구 시 환율 정보 새로고침
-      refetch()
-    }
-
-    const handleOffline = () => {
-      setIsOnline(false)
-    }
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
 
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
@@ -178,7 +164,7 @@ export function useOfflineExchangeRates(baseCurrency = 'KRW') {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
     }
-  }, [refetch])
+  }, [])
 
   return {
     rates: data,

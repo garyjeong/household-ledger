@@ -16,6 +16,9 @@ interface ApiResponse<TData> {
   errorReport?: ErrorReport
 }
 
+// 동일 GET 요청에 대한 중복 호출 방지 (in-flight dedupe)
+const inFlightGetMap = new Map<string, Promise<ApiResponse<unknown>>>()
+
 /**
  * 토큰 갱신 시도 (재귀 호출 방지를 위한 플래그)
  */
@@ -68,6 +71,36 @@ export async function apiCall<TData>(
 ): Promise<ApiResponse<TData>> {
   const method = options?.method || 'GET'
   const startTime = Date.now()
+  let errorReport: ErrorReport | undefined
+
+  const key = `${method}:${url}`
+  if (method === 'GET') {
+    const existing = inFlightGetMap.get(key) as Promise<ApiResponse<TData>> | undefined
+    if (existing) {
+      return existing
+    }
+    const promise = (async () => {
+      try {
+        const result = await coreApiCall<TData>(url, options, skipRetry, retryCount)
+        return result
+      } finally {
+        inFlightGetMap.delete(key)
+      }
+    })()
+    inFlightGetMap.set(key, promise as Promise<ApiResponse<unknown>>)
+    return promise
+  }
+
+  return coreApiCall<TData>(url, options, skipRetry, retryCount)
+}
+
+async function coreApiCall<TData>(
+  url: string,
+  options?: RequestInit,
+  skipRetry: boolean = false,
+  retryCount: number = 0
+): Promise<ApiResponse<TData>> {
+  const method = options?.method || 'GET'
   let errorReport: ErrorReport | undefined
 
   try {

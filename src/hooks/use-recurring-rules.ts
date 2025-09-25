@@ -31,7 +31,7 @@ export interface RecurringRule {
 export interface CreateRecurringRuleData {
   startDate: string
   frequency: 'MONTHLY' | 'WEEKLY' | 'DAILY'
-  dayRule: string
+  dayRule?: string
   amount: number
   categoryId?: string
   merchant?: string

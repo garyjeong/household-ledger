@@ -30,8 +30,10 @@ const signupSchema = z
     customDomain: z.string().optional(),
     password: z
       .string()
-      .min(8, '비밀번호는 최소 8자 이상이어야 합니다.')
-      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, '비밀번호는 대소문자와 숫자를 포함해야 합니다.'),
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/, // 소문자/대문자/숫자/특수문자/8자 이상
+        '비밀번호는 대소문자, 숫자, 특수문자를 포함하고 8자 이상이어야 합니다.'
+      ),
     confirmPassword: z.string(),
     nickname: z
       .string()
@@ -69,7 +71,7 @@ const signupSchema = z
 
 type SignupFormData = z.infer<typeof signupSchema>
 
-function SignupPageContent() {
+export function SignupPageContent({ initialEmail, asModal = false }: { initialEmail?: string; asModal?: boolean }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { signup, isAuthenticated, isLoading: authLoading } = useAuth()
@@ -79,7 +81,7 @@ function SignupPageContent() {
   const [suggestedDomains, setSuggestedDomains] = useState<string[]>([])
   const [recentUsernames, setRecentUsernames] = useState<string[]>([])
 
-  const emailFromUrl = searchParams.get('email') || ''
+  const emailFromUrl = initialEmail ?? (searchParams.get('email') || '')
   const isEmailFromUrl = Boolean(emailFromUrl)
 
   // URL에서 받은 이메일을 username@domain으로 분리
@@ -137,14 +139,18 @@ function SignupPageContent() {
     setRecentUsernames(emailStorage.getRecentUsernames())
   }, [])
 
+  // 비밀번호 조건 체크 (UI/검증 일관성)
+  const hasLower = (pwd: string) => /[a-z]/.test(pwd)
+  const hasUpper = (pwd: string) => /[A-Z]/.test(pwd)
+  const hasDigit = (pwd: string) => /\d/.test(pwd)
+  const hasSpecial = (pwd: string) => /[^\w\s]/.test(pwd)
+  const hasMinLength = (pwd: string) => pwd.length >= 8
+
   // 비밀번호 강도 계산
-  const calculatePasswordStrength = (password: string): number => {
-    let strength = 0
-    if (password.length >= 8) strength += 25
-    if (/[a-z]/.test(password)) strength += 25
-    if (/[A-Z]/.test(password)) strength += 25
-    if (/\d/.test(password)) strength += 25
-    return strength
+  const calculatePasswordStrength = (pwd: string): number => {
+    const checks = [hasMinLength(pwd), hasLower(pwd), hasUpper(pwd), hasDigit(pwd), hasSpecial(pwd)]
+    const passed = checks.filter(Boolean).length
+    return Math.round((passed / checks.length) * 100)
   }
 
   const getPasswordStrengthText = (strength: number): string => {
@@ -224,11 +230,11 @@ function SignupPageContent() {
   const passwordStrength = calculatePasswordStrength(password || '')
 
   return (
-    <div className='min-h-screen bg-slate-50 flex items-center justify-center p-4'>
-      <div className='w-full max-w-md space-y-8'>
+    <div className={asModal ? 'w-full' : 'min-h-screen bg-slate-50 flex items-center justify-center p-4'}>
+      <div className={asModal ? 'w-full max-w-xl p-6 space-y-6' : 'w-full max-w-md space-y-8'}>
         {/* Header */}
-        <div className='text-center space-y-3 animate-fade-in'>
-          {isEmailFromUrl && (
+        <div className={asModal ? 'text-center space-y-2' : 'text-center space-y-3 animate-fade-in'}>
+          {!asModal && isEmailFromUrl && (
             <div className='flex justify-start mb-4'>
               <button
                 onClick={() => router.push('/login')}
@@ -239,30 +245,30 @@ function SignupPageContent() {
               </button>
             </div>
           )}
-          <div className='w-16 h-16 mx-auto bg-slate-900 rounded-2xl flex items-center justify-center shadow-lg'>
-            <span className='text-2xl'>🌟</span>
+          <div className={asModal ? 'w-12 h-12 mx-auto bg-slate-900 rounded-xl flex items-center justify-center' : 'w-16 h-16 mx-auto bg-slate-900 rounded-2xl flex items-center justify-center shadow-lg'}>
+            <span className={asModal ? 'text-xl' : 'text-2xl'}>🌟</span>
           </div>
-          <h1 className='text-3xl font-semibold text-slate-900 tracking-tight'>
+          <h1 className={asModal ? 'text-xl font-semibold text-slate-900 tracking-tight' : 'text-3xl font-semibold text-slate-900 tracking-tight'}>
             {isEmailFromUrl ? '계정 만들기' : '회원가입'}
           </h1>
-          <p className='text-slate-600 text-base'>
+          <p className={asModal ? 'text-slate-600 text-sm' : 'text-slate-600 text-base'}>
             {isEmailFromUrl
               ? `${emailFromUrl}로 새 계정을 만들어보세요`
               : '새로운 계정을 만들어보세요'}
           </p>
         </div>
 
-        <Card className='bg-white border border-slate-200 shadow-xl animate-slide-up'>
-          <CardHeader className='space-y-1'>
-            <CardTitle className='text-xl text-center text-slate-900 font-medium tracking-tight'>
+        <Card className={asModal ? 'bg-white border border-slate-200 shadow-none' : 'bg-white border border-slate-200 shadow-xl animate-slide-up'}>
+          <CardHeader className={asModal ? 'space-y-1 pb-2' : 'space-y-1'}>
+            <CardTitle className={asModal ? 'text-lg text-center text-slate-900 font-medium tracking-tight' : 'text-xl text-center text-slate-900 font-medium tracking-tight'}>
               {isEmailFromUrl ? '추가 정보 입력' : '계정 만들기'}
             </CardTitle>
-            <CardDescription className='text-center text-slate-600'>
+            <CardDescription className={asModal ? 'text-center text-slate-600 text-sm' : 'text-center text-slate-600'}>
               {isEmailFromUrl ? '나머지 정보를 입력해주세요' : '필요한 정보를 입력해주세요'}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+          <CardContent className={asModal ? 'pt-2' : ''}>
+            <form onSubmit={handleSubmit(onSubmit)} className={asModal ? 'space-y-3' : 'space-y-4'}>
               {/* Email Field */}
               <div className='space-y-2'>
                 <Label className='text-slate-900 font-medium text-sm'>이메일</Label>
@@ -270,9 +276,9 @@ function SignupPageContent() {
                   {/* Username */}
                   <div className='flex-1 relative group'>
                     <AtSign className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 transition-colors group-focus-within:text-slate-900' />
-                    <Input
+                  <Input
                       placeholder='아이디'
-                      className={`pl-10 h-10 text-slate-900 placeholder:text-slate-400 transition-all duration-200 rounded-lg ${
+                    className={`pl-10 h-10 text-slate-900 placeholder:text-slate-400 transition-all duration-200 rounded-lg ${
                         isEmailFromUrl
                           ? 'bg-slate-100 border-slate-300 cursor-not-allowed opacity-70'
                           : 'bg-white border-slate-300 focus:bg-white focus:border-slate-400 focus:ring-slate-300/30'
@@ -427,36 +433,44 @@ function SignupPageContent() {
                   <p className='font-medium text-slate-800'>비밀번호 조건:</p>
                   <ul className='space-y-1 ml-2'>
                     <li
-                      className={`flex items-center gap-2 ${password && password.length >= 8 ? 'text-emerald-600' : 'text-slate-500'}`}
+                      className={`flex items-center gap-2 ${password && hasMinLength(password) ? 'text-emerald-600' : 'text-slate-500'}`}
                     >
                       <span
-                        className={`w-1.5 h-1.5 rounded-full ${password && password.length >= 8 ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                        className={`w-1.5 h-1.5 rounded-full ${password && hasMinLength(password) ? 'bg-emerald-600' : 'bg-slate-300'}`}
                       ></span>
                       최소 8자 이상
                     </li>
                     <li
-                      className={`flex items-center gap-2 ${password && /[A-Z]/.test(password) ? 'text-emerald-600' : 'text-slate-500'}`}
+                      className={`flex items-center gap-2 ${password && hasUpper(password) ? 'text-emerald-600' : 'text-slate-500'}`}
                     >
                       <span
-                        className={`w-1.5 h-1.5 rounded-full ${password && /[A-Z]/.test(password) ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                        className={`w-1.5 h-1.5 rounded-full ${password && hasUpper(password) ? 'bg-emerald-600' : 'bg-slate-300'}`}
                       ></span>
                       대문자 포함
                     </li>
                     <li
-                      className={`flex items-center gap-2 ${password && /[a-z]/.test(password) ? 'text-emerald-600' : 'text-slate-500'}`}
+                      className={`flex items-center gap-2 ${password && hasLower(password) ? 'text-emerald-600' : 'text-slate-500'}`}
                     >
                       <span
-                        className={`w-1.5 h-1.5 rounded-full ${password && /[a-z]/.test(password) ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                        className={`w-1.5 h-1.5 rounded-full ${password && hasLower(password) ? 'bg-emerald-600' : 'bg-slate-300'}`}
                       ></span>
                       소문자 포함
                     </li>
                     <li
-                      className={`flex items-center gap-2 ${password && /\d/.test(password) ? 'text-emerald-600' : 'text-slate-500'}`}
+                      className={`flex items-center gap-2 ${password && hasDigit(password) ? 'text-emerald-600' : 'text-slate-500'}`}
                     >
                       <span
-                        className={`w-1.5 h-1.5 rounded-full ${password && /\d/.test(password) ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                        className={`w-1.5 h-1.5 rounded-full ${password && hasDigit(password) ? 'bg-emerald-600' : 'bg-slate-300'}`}
                       ></span>
                       숫자 포함
+                    </li>
+                    <li
+                      className={`flex items-center gap-2 ${password && hasSpecial(password) ? 'text-emerald-600' : 'text-slate-500'}`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${password && hasSpecial(password) ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                      ></span>
+                      특수문자 포함 (예: !@#$%)
                     </li>
                   </ul>
                 </div>
@@ -558,7 +572,7 @@ function SignupPageContent() {
               {/* Submit Button */}
               <Button
                 type='submit'
-                className='w-full h-10 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg transition-all duration-200 disabled:opacity-50'
+                className={asModal ? 'w-full h-10 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg transition-all duration-200 disabled:opacity-50' : 'w-full h-10 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg transition-all duration-200 disabled:opacity-50'}
                 disabled={isLoading}
               >
                 <span className='flex items-center justify-center gap-2'>
@@ -575,23 +589,23 @@ function SignupPageContent() {
             </form>
           </CardContent>
         </Card>
-
-        {/* Login Link */}
-        <Card className='bg-white border border-slate-200 shadow-md animate-slide-up animation-delay-[0.2s]'>
-          <CardContent className='pt-6'>
-            <div className='text-center'>
-              <p className='text-sm text-slate-700'>
-                이미 계정이 있으신가요?{' '}
-                <Link
-                  href='/login'
-                  className='text-slate-900 hover:underline font-medium cursor-pointer'
-                >
-                  로그인
-                </Link>
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        {!asModal && (
+          <Card className='bg-white border border-slate-200 shadow-md animate-slide-up animation-delay-[0.2s]'>
+            <CardContent className='pt-6'>
+              <div className='text-center'>
+                <p className='text-sm text-slate-700'>
+                  이미 계정이 있으신가요?{' '}
+                  <Link
+                    href='/login'
+                    className='text-slate-900 hover:underline font-medium cursor-pointer'
+                  >
+                    로그인
+                  </Link>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

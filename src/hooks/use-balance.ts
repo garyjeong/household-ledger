@@ -45,9 +45,10 @@ export function useBalance(
     enabled: !!ownerId,
     staleTime: 30 * 1000, // 30초간 fresh
     gcTime: 5 * 60 * 1000, // 5분간 캐시 유지
-    refetchInterval: options.refreshInterval,
-    refetchOnWindowFocus: options.revalidateOnFocus ?? true,
-    retry: options.retry ?? 2,
+    refetchInterval:
+      options.refreshInterval && options.refreshInterval > 0 ? options.refreshInterval : undefined,
+    refetchOnWindowFocus: false,
+    retry: 0,
     retryDelay: 2000,
   })
 
