@@ -282,7 +282,7 @@ export const MonthlyDashboard = React.memo(function MonthlyDashboard({
                     
                     return (
                       <div 
-                        key={category.categoryId} 
+                        key={`${category.categoryId ?? 'none'}-${index}`} 
                         className={`group relative p-4 rounded-xl border ${rankStyle.border} bg-white hover:bg-slate-50 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5`}
                       >
                         <div className='flex items-center gap-4'>
@@ -402,7 +402,7 @@ export const MonthlyDashboard = React.memo(function MonthlyDashboard({
                             
                             return (
                               <div
-                                key={category.categoryId}
+                                key={`${category.categoryId ?? 'none'}-dot-${index}`}
                                 className='absolute transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer'
                                 style={{
                                   left: `calc(50% + ${x}px)`,
@@ -432,7 +432,7 @@ export const MonthlyDashboard = React.memo(function MonthlyDashboard({
                     <div className='space-y-3'>
                       {stats.categoryBreakdown.slice(0, 6).map((category, index) => (
                         <div 
-                          key={category.categoryId} 
+                          key={`${category.categoryId ?? 'none'}-row-${index}`} 
                           className='group flex items-center gap-4 p-3 rounded-lg bg-white border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all duration-200'
                         >
                           {/* 카테고리 색상 및 순위 */}

@@ -82,8 +82,17 @@ export function QuickAddModal({
   const { currentGroup, isLoading: groupLoading } = useGroup()
   
 
-  // 카테고리 가져오기 (API에서 자동으로 사용자의 그룹 상황에 맞는 카테고리 반환)
-  const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError, refetch: refetchCategories } = useCategories({})
+  // 카테고리 가져오기: 현재 그룹과 선택된 타입 기준으로 서버에서 필터링
+  const {
+    data: categoriesData,
+    isLoading: categoriesLoading,
+    error: categoriesError,
+    refetch: refetchCategories,
+  } = useCategories(
+    currentGroup
+      ? { groupId: currentGroup.id, type: formData.type }
+      : { type: formData.type }
+  )
 
   // 폼 상태
   const [formData, setFormData] = useState<QuickAddForm>({
@@ -360,12 +369,12 @@ export function QuickAddModal({
                   <div>
                     <h4 className='font-semibold text-slate-900 mb-1'>카테고리를 불러올 수 없습니다</h4>
                     <p className='text-sm text-slate-600 mb-4'>
-                      {categoriesError.includes('401') || categoriesError.includes('인증')
+                      {categoriesError?.includes('401') || categoriesError?.includes('인증')
                         ? '로그인이 만료되었습니다. 다시 로그인해 주세요.'
                         : categoriesError}
                     </p>
                     <div className='flex gap-2 justify-center'>
-                      {categoriesError.includes('401') || categoriesError.includes('인증') ? (
+                      {categoriesError?.includes('401') || categoriesError?.includes('인증') ? (
                         <Button
                           onClick={() => {
                             handleClose()
