@@ -9,6 +9,7 @@ import { QueryProvider } from '@/components/providers/QueryProvider'
 import { ToastProvider } from '@/components/error/ToastProvider'
 import { DatabaseConnectionChecker } from '@/components/database/DatabaseConnectionChecker'
 import { WebVitalsReporter } from '@/components/performance/WebVitalsReporter'
+import ServiceWorkerRegistrar from '@/components/providers/ServiceWorkerRegistrar'
 
 const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
@@ -19,6 +20,8 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: '우리집 가계부',
   description: '개인 및 그룹 가계부 관리 시스템',
+  themeColor: '#0ea5e9',
+  manifest: '/manifest.json',
 }
 
 export default function RootLayout({
@@ -29,6 +32,7 @@ export default function RootLayout({
   return (
     <html lang='ko'>
       <body className={`${jetbrainsMono.variable} antialiased font-sans`} suppressHydrationWarning>
+        <link rel="manifest" href="/manifest.json" />
         <DatabaseConnectionChecker>
           <QueryProvider>
             <ToastProvider>
@@ -42,6 +46,7 @@ export default function RootLayout({
             </ToastProvider>
           </QueryProvider>
         </DatabaseConnectionChecker>
+        <ServiceWorkerRegistrar />
         <WebVitalsReporter />
       </body>
     </html>

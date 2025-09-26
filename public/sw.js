@@ -25,8 +25,8 @@ self.addEventListener('push', event => {
   let notificationData = {
     title: '우리집 가계부',
     body: '새로운 알림이 있습니다.',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/badge-72x72.png',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-72.png',
     tag: NOTIFICATION_TAG,
     requireInteraction: false,
     actions: [

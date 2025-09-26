@@ -38,7 +38,8 @@
     "test:e2e:debug": "playwright test --debug",
     "test:responsive": "playwright test tests/responsive-ui.test.ts",
     "analyze": "ANALYZE=true next build",
-    "lighthouse": "lighthouse http://localhost:3001 --output=json --output-path=./lighthouse-report.json",
+    "lighthouse": "lighthouse http://localhost:3001 --preset=desktop --chrome-flags=\"--no-sandbox --disable-dev-shm-usage\" --output=json --output-path=./lighthouse-report.json",
+    "lighthouse:ci": "lhci autorun --config=./lighthouserc.json",
     "prepare": "husky",
     "mcp:prisma": "prisma mcp"
   },
