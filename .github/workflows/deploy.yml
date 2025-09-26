@@ -27,6 +27,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: WhoAmI (AWS)
+        run: |
+          aws sts get-caller-identity
+
       - name: Determine ECR registry
         id: acct
         run: |
@@ -88,6 +92,11 @@ jobs:
       - name: Update kubeconfig for EKS (assumed creds in env)
         run: |
           aws eks update-kubeconfig --name gary-cluster --region ${{ env.AWS_REGION }}
+
+      - name: Sanity check EKS auth
+        run: |
+          kubectl version --short || true
+          kubectl auth can-i get pods -A || true
 
       - name: Rollout new image to EKS
         run: |
