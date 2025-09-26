@@ -20,8 +20,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: '우리집 가계부',
   description: '개인 및 그룹 가계부 관리 시스템',
-  themeColor: '#0ea5e9',
   manifest: '/manifest.json',
+}
+
+export const viewport = {
+  themeColor: '#0ea5e9',
 }
 
 export default function RootLayout({
