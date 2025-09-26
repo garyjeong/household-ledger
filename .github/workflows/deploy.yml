@@ -86,9 +86,9 @@ jobs:
         with:
           version: latest
 
-      - name: Update kubeconfig for EKS (assume role)
+      - name: Update kubeconfig for EKS (assumed creds in env)
         run: |
-          aws eks update-kubeconfig --name gary-cluster --region ${{ env.AWS_REGION }} --role-arn ${{ secrets.AWS_ROLE_ARN }}
+          aws eks update-kubeconfig --name gary-cluster --region ${{ env.AWS_REGION }}
 
       - name: Rollout new image to EKS
         run: |

@@ -1,0 +1,41 @@
+# VCS
+.git
+.gitignore
+
+# Dependencies & caches
+node_modules
+.pnpm-store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp.*
+
+# Build artifacts
+.next
+out
+dist
+build
+coverage
+
+# Test & reports
+__tests__
+/tests
+/test-results
+/playwright-report
+/playwright/.cache
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea
+.vscode
+
+# Docker
+.dockerignore
+Dockerfile.*.local
+
+# Misc
+*.local
+.env
+.env.*
+**/*.md
