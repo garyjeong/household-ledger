@@ -6,6 +6,7 @@ on:
     branches: ['main']
 
 permissions:
+  id-token: write
   contents: read
 
 jobs:
@@ -19,12 +20,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set AWS creds (env)
-        shell: bash
-        run: |
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
-          echo "AWS_REGION=${{ env.AWS_REGION }}" >> $GITHUB_ENV
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Determine ECR registry
         id: acct
@@ -55,6 +55,11 @@ jobs:
             type=sha,prefix=sha-,format=short
             type=raw,value=latest,enable={{is_default_branch}}
 
+      - name: Generate timestamp tag (ms)
+        id: ts
+        run: |
+          echo "tag=ts-$(date +%s%3N)" >> $GITHUB_OUTPUT
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
@@ -66,8 +71,26 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.ts.outputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Checkout gary-cluster repo
+        uses: actions/checkout@v4
+        with:
+          repository: gary/gary-cluster
+          ssh-key: ${{ secrets.GARY_CLUSTER_DEPLOY_KEY }}
+          path: gary-cluster
+
+      
+
+      - name: Terraform Apply with timestamp tag
+        working-directory: gary-cluster
+        run: |
+          terraform -chdir=terraform init -upgrade -input=false
+          terraform -chdir=terraform apply -auto-approve \
+            -var="household_ledger_image_tag=${{ steps.ts.outputs.tag }}"
