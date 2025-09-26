@@ -20,12 +20,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials (Access Keys)
+      - name: Configure AWS credentials (Access Keys + AssumeRole)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
 
       - name: Determine ECR registry
         id: acct
@@ -85,9 +86,9 @@ jobs:
         with:
           version: latest
 
-      - name: Update kubeconfig for EKS
+      - name: Update kubeconfig for EKS (assume role)
         run: |
-          aws eks update-kubeconfig --name gary-cluster --region ${{ env.AWS_REGION }}
+          aws eks update-kubeconfig --name gary-cluster --region ${{ env.AWS_REGION }} --role-arn ${{ secrets.AWS_ROLE_ARN }}
 
       - name: Rollout new image to EKS
         run: |
