@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useProfile, useUpdateProfile, UserProfile } from '@/hooks/use-profile'
+import { useAuth } from '@/contexts/auth-context'
 import { useToast } from '@/hooks/use-toast'
 
 // 프로필 업데이트 스키마
@@ -35,6 +36,7 @@ interface ProfileFormProps {
 
 export function ProfileForm({ className }: ProfileFormProps) {
   const { toast } = useToast()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
 
   // API hooks
   const { data: profile, isLoading: profileLoading } = useProfile()
@@ -91,9 +93,9 @@ export function ProfileForm({ className }: ProfileFormProps) {
     }
   }
 
-  const isLoading = profileLoading || updateProfile.isPending
+  const isLoading = authLoading || !isAuthenticated || profileLoading || updateProfile.isPending
 
-  if (profileLoading) {
+  if (isLoading) {
     return (
       <Card className={className}>
         <CardContent className='p-6'>

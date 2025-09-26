@@ -55,6 +55,11 @@
   ::selection {
     @apply bg-blue-500/20 text-gray-900;
   }
+
+  :root {
+    /* iOS safe-area 대응 상단 inset 변수 */
+    --safe-top: env(safe-area-inset-top, 0px);
+  }
 }
 
 /* 컴포넌트 레이어 */
@@ -186,6 +191,20 @@
 
 /* 유틸리티 레이어 */
 @layer utilities {
+  /* 모든 페이지 공통 고정 헤더 유틸리티 (모바일 safe-area 대응) */
+  .sticky-header {
+    position: sticky;
+    top: var(--safe-top);
+    z-index: 40;
+    background-color: #ffffff;
+    padding-top: var(--safe-top);
+    /* iOS 스크롤 중 점프 방지 */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
   .hover-device:hover .hover-lift {
     @apply translate-y-[-1px] shadow-lg;
   }

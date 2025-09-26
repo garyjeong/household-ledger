@@ -38,7 +38,7 @@ export default function AppHeader({
     : subtitle
 
   return (
-    <div className='bg-white border-b border-slate-200 sticky top-0 z-40 backdrop-blur-sm bg-white/95'>
+    <div className='bg-white border-b border-slate-200 sticky-header backdrop-blur-sm bg-white/95 will-change-[transform,top]'>
       <div className='container-responsive'>
         <div className='flex items-center h-14 sm:h-16 relative'>
           {/* 좌측 영역 - 뒤로가기 버튼 */}

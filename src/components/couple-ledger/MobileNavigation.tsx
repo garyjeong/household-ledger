@@ -1,13 +1,12 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus, List, BarChart3, User, Home, Receipt, Users, LogOut } from 'lucide-react'
+import { Plus, List, BarChart3, User, Home, Receipt, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { useAuth } from '@/contexts/auth-context'
-import { LogoutConfirmDialog } from '@/components/ui/logout-confirm-dialog'
+ 
 
 interface MobileNavigationProps {
   onQuickAddClick: () => void
@@ -64,8 +63,7 @@ const navigationItems = [
  */
 export function MobileNavigation({ onQuickAddClick, className = '' }: MobileNavigationProps) {
   const pathname = usePathname()
-  const { logout } = useAuth()
-  const [showLogout, setShowLogout] = useState(false)
+  
 
   // 현재 활성 경로 확인
   const isActive = (href: string) => {
@@ -103,23 +101,6 @@ export function MobileNavigation({ onQuickAddClick, className = '' }: MobileNavi
           )
         })}
 
-        {/* 로그아웃 버튼 (모바일 하단 네비 우측에 동일 스타일로 배치) */}
-        <button
-          type='button'
-          onClick={() => setShowLogout(true)}
-          className='flex-1'
-        >
-          <div
-            className='
-              flex flex-col items-center justify-center h-16 text-xs transition-all duration-200 min-h-[44px] min-w-[44px] relative
-              text-gray-500 hover:text-red-600
-            '
-          >
-            <LogOut className='h-4 w-4 mb-1' />
-            <span className='text-xs font-medium truncate max-w-full'>로그아웃</span>
-          </div>
-        </button>
-
         {/* 플로팅 빠른 입력 버튼 - 우상단에 배치 */}
         <Button
           onClick={onQuickAddClick}
@@ -133,15 +114,7 @@ export function MobileNavigation({ onQuickAddClick, className = '' }: MobileNavi
         </Button>
       </div>
 
-      {/* 로그아웃 확인 다이얼로그 */}
-      <LogoutConfirmDialog
-        isOpen={showLogout}
-        onClose={() => setShowLogout(false)}
-        onConfirm={() => {
-          setShowLogout(false)
-          logout()
-        }}
-      />
+      
     </nav>
   )
 }

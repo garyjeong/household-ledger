@@ -25,6 +25,7 @@ import {
   Clipboard,
   ClipboardCheck,
   RefreshCw,
+  LogOut,
 } from 'lucide-react'
 import { ResponsiveLayout } from '@/components/couple-ledger/DesktopSidebar'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -323,17 +324,6 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
-            {/* 모바일 우선 로그아웃 버튼 (최하단) */}
-            <div className='pt-2'>
-              <Button
-                onClick={logout}
-                variant='outline'
-                className='w-full md:hidden'
-              >
-                로그아웃
-              </Button>
-            </div>
-
             {/* 계정 삭제 섹션 */}
             <div className='border border-red-200 bg-red-50/30 rounded-lg p-3'>
               <div className='flex items-center justify-between gap-4'>
@@ -389,6 +379,18 @@ export default function ProfilePage() {
 
             {/* 프로필 폼 */}
             <ProfileForm />
+
+            {/* 로그아웃 버튼: 프로필 정보 탭 최하단 */}
+            <div>
+              <Button
+                onClick={logout}
+                variant='destructive'
+                className='w-full'
+                data-testid='logout-button'
+              >
+                로그아웃
+              </Button>
+            </div>
           </div>
         )
     }
@@ -413,7 +415,7 @@ export default function ProfilePage() {
     <ResponsiveLayout>
       <div className='w-full max-w-none px-4 md:px-6 lg:px-8 py-4 md:py-6 lg:py-8 space-y-4'>
         {/* 헤더 */}
-        <div className='sticky top-0 z-20 bg-white mb-2'>
+        <div className='sticky-header mb-2'>
           <div className='pt-4 bg-white border border-slate-200 rounded-lg p-4 shadow-sm'>
             <div>
               <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>내 정보</h1>
@@ -426,14 +428,25 @@ export default function ProfilePage() {
         <div className='space-y-6'>
           {/* 탭 네비게이션 */}
           <Tabs value={activeTab} onValueChange={value => setActiveTab(value as TabType)}>
-            <TabsList>
+          <TabsList className='flex w-full bg-white border rounded-lg overflow-hidden'>
             {tabs.map(tab => {
               const Icon = tab.icon
               return (
-                <TabsTrigger key={tab.id} value={tab.id} className='gap-2'>
-                  <Icon className='h-4 w-4' />
-                  <div className='hidden sm:block'>
-                    <div className='text-sm font-medium'>{tab.label}</div>
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  aria-label={tab.label}
+                  className='
+                    h-12 sm:h-12 flex-1 rounded-none flex items-center justify-center
+                    px-3 sm:px-4 border-l border-slate-200 first:border-l-0 select-none
+                    data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600
+                    text-slate-700 text-sm whitespace-nowrap leading-none
+                    focus-visible:outline-none focus-visible:ring-0 transition-colors
+                  '
+                >
+                  <div className='flex items-center gap-2'>
+                    <Icon className='h-5 w-5 sm:h-4 sm:w-4' />
+                    <div className='text-sm font-medium whitespace-nowrap'>{tab.label}</div>
                   </div>
                 </TabsTrigger>
               )

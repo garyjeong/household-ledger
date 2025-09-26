@@ -127,7 +127,9 @@ async function coreApiCall<TData>(
             url,
             retryCount: retryCount + 1,
           })
-          return apiCall<TData>(url, options, true, retryCount + 1) // 재시도 카운트 증가
+          // GET 요청 in-flight dedupe에 걸려 재시도가 막히는 문제를 피하기 위해
+          // 여기서는 apiCall이 아닌 coreApiCall을 직접 호출한다
+          return coreApiCall<TData>(url, options, true, retryCount + 1)
         } else {
           safeConsole.warn('❌ 토큰 갱신 실패, 로그인 페이지로 리다이렉트', {
             currentUrl: window.location.href,

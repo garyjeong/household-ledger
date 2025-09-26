@@ -427,8 +427,8 @@ export function CategoryManagement({ className }: CategoryManagementProps) {
   return (
     <div className={`space-y-4 ${className || ''}`}>
       {/* 헤더 */}
-      <div className='sticky top-0 z-20 bg-white mb-2'>
-        <div className='pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white border border-slate-200 rounded-lg p-4 shadow-sm'>
+      <div className='sticky-header mb-2 will-change-[transform,top]'>
+        <div className='pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white/95 border border-slate-200 rounded-lg p-4 shadow-sm backdrop-blur'>
           <div>
             <h1 className='text-3xl font-bold text-slate-900 tracking-tight'>카테고리 관리</h1>
             <p className='text-slate-600 mt-1'>

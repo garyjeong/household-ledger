@@ -25,35 +25,9 @@ export function DatabaseConnectionChecker({ children }: Props) {
   })
 
   const checkDatabaseConnection = async (retryCount = 0) => {
-    try {
-      setDbStatus(prev => ({ ...prev, status: 'checking', retryCount }))
-
-      const response = await fetch('/api/health', {
-        method: 'HEAD',
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache',
-        },
-        signal: AbortSignal.timeout(10000), // 10초 타임아웃
-      })
-
-      if (response.ok) {
-        setDbStatus({
-          status: 'connected',
-          retryCount,
-        })
-      } else {
-        throw new Error(`Database health check failed: HTTP ${response.status}`)
-      }
-    } catch (error: any) {
-      console.error('Database connection check failed:', error)
-      
-      setDbStatus({
-        status: 'error',
-        error: error.message || 'Unknown database connection error',
-        retryCount,
-      })
-    }
+    // 프론트에서 서버의 /api/health를 호출하지 않도록 변경
+    // 앱 초기화 시 바로 연결된 것으로 처리
+    setDbStatus({ status: 'connected', retryCount })
   }
 
   // 컴포넌트 마운트 시 데이터베이스 연결 확인
