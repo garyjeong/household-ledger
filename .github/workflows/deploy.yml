@@ -80,18 +80,21 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Checkout gary-cluster repo
-        uses: actions/checkout@v4
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
         with:
-          repository: gary/gary-cluster
-          ssh-key: ${{ secrets.GARY_CLUSTER_DEPLOY_KEY }}
-          path: gary-cluster
+          version: latest
 
-      
-
-      - name: Terraform Apply with timestamp tag
-        working-directory: gary-cluster
+      - name: Update kubeconfig for EKS
         run: |
-          terraform -chdir=terraform init -upgrade -input=false
-          terraform -chdir=terraform apply -auto-approve \
-            -var="household_ledger_image_tag=${{ steps.ts.outputs.tag }}"
+          aws eks update-kubeconfig --name gary-cluster --region ${{ env.AWS_REGION }}
+
+      - name: Rollout new image to EKS
+        run: |
+          set -e
+          DEPLOY="household-ledger"
+          NAMESPACE="gary-app"
+          IMAGE="${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.ts.outputs.tag }}"
+          kubectl -n "$NAMESPACE" set image deploy/$DEPLOY $DEPLOY=$IMAGE --record
+          kubectl -n "$NAMESPACE" annotate deploy/$DEPLOY deploy.garyzone.pro/image-tag=${{ steps.ts.outputs.tag }} --overwrite
+          kubectl -n "$NAMESPACE" rollout status deploy/$DEPLOY
