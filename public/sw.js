@@ -3,7 +3,7 @@
  * T-026: 설정 하위 메뉴 - 프로필 관리 (알림 설정)
  */
 
-const CACHE_NAME = 'household-ledger-v3'
+const CACHE_NAME = 'household-ledger-v4'
 const NOTIFICATION_TAG = 'household-ledger-notification'
 
 // 오프라인 프리캐시 자원 목록 (정적/공개 자원만 포함)
@@ -50,12 +50,18 @@ self.addEventListener('activate', event => {
     (async () => {
       const keys = await caches.keys()
       await Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      // Navigation Preload 활성화(가능한 브라우저에서)
+      if ('navigationPreload' in self.registration) {
+        try {
+          await self.registration.navigationPreload.enable()
+        } catch (_e) {}
+      }
       await self.clients.claim()
     })()
   )
 })
 
-// 네트워크 우선(HTML/문서), 캐시 우선(정적 파일) 전략
+// 네트워크 우선(HTML/문서), 캐시 우선(정적 파일) + S-W-R 전략
 self.addEventListener('fetch', event => {
   const request = event.request
   const url = new URL(request.url)
@@ -65,13 +71,15 @@ self.addEventListener('fetch', event => {
     return
   }
 
-  // 문서(HTML) 요청: network-first, 실패 시 캐시 fallback
+  // 문서(HTML) 요청: Network-first with navigation preload, 실패 시 캐시/오프라인 fallback
   if (request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html')) {
     event.waitUntil((async () => undefined)())
     event.respondWith(
       (async () => {
         try {
-          const fresh = await fetch(request)
+          // Navigation preload 응답 사용(가능하면) → 아닐 경우 네트워크 페치
+          const preload = event.preloadResponse ? await event.preloadResponse : undefined
+          const fresh = preload || (await fetch(request))
           // 성공 시 캐시에 백그라운드로 저장
           const cache = await caches.open(CACHE_NAME)
           cache.put(request, fresh.clone())
@@ -82,14 +90,20 @@ self.addEventListener('fetch', event => {
           if (cached) return cached
           // 최후 fallback: 루트 캐시 시도
           const root = await cache.match('/')
-          return root || Response.error()
+          // 오프라인 전용 간단한 문서 응답(Fallback)
+          return (
+            root ||
+            new Response('<!doctype html><meta charset="utf-8" /><title>오프라인</title><style>body{font-family:sans-serif;padding:24px;line-height:1.6}</style><h1>오프라인 상태</h1><p>네트워크에 연결되지 않았습니다.</p><p>기본 페이지는 오프라인에서 제한적으로 표시될 수 있습니다.</p>', {
+              headers: { 'Content-Type': 'text/html; charset=utf-8' },
+            })
+          )
         }
       })()
     )
     return
   }
 
-  // 정적 자산: cache-first
+  // 정적 자산: Stale-While-Revalidate
   if (
     url.pathname.startsWith('/_next/') ||
     url.pathname.startsWith('/icons/') ||
@@ -106,10 +120,16 @@ self.addEventListener('fetch', event => {
       (async () => {
         const cache = await caches.open(CACHE_NAME)
         const cached = await cache.match(request)
-        if (cached) return cached
-        const fresh = await fetch(request)
-        cache.put(request, fresh.clone())
-        return fresh
+        const fetchPromise = fetch(request)
+          .then(response => {
+            // 성공한 응답만 캐시 저장
+            if (response && response.status === 200) {
+              cache.put(request, response.clone())
+            }
+            return response
+          })
+          .catch(() => cached || Promise.reject(new Error('offline')))
+        return cached || fetchPromise
       })()
     )
   }
