@@ -206,7 +206,7 @@ pnpm test:coverage    # 테스트 커버리지
 
 ---
 
-## 📱 PWA 설치(A2HS) & 🔎 Lighthouse 가이드
+## 📱 PWA 설치(A2HS) 가이드
 
 ### PWA 설치(A2HS)
 
@@ -227,16 +227,6 @@ pnpm test:coverage    # 테스트 커버리지
 문제 해결 체크리스트
 
 - HTTPS 여부, 매니페스트/SW 200 응답, 아이콘 192/512 포함 여부, `display: standalone` 확인
-
-### Lighthouse 실행
-
-- 단발 측정(로컬 서버 필요):
-  - 터미널 1: `pnpm dev`
-  - 터미널 2: `pnpm lighthouse` (리포트: `./lighthouse-report.json`)
-
-- CI 다중 경로 측정:
-  - `pnpm lighthouse:ci` (구성: `lighthouserc.json`)
-- 참고: 현재 CI 구성은 PWA 카테고리 assert를 비활성화(`categories:pwa: off`). PWA 전용 점검은 Chrome DevTools Lighthouse에서 추가로 수행하세요.
 
 ---
 

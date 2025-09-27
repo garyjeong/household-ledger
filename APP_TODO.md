@@ -10,10 +10,9 @@
 ### 0단계 — 준비/점검
 
 - [ ] 프로덕션 도메인/HTTPS 준비(필수)
-- [ ] Lighthouse 현재 점수 측정(성능/접근성/베프/SEO, PWA 항목)
 - [ ] 쿠키 정책 확인: `SameSite=Lax`, `Secure`(prod) 유지
 
-산출물: 초기 진단 기록(Lighthouse 리포트 파일/숫자)
+산출물: 초기 진단 기록
 
 ---
 
@@ -24,7 +23,7 @@
 - [x] `src/app/layout.tsx`에 매니페스트/테마컬러 반영(Next Metadata 또는 `<link rel="manifest">`)
 - [x] 경량 Registrar 컴포넌트 도입: 초기 로드 시 1회 `registerServiceWorker()` 호출
 - [x] `public/sw.js`의 알림/배지 아이콘 경로를 실제 아이콘으로 교체
-- [ ] Android 크롬에서 “홈 화면에 추가” 확인, Lighthouse PWA Pass 달성 (기기에서 확인 필요)
+- [ ] Android 크롬에서 "홈 화면에 추가" 확인 (기기에서 확인 필요)
 
 산출물: manifest.json, icons/, Registrar 컴포넌트, 스크린샷/체크리스트
 
@@ -66,7 +65,6 @@
 ### 5단계 — 문서/운영
 
 - [x] README에 PWA 설치/TWA 배포 가이드 섹션 추가
-- [x] CI에 Lighthouse CI 도입(임계치 설정)
 - [ ] 장애 대응 메모: 토큰 만료, SW 업데이트 루프, 아이콘 누락 등
 
 산출물: 문서 갱신, CI 설정
@@ -75,7 +73,7 @@
 
 ### 수용 기준(Definition of Done)
 
-- 1단계 완료: Android에서 설치 배너 노출, Lighthouse PWA Pass
+- 1단계 완료: Android에서 설치 배너 노출
 - 2단계 선택: 핵심 페이지 최소 오프라인 경험
 - 3단계 선택: 구독 생성/저장/테스트 알림 발송 성공
 - 4단계 옵션: TWA 설치 및 로그인 정상 동작
