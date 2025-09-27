@@ -19,7 +19,6 @@ import {
   PieChart,
   Target,
   ArrowUpDown,
-  Download,
   DollarSign,
   Wallet,
   Calculator,
@@ -59,30 +58,7 @@ export default function StatisticsPage() {
   // 통계 데이터 조회
   const { data: statistics, isLoading, isError, refetch } = useStatistics(filters)
 
-  // 데이터 내보내기 (임시 구현)
-  const handleExportData = () => {
-    if (!statistics) return
-
-    const exportData = {
-      period: statistics.period,
-      dateRange: statistics.dateRange,
-      summary: statistics.summary,
-      categoryBreakdown: statistics.categoryBreakdown,
-      generatedAt: new Date().toISOString(),
-    }
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-      type: 'application/json',
-    })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `statistics-${statistics.period}-${new Date().toISOString().split('T')[0]}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
+  // 내보내기 기능 제거됨
 
   // 로딩 상태
   if (isLoading) {
@@ -134,12 +110,7 @@ export default function StatisticsPage() {
               <p className='text-slate-600 mt-1'>카테고리별 수입·지출 통계 및 트렌드 분석</p>
             </div>
 
-            <div className='flex items-center gap-2'>
-              <Button onClick={handleExportData} className='gap-2 bg-blue-600 hover:bg-blue-700'>
-                <Download className='h-4 w-4' />
-                내보내기
-              </Button>
-            </div>
+            {/* 내보내기 버튼 제거됨 */}
           </div>
         </div>
 
