@@ -345,6 +345,7 @@ export function middleware(request: NextRequest) {
       response.headers.set('X-Frame-Options', 'DENY')
       response.headers.set('X-XSS-Protection', '1; mode=block')
       response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+      response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive')
 
       // CORS 헤더 (필요한 경우)
       const origin = request.headers.get('origin')
@@ -370,6 +371,7 @@ export function middleware(request: NextRequest) {
     // 6. 일반 페이지 요청
     const response = NextResponse.next()
     response.headers.set('X-Request-ID', context.requestId)
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow, noarchive')
 
     return response
   } catch (error) {

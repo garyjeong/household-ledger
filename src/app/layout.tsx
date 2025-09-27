@@ -21,6 +21,16 @@ export const metadata: Metadata = {
   title: '우리집 가계부',
   description: '개인 및 그룹 가계부 관리 시스템',
   manifest: '/manifest.json',
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+    },
+  },
 }
 
 export const viewport = {
