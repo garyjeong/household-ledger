@@ -9,6 +9,7 @@ coverage/
 playwright-report/
 test-results/
 lighthouse-report.json
+.lighthouseci/
 
 # Caches
 *.tsbuildinfo

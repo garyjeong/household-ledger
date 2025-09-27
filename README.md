@@ -206,6 +206,106 @@ pnpm test:coverage    # 테스트 커버리지
 
 ---
 
+## 📱 PWA 설치(A2HS) & 🔎 Lighthouse 가이드
+
+### PWA 설치(A2HS)
+
+- 설치 요건
+  - HTTPS(개발은 `http://localhost` 허용)
+  - 매니페스트 존재: `/manifest.json` (`public/manifest.json`)
+  - 서비스 워커 등록: `/sw.js` (`public/sw.js`)
+  - 아이콘 세트: `public/icons/`
+
+- 데스크톱 Chrome
+  - 주소창 우측의 “앱 설치” 아이콘 클릭 또는 메뉴 → 앱 설치
+  - DevTools → Application → Manifest 탭에서 Installable 상태 확인
+
+- Android Chrome
+  - 사이트 접속 → 우측 상단 메뉴 → “앱 설치/홈 화면에 추가” 노출 확인
+  - 최초 방문 직후가 아니라 일정 상호작용 후 노출될 수 있음
+
+문제 해결 체크리스트
+
+- HTTPS 여부, 매니페스트/SW 200 응답, 아이콘 192/512 포함 여부, `display: standalone` 확인
+
+### Lighthouse 실행
+
+- 단발 측정(로컬 서버 필요):
+  - 터미널 1: `pnpm dev`
+  - 터미널 2: `pnpm lighthouse` (리포트: `./lighthouse-report.json`)
+
+- CI 다중 경로 측정:
+  - `pnpm lighthouse:ci` (구성: `lighthouserc.json`)
+- 참고: 현재 CI 구성은 PWA 카테고리 assert를 비활성화(`categories:pwa: off`). PWA 전용 점검은 Chrome DevTools Lighthouse에서 추가로 수행하세요.
+
+---
+
+## 🧰 운영/문제해결 가이드
+
+### Service Worker 제어
+
+- 버전 확인: `postMessage({ type: 'GET_VERSION' })`
+- 강제 캐시 삭제: `postMessage({ type: 'CLEAR_CACHES' })` 후 페이지 새로고침
+- 프리캐시 재실행: `postMessage({ type: 'PRECACHE' })`
+- 업데이트 적용 절차: Application → Service Workers → Update → Reload
+
+### A2HS(설치 배너) 디버깅
+
+- HTTPS, 올바른 `manifest.json`/`sw.js` 200 응답
+- 아이콘 192/512 포함, `display: standalone`
+- Android Chrome에서 일정 상호작용 후 노출될 수 있음
+
+### 토큰 만료/재시도 유의사항
+
+- 최초 401 후 refresh 성공 시, 재호출이 dedupe 캐시에 막히지 않도록 구현되어 있음
+- 재시도 로직에서 /api/\* GET 캐시 사용 금지, 실패 응답 캐시 금지
+
+---
+
+## 📦 TWA(Trusted Web Activity) 패키징 가이드
+
+### 준비
+
+- 도메인에 `public/.well-known/assetlinks.json` 배치
+- Android 패키지명과 Play 서명키 SHA-256 지문 준비
+
+### assetlinks.json 예시
+
+```json
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.household_ledger",
+      "sha256_cert_fingerprints": ["REPLACE_WITH_YOUR_SHA256_FINGERPRINT"]
+    }
+  }
+]
+```
+
+### Bubblewrap 초기화(요약)
+
+```bash
+npm i -g @bubblewrap/cli
+bubblewrap init --manifest=https://<your-domain>/manifest.json
+bubblewrap build
+```
+
+### 체크리스트
+
+- HTTPS, `service worker` 등록, `manifest.json` 유효성
+- 오리진 동일성(리다이렉트 없이 동일 도메인 로딩)
+- 백 버튼, 파일 업로드, 로그인 플로우 정상 동작
+
+---
+
+## 🔐 환경 변수/쿠키 체크리스트 (Prod)
+
+- `NEXT_PUBLIC_APP_URL`: 프로덕션 도메인
+- 쿠키: `Secure`=true, `SameSite=Lax`, `HttpOnly`(서버 쿠키)
+- 보안 헤더: `X-Frame-Options=DENY`, `Referrer-Policy=strict-origin-when-cross-origin`
+
 ## 🎊 현재 상태
 
 **✨ 완성도**: 100% (MVP + 데이터베이스 대폭 단순화 완성)  

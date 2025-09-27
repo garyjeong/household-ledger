@@ -3,19 +3,116 @@
  * T-026: 설정 하위 메뉴 - 프로필 관리 (알림 설정)
  */
 
-const CACHE_NAME = 'household-ledger-v1'
+const CACHE_NAME = 'household-ledger-v3'
 const NOTIFICATION_TAG = 'household-ledger-notification'
 
+// 오프라인 프리캐시 자원 목록 (정적/공개 자원만 포함)
+const PRECACHE_URLS = [
+  '/',
+  '/manifest.json',
+  '/sw.js',
+  '/favicon.ico',
+  // static assets in public/
+  '/file.svg',
+  '/globe.svg',
+  '/next.svg',
+  '/vercel.svg',
+  '/window.svg',
+  '/icons/icon-72.png',
+  '/icons/icon-96.png',
+  '/icons/icon-128.png',
+  '/icons/icon-144.png',
+  '/icons/icon-152.png',
+  '/icons/icon-192.png',
+  '/icons/icon-384.png',
+  '/icons/icon-512.png',
+  '/icons/icon-192-maskable.png',
+  '/icons/icon-512-maskable.png',
+]
+
 // Service Worker 설치
-self.addEventListener('install', _event => {
-  // Service Worker 설치됨
+self.addEventListener('install', event => {
+  // 기본 설치 단계: 즉시 활성화 대기 종료
   self.skipWaiting()
+  // 프리캐시 수행
+  event.waitUntil(
+    caches
+      .open(CACHE_NAME)
+      .then(cache => cache.addAll(PRECACHE_URLS))
+      .catch(() => {})
+  )
 })
 
 // Service Worker 활성화
 self.addEventListener('activate', event => {
-  // Service Worker 활성화됨
-  event.waitUntil(self.clients.claim())
+  // 구 캐시 정리 및 즉시 제어권 획득
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys()
+      await Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      await self.clients.claim()
+    })()
+  )
+})
+
+// 네트워크 우선(HTML/문서), 캐시 우선(정적 파일) 전략
+self.addEventListener('fetch', event => {
+  const request = event.request
+  const url = new URL(request.url)
+
+  // API는 캐시하지 않음
+  if (url.pathname.startsWith('/api/')) {
+    return
+  }
+
+  // 문서(HTML) 요청: network-first, 실패 시 캐시 fallback
+  if (request.mode === 'navigate' || (request.headers.get('accept') || '').includes('text/html')) {
+    event.waitUntil((async () => undefined)())
+    event.respondWith(
+      (async () => {
+        try {
+          const fresh = await fetch(request)
+          // 성공 시 캐시에 백그라운드로 저장
+          const cache = await caches.open(CACHE_NAME)
+          cache.put(request, fresh.clone())
+          return fresh
+        } catch (_err) {
+          const cache = await caches.open(CACHE_NAME)
+          const cached = await cache.match(request)
+          if (cached) return cached
+          // 최후 fallback: 루트 캐시 시도
+          const root = await cache.match('/')
+          return root || Response.error()
+        }
+      })()
+    )
+    return
+  }
+
+  // 정적 자산: cache-first
+  if (
+    url.pathname.startsWith('/_next/') ||
+    url.pathname.startsWith('/icons/') ||
+    url.pathname.endsWith('.css') ||
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.png') ||
+    url.pathname.endsWith('.jpg') ||
+    url.pathname.endsWith('.jpeg') ||
+    url.pathname.endsWith('.svg') ||
+    url.pathname.endsWith('.ico') ||
+    url.pathname.endsWith('.webp')
+  ) {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(CACHE_NAME)
+        const cached = await cache.match(request)
+        if (cached) return cached
+        const fresh = await fetch(request)
+        cache.put(request, fresh.clone())
+        return fresh
+      })()
+    )
+  }
 })
 
 // 푸시 이벤트 처리
@@ -29,17 +126,10 @@ self.addEventListener('push', event => {
     badge: '/icons/icon-72.png',
     tag: NOTIFICATION_TAG,
     requireInteraction: false,
+    // 액션 아이콘은 리소스 누락으로 제거
     actions: [
-      {
-        action: 'open',
-        title: '확인',
-        icon: '/icons/action-open.png',
-      },
-      {
-        action: 'close',
-        title: '닫기',
-        icon: '/icons/action-close.png',
-      },
+      { action: 'open', title: '확인' },
+      { action: 'close', title: '닫기' },
     ],
     data: {
       url: '/',
@@ -155,6 +245,28 @@ self.addEventListener('message', event => {
       break
     case 'GET_VERSION':
       event.ports[0].postMessage({ version: CACHE_NAME })
+      break
+    case 'CLEAR_CACHES':
+      event.waitUntil(
+        (async () => {
+          const keys = await caches.keys()
+          await Promise.all(keys.map(k => caches.delete(k)))
+        })()
+      )
+      if (event.ports && event.ports[0]) {
+        event.ports[0].postMessage({ cleared: true })
+      }
+      break
+    case 'PRECACHE':
+      event.waitUntil(
+        caches
+          .open(CACHE_NAME)
+          .then(cache => cache.addAll(PRECACHE_URLS))
+          .catch(() => {})
+      )
+      if (event.ports && event.ports[0]) {
+        event.ports[0].postMessage({ precached: true })
+      }
       break
     case 'UPDATE_NOTIFICATION_TOKEN':
       // 알림 토큰 업데이트 처리

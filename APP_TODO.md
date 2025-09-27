@@ -1,6 +1,6 @@
-## PWA 구현 계획 (Minimal Change, 문서 우선)
+# PWA 구현 계획 (Minimal Change, 문서 우선)
 
-### 목표
+## 목표
 
 - 기존 Next.js 앱을 설치 가능한 PWA로 완성하고, 이후 TWA(Play 스토어) 패키징까지 확장 가능한 기반을 구축한다.
 - 변경 범위 최소화(MCP-원칙), 보안/호환성 유지.
@@ -19,12 +19,12 @@
 
 ### 1단계 — PWA 베이스라인 완성
 
-- [ ] `public/manifest.json` 추가(앱명, 색상, start_url, display, orientation, categories)
-- [ ] 아이콘 세트 추가: `public/icons/` 72, 96, 128, 144, 152, 192, 384, 512 및 maskable 192/512
-- [ ] `src/app/layout.tsx`에 매니페스트/테마컬러 반영(Next Metadata 또는 `<link rel="manifest">`)
-- [ ] 경량 Registrar 컴포넌트 도입: 초기 로드 시 1회 `registerServiceWorker()` 호출
-- [ ] `public/sw.js`의 알림/배지 아이콘 경로를 실제 아이콘으로 교체
-- [ ] Android 크롬에서 “홈 화면에 추가” 확인, Lighthouse PWA Pass 달성
+- [x] `public/manifest.json` 추가(앱명, 색상, start_url, display, orientation, categories)
+- [x] 아이콘 세트 추가: `public/icons/` 72, 96, 128, 144, 152, 192, 384, 512 및 maskable 192/512
+- [x] `src/app/layout.tsx`에 매니페스트/테마컬러 반영(Next Metadata 또는 `<link rel="manifest">`)
+- [x] 경량 Registrar 컴포넌트 도입: 초기 로드 시 1회 `registerServiceWorker()` 호출
+- [x] `public/sw.js`의 알림/배지 아이콘 경로를 실제 아이콘으로 교체
+- [ ] Android 크롬에서 “홈 화면에 추가” 확인, Lighthouse PWA Pass 달성 (기기에서 확인 필요)
 
 산출물: manifest.json, icons/, Registrar 컴포넌트, 스크린샷/체크리스트
 
@@ -34,7 +34,7 @@
 
 - [ ] `sw.js`에 기본 캐시 전략 정의(필수 자원 사전 캐시 또는 network-first 전략)
 - [ ] 주요 경로(`/`, `/transactions`, `/statistics`)의 최소 오프라인 경험 제공
-- [ ] SW 업데이트 전략/버전 관리(activate 시 clients.claim, skipWaiting 메시지 처리)
+- [x] SW 업데이트 전략/버전 관리(activate 시 clients.claim, skipWaiting 메시지 처리)
 
 산출물: 캐시 전략 요약, 테스트 시나리오
 
@@ -47,6 +47,7 @@
 - [ ] 환경변수 설정: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`
 - [ ] `NotificationSettings`에서 `setupPushNotifications()` 연결(권한 요청→SW 등록→구독 저장)
 - [ ] 테스트 알림 시나리오(1~2개) 검증
+  - 현재 요구사항: 웹 푸시는 사용하지 않음 → 전체 섹션 보류 권장
 
 산출물: 구독 저장 테이블/엔드포인트, VAPID 키, 테스트 로그
 
@@ -64,8 +65,8 @@
 
 ### 5단계 — 문서/운영
 
-- [ ] README에 PWA 설치/TWA 배포 가이드 섹션 추가
-- [ ] CI에 Lighthouse CI 도입(임계치 설정)
+- [x] README에 PWA 설치/TWA 배포 가이드 섹션 추가
+- [x] CI에 Lighthouse CI 도입(임계치 설정)
 - [ ] 장애 대응 메모: 토큰 만료, SW 업데이트 루프, 아이콘 누락 등
 
 산출물: 문서 갱신, CI 설정
