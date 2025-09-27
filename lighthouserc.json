@@ -7,7 +7,7 @@
         "http://localhost:3001/ledger",
         "http://localhost:3001/groups"
       ],
-      "startServerCommand": "pnpm start",
+      "startServerCommand": "pnpm start -p 3001",
       "startServerReadyPattern": "ready",
       "startServerReadyTimeout": 60000,
       "numberOfRuns": 3,
