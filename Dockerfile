@@ -51,6 +51,9 @@ COPY --from=builder /app/next.config.ts ./next.config.ts
 # Copy node_modules from builder so generated Prisma client (node_modules/.prisma) is included
 COPY --from=builder /app/node_modules ./node_modules
 
+# Prisma needs the schema during release_command (migrate deploy)
+COPY --from=builder /app/prisma ./prisma
+
 # Expose the port the app runs on
 EXPOSE 3000
 
