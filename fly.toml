@@ -22,4 +22,4 @@ primary_region = 'nrt'
   cpus = 1
  
 [deploy]
-  release_command = "npx prisma db push"
+  release_command = "sh -c 'DATABASE_URL=\"${FLY_DATABASE_URL:-$DATABASE_URL}\" npx prisma db push'"
