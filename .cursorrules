@@ -1,0 +1,337 @@
+# Household Ledger - Project Rules
+
+## 0. Core Principles
+- **Minimal Change Principle (MCP)**: Preserve existing logic where possible; minimize scope of changes.
+- **Documentation First**: Always refer to Project Rules and local docs before coding.
+- **User Approval Required**: Do not run servers/builds/commits without explicit user approval (unless readonly).
+
+## 1. Project Overview
+- **Goal**: 신혼부부 가계부 웹앱 (Next.js) + Android 앱 + FastAPI 백엔드
+- **Tech Stack**: 
+  - Frontend: Next.js, React, TypeScript, Tailwind CSS, Prisma
+  - Backend: FastAPI, Python, SQLAlchemy, MySQL
+  - Mobile: Flutter/Kotlin (Android)
+- **Database**: MySQL with Prisma ORM (9 tables)
+- **API**: 31+ API endpoints
+
+## 2. Architecture
+- **Pattern**: Full-Stack with separate frontend/backend
+- **Structure**:
+  - `src/app/` - Next.js App Router pages
+  - `src/app/api/` - API routes (31 endpoints)
+  - `src/components/` - React components
+  - `prisma/` - Database schema (9 tables)
+  - `src/lib/` - Utilities, API clients
+- **Database**: MySQL with Prisma ORM
+- **Authentication**: JWT-based authentication
+
+## 3. Code Style
+- **Language**: TypeScript (Frontend), Python (Backend)
+- **Formatting**: Prettier (Frontend), Black (Backend)
+- **Linting**: ESLint (Frontend), Ruff/Flake8 (Backend)
+- **Naming**:
+  - Components: PascalCase
+  - Functions/Vars: camelCase (TS), snake_case (Python)
+  - Constants: UPPER_SNAKE_CASE
+
+## 4. Testing
+- **Strategy**: Unit tests + Integration tests + E2E tests
+- **Tools**: 
+  - Frontend: Vitest + React Testing Library + Playwright
+  - Backend: pytest
+- **Coverage**: Focus on critical paths and user flows
+
+## 5. Deployment
+- **Platform**: Vercel (Frontend), AWS/Docker (Backend)
+- **Database**: MySQL (managed or self-hosted)
+- **Build Output**: `.next/` (Next.js build)
+
+---
+
+## 6. Full-Stack Development Guidelines (from fullstack-developer agent)
+
+### Frontend Architecture
+- **Next.js App Router**: Use Server Components by default
+- **API Integration**: Custom API client with error handling
+- **State Management**: React Context + Zustand for global state
+- **Authentication**: JWT token management
+
+### Backend Architecture
+- **FastAPI**: Async API endpoints
+- **Repository Pattern**: Data access abstraction
+- **Service Layer**: Business logic separation
+- **Database**: Prisma ORM for type-safe queries
+
+### API Design
+```typescript
+// Frontend API Client
+class ApiClient {
+  private baseURL: string
+  private getAuthHeaders(): Record<string, string> {
+    const token = localStorage.getItem('auth_token')
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  }
+
+  async createTransaction(data: TransactionCreateDto): Promise<TransactionDto> {
+    const response = await fetch(`${this.baseURL}/api/transactions`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(data)
+    })
+    
+    if (!response.ok) {
+      throw new ApiError(`거래 생성 실패: ${response.statusText}`)
+    }
+    
+    return response.json()
+  }
+}
+```
+
+### Database Schema
+```prisma
+// Prisma Schema (9 tables)
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  amount    Decimal
+  category  String
+  date      DateTime
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id           Int          @id @default(autoincrement())
+  email        String       @unique
+  name         String
+  transactions Transaction[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+```
+
+---
+
+## 7. Frontend Development Guidelines (from frontend-developer agent)
+
+### Component Architecture
+- **React Hooks**: Prefer hooks over class components
+- **Performance**: Use React.memo, useMemo, useCallback appropriately
+- **Accessibility**: WCAG 2.1 AA compliance, ARIA labels, keyboard navigation
+
+### Component Examples
+```typescript
+interface TransactionFormProps {
+  onSubmit: (data: TransactionCreateDto) => Promise<void>
+  initialData?: TransactionDto
+}
+
+export const TransactionForm = ({ onSubmit, initialData }: TransactionFormProps) => {
+  const [isLoading, setIsLoading] = useState(false)
+  
+  const handleSubmit = async (data: TransactionCreateDto) => {
+    setIsLoading(true)
+    try {
+      await onSubmit(data)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* Form fields */}
+    </form>
+  )
+}
+```
+
+### Responsive Design
+- **Mobile-First**: Design for mobile, enhance for desktop
+- **Breakpoints**: Use Tailwind's default breakpoints
+- **Touch Targets**: Minimum 44x44px for interactive elements
+
+---
+
+## 8. Database Administration (from database-admin agent)
+
+### Database Best Practices
+- **Backup Strategy**: Daily automated backups with retention policy
+- **Migrations**: Use Prisma migrations for schema changes
+- **Connection Pooling**: Configure proper connection pool size
+- **Indexing**: Add indexes for frequently queried fields
+
+### Backup Script Example
+```bash
+#!/bin/bash
+# Daily backup script
+DATE=$(date +%Y%m%d_%H%M%S)
+BACKUP_DIR="/backups"
+DB_NAME="household_ledger"
+
+mysqldump -u $DB_USER -p$DB_PASSWORD $DB_NAME > "$BACKUP_DIR/backup_$DATE.sql"
+
+# Retention: Keep last 30 days
+find $BACKUP_DIR -name "backup_*.sql" -mtime +30 -delete
+```
+
+### Monitoring Queries
+```sql
+-- Check table sizes
+SELECT 
+  table_name,
+  ROUND(((data_length + index_length) / 1024 / 1024), 2) AS size_mb
+FROM information_schema.TABLES
+WHERE table_schema = 'household_ledger'
+ORDER BY size_mb DESC;
+
+-- Check slow queries
+SELECT * FROM mysql.slow_log
+WHERE start_time > DATE_SUB(NOW(), INTERVAL 1 DAY)
+ORDER BY start_time DESC;
+```
+
+### Performance Optimization
+- **Indexes**: Add indexes on foreign keys and frequently filtered columns
+- **Query Optimization**: Use Prisma query optimization features
+- **Connection Pooling**: Configure appropriate pool size
+- **Caching**: Use Redis for frequently accessed data (optional)
+
+---
+
+## 9. API Integration
+
+### Frontend-Backend Communication
+- **API Routes**: Next.js API routes for server-side logic
+- **External API**: FastAPI backend for complex operations
+- **Error Handling**: Consistent error format across all APIs
+- **Authentication**: JWT tokens in Authorization header
+
+### Error Handling
+```typescript
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status?: number,
+    public code?: string
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+// Error handling in components
+try {
+  await apiClient.createTransaction(data)
+} catch (error) {
+  if (error instanceof ApiError) {
+    toast.error(error.message)
+  } else {
+    toast.error('알 수 없는 오류가 발생했습니다')
+  }
+}
+```
+
+---
+
+## 10. Claude Skills Integration
+
+### 10.1 Senior Fullstack Skill
+**Source**: `/Users/gary/.claude/skills/senior-fullstack/`
+
+**Capabilities**:
+- Fullstack Scaffolder: Automated fullstack project scaffolding
+- Project Scaffolder: Comprehensive project setup and structure
+- Code Quality Analyzer: Code quality analysis and recommendations
+
+**Usage**:
+```bash
+# Fullstack scaffolding
+python /Users/gary/.claude/skills/senior-fullstack/scripts/fullstack_scaffolder.py <project-path>
+
+# Project scaffolding
+python /Users/gary/.claude/skills/senior-fullstack/scripts/project_scaffolder.py <target-path> --verbose
+
+# Code quality analysis
+python /Users/gary/.claude/skills/senior-fullstack/scripts/code_quality_analyzer.py [arguments]
+```
+
+**Reference Documentation**:
+- `references/tech_stack_guide.md`: Complete tech stack guidance
+- `references/architecture_patterns.md`: Architecture patterns and best practices
+- `references/development_workflows.md`: Development workflow documentation
+
+### 10.2 Database Operations Skill
+**Source**: `/Users/gary/.claude/skills/database-ops/`
+
+**Capabilities**:
+- Database schema inspection
+- SQL query execution (read-only by default)
+- Database backup/restore operations
+- Data integrity validation
+
+**MCP Tools Usage**:
+```typescript
+// DB 목록 조회
+mcp__db-mcp__list_databases({ use_dotenv: true })
+
+// 테이블 스키마 조회
+mcp__db-mcp__describe_tables({ db_name: "household_ledger", use_dotenv: true })
+
+// SQL 쿼리 실행
+mcp__db-mcp__run_query({
+  query: "SELECT * FROM transactions LIMIT 10",
+  db_name: "household_ledger",
+  use_dotenv: true,
+  mode: "read_only"
+})
+```
+
+**Important Notes**:
+- Default mode is `read_only` - specify `read_write` for write operations
+- Always check backup status before production DB access
+- Use `limit` parameter for large data queries
+
+### 10.3 Senior Backend Skill
+**Source**: `/Users/gary/.claude/skills/senior-backend/`
+
+**Capabilities**:
+- API Scaffolder: Automated API scaffolding with best practices
+- Database Migration Tool: Database optimization and migration management
+- API Load Tester: Performance testing and load analysis
+
+**Usage**:
+```bash
+# API scaffolding
+python /Users/gary/.claude/skills/senior-backend/scripts/api_scaffolder.py <project-path>
+
+# Database migration tool
+python /Users/gary/.claude/skills/senior-backend/scripts/database_migration_tool.py <target-path> --verbose
+```
+
+**Reference Documentation**:
+- `references/api_design_patterns.md`: API design patterns and best practices
+- `references/database_optimization_guide.md`: Database optimization strategies
+- `references/backend_security_practices.md`: Backend security best practices
+
+---
+
+## 11. References
+- `README.md`: Project setup and overview
+- `prisma/schema.prisma`: Database schema
+- `src/app/api/`: API route handlers
+- `DATABASE.md`: Database documentation (if exists)
+- `/Users/gary/.claude/skills/senior-fullstack/`: Senior Fullstack skill
+- `/Users/gary/.claude/skills/database-ops/`: Database Operations skill
+- `/Users/gary/.claude/skills/senior-backend/`: Senior Backend skill
+
+---
+
+**Last Updated**: 2025-01-25
+**Maintained By**: Household Ledger Development Team
+

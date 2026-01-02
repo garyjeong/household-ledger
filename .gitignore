@@ -1,0 +1,89 @@
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Flutter
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/.packages
+apps/mobile/.pub-cache/
+apps/mobile/.pub/
+apps/mobile/build/
+apps/mobile/ios/Pods/
+apps/mobile/ios/.symlinks/
+apps/mobile/ios/Flutter/Flutter.framework
+apps/mobile/ios/Flutter/Flutter.podspec
+apps/mobile/android/.gradle/
+apps/mobile/android/app/build/
+apps/mobile/android/.idea/
+apps/mobile/android/local.properties
+apps/mobile/android/.dart_tool/
+apps/mobile/android/captures/
+apps/mobile/android/gradlew
+apps/mobile/android/gradlew.bat
+apps/mobile/android/gradle-wrapper.jar
+apps/mobile/android/key.properties
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Rust
+apps/api/target/
+apps/api/Cargo.lock
+apps/api/**/*.rs.bk
+*.pdb
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Generated files
+apps/mobile/lib/**/*.g.dart
+apps/mobile/lib/**/*.freezed.dart
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/.packages
+apps/mobile/.pub-cache/
+apps/mobile/.pub/
+apps/mobile/build/
+
+# Cursor
+.cursor/
+
